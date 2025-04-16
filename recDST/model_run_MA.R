@@ -7,13 +7,13 @@ state1 = "MA"
 predictions_all = list()
 
 #### Read in size data ####
-sf_size_dat <- readr::read_csv(file.path(here::here("data-raw/size_data/fluke_prob_star_2024_MA.csv")),  show_col_types = FALSE) 
+sf_size_dat <- readr::read_csv(file.path(here::here("data-raw/size_data/fluke_prob_star_2024_MA.csv")),  show_col_types = FALSE, progress = FALSE) 
 
-bsb_size_dat <- readr::read_csv(file.path(here::here("data-raw/size_data/bsb_prob_star_2022_MA.csv")),  show_col_types = FALSE)
+bsb_size_dat <- readr::read_csv(file.path(here::here("data-raw/size_data/bsb_prob_star_2022_MA.csv")),  show_col_types = FALSE, progress = FALSE)
 
-scup_size_dat <- readr::read_csv(file.path(here::here("data-raw/size_data/scup_prob_star_2024_MA.csv")),  show_col_types = FALSE)
+scup_size_dat <- readr::read_csv(file.path(here::here("data-raw/size_data/scup_prob_star_2024_MA.csv")),  show_col_types = FALSE, progress = FALSE)
 
-l_w_conversion <-readr::read_csv(file.path(here::here("data-raw/size_data/L_W_Conversion.csv")),  show_col_types = FALSE) %>%
+l_w_conversion <-readr::read_csv(file.path(here::here("data-raw/size_data/L_W_Conversion.csv")),  show_col_types = FALSE, progress = FALSE) %>%
   dplyr::filter(State=="MA") %>% 
   dplyr::mutate(ln_a = as.numeric(ln_a))
 
@@ -100,7 +100,7 @@ for(x in 1:100){
   
   print(x)
   
-  catch_files_MA<- readr::read_csv(file.path(here::here(paste0("data-raw/catch2024/", state1, " catch draws 2024 draw4 ",x ,".csv")))) %>% 
+  catch_files_MA<- readr::read_csv(file.path(here::here(paste0("data-raw/catch2024/", state1, " catch draws 2024 draw4 ",x ,".csv"))), progress = FALSE) %>% 
     dplyr::rename(tot_sf_catch = tot_cat_sf,
                   tot_bsb_catch = tot_cat_bsb,
                   tot_scup_catch = tot_cat_scup, 
