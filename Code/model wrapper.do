@@ -38,8 +38,8 @@
 *These need to be changed every year 
 
 *Years/waves of MRIP data. 
-global yr_wvs 20226 20231 20232 20233 20234 20235 20236  20241 20242 20243 20244 20245 
-global yearlist 2022 2023 2024 
+global yr_wvs 20211 20212 20213 20214 20215 20216 20221 20222 20223 20224 20225 20226 20231 20232 20233 20234 20235 20236  20241 20242 20243 20244 20245 
+global yearlist 2021 2022 2023 2024 
 global wavelist 1 2 3 4 5 6
 
 
@@ -80,7 +80,7 @@ global fed_holidays "inlist(day, td(02jan2023), td(16jan2023), td(20feb2023), td
 global fed_holidays "inlist(day, td(10nov2023), td(23nov2023), td(25dec2023), td(01jan2024), td(15jan2024), td(19feb2024), td(27may2024), td(19jun2024), td(04jul2024), td(02sep2024), td(14oct2024), td(11nov2024), td(28nov2024), td(25dec2024))" 
 
 *Fed holidays in the projection year CHECK
-global fed_holidays_y2 "inlist(day_y2,td(01jan2025), td(20jan2025), td(17feb2025), td(26may2025), td(19jun2025), td(04jul2025), td(01sep2025), td(13oct2025), td(11nov2025), td(27nov2025), td(25dec2025)"
+global fed_holidays_y2 "inlist(day_y2,td(01jan2025), td(20jan2025), td(17feb2025), td(26may2025), td(19jun2025), td(04jul2025), td(01sep2025), td(13oct2025), td(11nov2025), td(27nov2025), td(25dec2025))"
 
 *Put leap-year days here
 global leap_yr_days "td(29feb2024)" 
@@ -134,9 +134,6 @@ do "$input_code_cd\MRIP data wrapper.do"
 
 // 2) Estimate directed trips at the month, mode, kind-of day level
 		*Note this file calls "set regulations.do". In it you must enter the regulations in the calibration + projection year. THIS NEEDS TO BE ADJUSTED EVERY YEAR. 
-		*datasets needed: 
-			*(old) ma site allocation.dta - allocating MRIP sites to GoM stock area. Note this will change in FY25+
-			*(new) ma_site_list_updated_SS.xlsx - allocating MRIP sites to GoM stock area. 
 
 do "$input_code_cd\directed_trips_calibration.do"
 
