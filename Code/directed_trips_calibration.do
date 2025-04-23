@@ -512,7 +512,7 @@ save  "$input_data_cd\cod_open_season_dates.dta",  replace
 restore 
 */
 
-
+compress
 export delimited using "$input_data_cd\directed_trips_calibration_`s'.csv",  replace 
 
 
@@ -569,6 +569,7 @@ su check
 return list
 
 drop check 
+compress
 
 export delimited using "$input_data_cd\proj_year_calendar_adjustments_`s'.csv",  replace 
 }
