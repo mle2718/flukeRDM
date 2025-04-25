@@ -44,6 +44,7 @@ global wavelist 1 2 3 4 5 6
 
 
 global calibration_year "(year==2024 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2023 & inlist(wave, 6))"
+global calibration_catch_per_trip_years "(year==2024 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2023 & inlist(wave, 6)) | (year==2023 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2022 & inlist(wave, 6))"
 global rec_selectivity_year "(year==2024 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2023 & inlist(wave, 6))"
 
 global calibration_date_start td(01nov2023)
@@ -86,7 +87,7 @@ global fed_holidays_y2 "inlist(day_y2,td(01jan2025), td(20jan2025), td(17feb2025
 global leap_yr_days "td(29feb2024)" 
 
 *Choose how many draws you want to create. Will create 150 for final version, from which 100 will be selected
-global ndraws 100
+global ndraws 10
 
 *Set the global length to pull either ionches or centimeters from MRIP (l_in_bin or l_cm_bin)
 global length_bin l_cm_bin
@@ -113,7 +114,8 @@ global projected_hadd_NAA  "GOM_Haddock_projected_NAA_2024Assessment.dta"
 
 
 *Adjustment to 2017 survey trip costs to account for inflation
-global inflation_expansion=1.27 //CHECK
+*https://www.bls.gov/data/inflation_calculator.htm, January 2017 - January 2025 
+global inflation_expansion=1.31 
 
 *Adjust project paths based on user
 global project_path "C:\Users\andrew.carr-harris\Desktop\Git\flukeRDM" /* Lou's project path */
