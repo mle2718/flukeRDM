@@ -85,13 +85,8 @@ directed_trips<- directed_trips %>%
     bsb_min=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(input$BSBctSH_seas2[1]) & day_i <= lubridate::yday(input$BSBctSH_seas2[2]) ~ as.numeric(input$BSBctSH_2_len), TRUE ~ bsb_min), 
     bsb_min=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(input$BSBctFH_seas3[1]) & day_i <= lubridate::yday(input$BSBctFH_seas3[2]) ~ as.numeric(input$BSBctFH_3_len), TRUE ~ bsb_min), 
     bsb_min=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(input$BSBctPR_seas3[1]) & day_i <= lubridate::yday(input$BSBctPR_seas3[2]) ~ as.numeric(input$BSBctPR_3_len), TRUE ~ bsb_min), 
-    bsb_min=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(input$BSBctSH_seas3[1]) & day_i <= lubridate::yday(input$BSBctSH_seas3[2]) ~ as.numeric(input$BSBctSH_3_len), TRUE ~ bsb_min))
+    bsb_min=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(input$BSBctSH_seas3[1]) & day_i <= lubridate::yday(input$BSBctSH_seas3[2]) ~ as.numeric(input$BSBctSH_3_len), TRUE ~ bsb_min),
 
-
-
-
-directed_trips<- directed_trips %>%  
-  dplyr::mutate(
     scup_bag=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(input$SCUPctFH_seas1[1]) & day_i <= lubridate::yday(input$SCUPctFH_seas1[2]) ~ as.numeric(input$SCUPctFH_1_bag), TRUE ~ 0), 
     scup_min=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(input$SCUPctFH_seas1[1]) & day_i <= lubridate::yday(input$SCUPctFH_seas1[2]) ~ as.numeric(input$SCUPctFH_1_len), TRUE ~ 100),
     scup_bag=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(input$SCUPctFH_seas2[1]) & day_i <= lubridate::yday(input$SCUPctFH_seas2[2]) ~ as.numeric(input$SCUPctFH_2_bag), TRUE ~ scup_bag),
