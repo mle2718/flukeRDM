@@ -40,11 +40,11 @@ We come from many cultures and backgrounds. Cultural differences can encompass e
 
 # Summary
 
-Be respectful, direct, respectful, accommodating, appreciative, and open to learning from everyone else.
+Be respectful, direct, accommodating, appreciative, and open to learning from everyone else.
 
 Do not attack, demean, disrupt, harass, or threaten others or encourage such behavior.
 
-This Code of Conduct applies to all people participating in this project.  It applies to all modes of interaction online including GitHub project repositories, remote calls, and in person.
+This Code of Conduct applies to all people participating in this project. It applies to all modes of interaction online including GitHub project repositories, remote calls, and in person.
 
 
 # Reporting Guidelines
