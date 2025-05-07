@@ -435,3 +435,277 @@ pA<- ggplot(plot_data, aes(x = metric, y = value, fill = source)) +
   scale_fill_manual(values = c("Survey" = "red", "Simulated" = "steelblue")) +
   theme_minimal()
 pA
+
+
+
+# # Now summarize the means by simulation ID
+# sim_means <- combined_sim %>%
+#   dplyr::group_by(sim_id) %>%
+#   dplyr::summarize(
+#     mean_sf_keep  = mean(sf_keep_sim),
+#     sd_sf_keep  = sd(sf_keep_sim),
+#     .groups = "drop"
+#   )
+# 
+# # Summary
+# # Summarize simulated means
+# sim_summary <- sim_means %>%
+#   dplyr::summarize(
+#     mean_keep  = mean(mean_sf_keep),
+#     sdm_keep    = sd(mean_sf_keep),
+#     sd_keep    = mean(sd_sf_keep),
+#     sd_sd_keep    = sd(sd_sf_keep),
+# 
+#   )
+# 
+# # Build tidy comparison table
+# comparison_plot_df <- tibble::tibble(
+#   metric = rep(c( "sf_keep"), times = 2),
+#   value = c(
+#     # Means
+#     coef(mean_keep),
+#     sim_summary$mean_keep
+#   ),
+#   se = c(
+#     sqrt(var_keep),
+#     sim_summary$sdm_keep
+#   ),
+#   source = rep(c("Survey", "Simulated")),
+#   statistic = "Mean"
+# )
+# 
+# # Add SD comparison
+# sd_plot_df <- tibble::tibble(
+#   metric = rep(c( "sf_keep"), times = 2),
+#   value = c(
+#     obs_sd_keep,
+#     sim_summary$sd_keep
+#   ),
+#   se = c(
+#     NA,
+#     sim_summary$sd_sd_keep
+#   ),
+#   source = rep(c("Survey", "Simulated")),
+#   statistic = "SD"
+# )
+# 
+# 
+# # Combine for plotting
+# plot_data <- bind_rows(comparison_plot_df, sd_plot_df)
+# 
+# 
+# pA<- ggplot(plot_data, aes(x = metric, y = value, fill = source)) +
+#   geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+#   geom_errorbar(
+#     aes(ymin = value - 1.96 * se, ymax = value + 1.96 * se),
+#     width = 0.2,
+#     position = position_dodge(width = 0.8)
+#   ) +
+#   facet_wrap(~statistic, scales = "free_y") +
+#   labs(
+#     title = "Survey vs Simulated: Means and Standard Deviations",
+#     x = "Metric",
+#     y = "Value (Fish per Trip)",
+#     fill = "Source"
+#   ) +
+#   scale_fill_manual(values = c("Survey" = "red", "Simulated" = "steelblue")) +
+#   theme_minimal()
+# pA
+
+# # Now summarize the means by simulation ID
+# sim_means <- combined_sim %>%
+#   dplyr::group_by(sim_id) %>%
+#   dplyr::summarize(
+#     mean_sf_rel  = mean(sf_rel_sim),
+#     sd_sf_rel  = sd(sf_rel_sim),
+#     .groups = "drop"
+#   )
+# 
+# # Summary
+# # Summarize simulated means
+# sim_summary <- sim_means %>%
+#   dplyr::summarize(
+#     mean_rel  = mean(mean_sf_rel),
+#     sdm_rel    = sd(mean_sf_rel),
+#     sd_rel    = mean(sd_sf_rel),
+#     sd_sd_rel    = sd(sd_sf_rel),
+# 
+#   )
+# 
+# # Build tidy comparison table
+# comparison_plot_df <- tibble::tibble(
+#   metric = rep(c( "sf_rel"), times = 2),
+#   value = c(
+#     # Means
+#     coef(mean_rel),
+#     sim_summary$mean_rel
+#   ),
+#   se = c(
+#     sqrt(var_rel),
+#     sim_summary$sdm_rel
+#   ),
+#   source = rep(c("Survey", "Simulated")),
+#   statistic = "Mean"
+# )
+# 
+# # Add SD comparison
+# sd_plot_df <- tibble::tibble(
+#   metric = rep(c( "sf_rel"), times = 2),
+#   value = c(
+#     obs_sd_rel,
+#     sim_summary$sd_rel
+#   ),
+#   se = c(
+#     NA,
+#     sim_summary$sd_sd_rel
+#   ),
+#   source = rep(c("Survey", "Simulated")),
+#   statistic = "SD"
+# )
+# 
+# 
+# # Combine for plotting
+# plot_data <- bind_rows(comparison_plot_df, sd_plot_df)
+# 
+# 
+# pA<- ggplot(plot_data, aes(x = metric, y = value, fill = source)) +
+#   geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+#   geom_errorbar(
+#     aes(ymin = value - 1.96 * se, ymax = value + 1.96 * se),
+#     width = 0.2,
+#     position = position_dodge(width = 0.8)
+#   ) +
+#   facet_wrap(~statistic, scales = "free_y") +
+#   labs(
+#     title = "Survey vs Simulated: Means and Standard Deviations",
+#     x = "Metric",
+#     y = "Value (Fish per Trip)",
+#     fill = "Source"
+#   ) +
+#   scale_fill_manual(values = c("Survey" = "red", "Simulated" = "steelblue")) +
+#   theme_minimal()
+# pA
+
+
+
+# # Now summarize the means by simulation ID
+# sim_means <- combined_sim %>%
+#   dplyr::group_by(sim_id) %>%
+#   dplyr::summarize(
+#     mean_sf_keep = mean(sf_keep_sim),
+#     mean_sf_rel  = mean(sf_rel_sim),
+#     mean_sf_catch  = mean(sf_catch_sim),
+#     sd_sf_keep = sd(sf_keep_sim),
+#     sd_sf_rel  = sd(sf_rel_sim),
+#     sd_sf_catch  = sd(sf_catch_sim),
+#     corr= mean(sim_corr),
+#     .groups = "drop"
+#   )
+# 
+# sim_means$corr[is.na(sim_means$corr)] <- 0
+# corr
+# sim_corrs <- sapply(sim_datasets, function(x) x$sim_corr[1])
+# mean(sim_corrs)
+# sd(sim_corrs)
+# 
+# # Summarize simulated means
+# sim_summary <- sim_means %>%
+#   dplyr::summarize(
+#     mean_keep = mean(mean_sf_keep),
+#     mean_rel  = mean(mean_sf_rel),
+#     mean_cat  = mean(mean_sf_catch),
+#     sdm_keep   = sd(mean_sf_keep),
+#     sdm_rel    = sd(mean_sf_rel),
+#     sdm_cat    = sd(mean_sf_catch),
+#     sd_keep   = mean(sd_sf_keep),
+#     sd_rel    = mean(sd_sf_rel),
+#     sd_cat    = mean(sd_sf_catch),
+#     sd_sd_keep   = sd(sd_sf_keep),
+#     sd_sd_rel    = sd(sd_sf_rel),
+#     sd_sd_cat    = sd(sd_sf_catch),
+#     mean_corr    =mean(corr),
+#     sd_corr=sd(corr)
+# 
+#   )
+# 
+# # Observed SDs from expanded dataset
+# obs_sd_keep <- sd(df_expanded$sf_keep)
+# obs_sd_rel  <- sd(df_expanded$sf_rel)
+# obs_sd_cat  <- sd(df_expanded$sf_catch)
+# 
+# # Build tidy comparison table
+# comparison_plot_df <- tibble::tibble(
+#   metric = rep(c("sf_keep", "sf_rel", "sf_catch"), times = 2),
+#   value = c(
+#     # Means
+#     coef(mean_keep), coef(mean_rel), coef(mean_cat),
+#     sim_summary$mean_keep, sim_summary$mean_rel, sim_summary$mean_cat
+#   ),
+#   se = c(
+#     sqrt(var_keep), sqrt(var_rel), sqrt(var_cat),
+#     sim_summary$sdm_keep, sim_summary$sdm_rel, sim_summary$sdm_cat
+#   ),
+#   source = rep(c("Survey", "Simulated"), each = 3),
+#   statistic = "Mean"
+# )
+# 
+# # Add SD comparison
+# sd_plot_df <- tibble::tibble(
+#   metric = rep(c("sf_keep", "sf_rel", "sf_catch"), times = 2),
+#   value = c(
+#     obs_sd_keep, obs_sd_rel, obs_sd_cat,
+#     sim_summary$sd_keep, sim_summary$sd_rel, sim_summary$sd_cat
+#   ),
+#   se = c(
+#     NA, NA, NA,
+#     sim_summary$sd_sd_keep, sim_summary$sd_sd_rel, sim_summary$sd_sd_cat
+#   ),
+#   source = rep(c("Survey", "Simulated"), each = 3),
+#   statistic = "SD"
+# )
+# 
+# # Create correlation plot data
+# corr_data <- tibble(
+#   variable = "Correlation",
+#   value = c(corr, sim_summary$mean_corr),  # your observed correlation
+#   se = c(0, sim_summary$sd_corr),
+#   source = c("Survey", "Simulated")
+# )
+# sim_summary$mean_corr
+# 
+# # Replace NA standard errors with 0
+# corr_data$se[is.na(corr_data$se)] <- 0
+# 
+# # Combine for plotting
+# plot_data <- bind_rows(comparison_plot_df, sd_plot_df)
+# plot_data$se[is.na(plot_data$se)] <- 0
+# 
+# 
+# pA<- ggplot(plot_data, aes(x = metric, y = value, fill = source)) +
+#   geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+#   geom_errorbar(
+#     aes(ymin = value - 1.96 * se, ymax = value + 1.96 * se),
+#     width = 0.2,
+#     position = position_dodge(width = 0.8)
+#   ) +
+#   facet_wrap(~statistic, scales = "free_y") +
+#   labs(
+#     title = "Survey vs Simulated: Means and Standard Deviations",
+#     x = "Metric",
+#     y = "Value (Fish per Trip)",
+#     fill = "Source"
+#   ) +
+#   scale_fill_manual(values = c("Survey" = "red", "Simulated" = "steelblue")) +
+#   theme_minimal()
+# 
+# p3 <- ggplot(corr_data, aes(x = variable, y = value, fill = source)) +
+#   geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.5) +
+#   geom_errorbar(aes(ymin = value - 1.96 * se, ymax = value + 1.96 * se),
+#                 width = 0.2, position = position_dodge(width = 0.8)) +
+#   labs(title = "Pearson Correlation ± 95% CI", y = "Correlation", x = NULL) +
+#   theme_minimal() +
+#   scale_fill_manual(values = c("Survey" = "steelblue", "Simulated" = "orange"))
+# 
+# # Combine with patchwork
+# (pA | p3) + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+

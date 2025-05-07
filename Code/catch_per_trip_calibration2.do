@@ -201,7 +201,7 @@ tempfile results
 postfile handle str15 varname str15 domain float mean se ll95 ul95 using `results', replace
 
 * Loop over variables
-foreach var in sf_keep sf_rel bsb_keep bsb_rel scup_keep scup_rel {
+foreach var in sf_keep sf_rel sf_catch bsb_keep bsb_rel bsb_catch scup_keep scup_rel scup_catch {
 
     * Run svy mean for the variable by domain
     svy: mean `var', over(my_dom_id)
@@ -475,7 +475,15 @@ mvencode missing*, mv(0) override
 export excel "$iterative_input_data_cd\baseline_mrip_catch_processed.xlsx", firstrow(variables) replace
 
 
+keep if state=="MA"
+keep my_dom_id_string  meanbsb_keep meanbsb_rel meanscup_keep missing_sescup_keep meansf_keep meansf_rel
+duplicates drop 
+tempfile base
+save `base', replace
 
+import excel using "C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/check_data.xlsx", clear firstrow
+merge 1:1 my_dom_id_string using `base'
+ order my mean_sf_keep meansf_keep mean_sf_rel meansf_rel mean_bsb_keep meanbsb_keep mean_bsb_rel meanbsb_rel mean_scup_keep meanscup_keep
 
 save "$iterative_input_data_cd\MRIP catch data.dta", replace 
 u "$iterative_input_data_cd\MRIP catch data.dta", clear 
