@@ -48,4 +48,4 @@ This Code of Conduct applies to all people participating in this project.  It ap
 
 # Reporting Guidelines
 
-If you experience or witness unacceptable behavior, or have any other concerns, please report it by contacting the  Min-Yang Lee at Min-Yang.Lee@noaa.gov or Tammy.Murphy@noaa.gov with a description of what has occurred and any supporting information that would be helpful. After receiving a concise description of your situation, Min-Yang or Tammy will review the report and determine next steps. We will respect confidentiality requests for the purpose of protecting victims of abuse.
+If you experience or witness unacceptable behavior, or have any other concerns, please report it by contacting Min-Yang Lee at Min-Yang.Lee@noaa.gov or Tammy.Murphy@noaa.gov with a description of what has occurred and any supporting information that would be helpful. After receiving a concise description of your situation, Min-Yang or Tammy will review the report and determine next steps. We will respect confidentiality requests for the purpose of protecting victims of abuse.
