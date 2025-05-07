@@ -1,7 +1,7 @@
 # Our Code of conduct
 May , 2025.
 
-Supporting a safe, inclusive, welcoming, and harassment-free experience for everyone in our community is paramount, as is strengthening connections with other communities that have influenced our work. Our Code of Conduct is heavily drawn from from [Openscapes](https://www.openscapes.org/code-of-conduct).
+Supporting a safe, inclusive, welcoming, and harassment-free experience for everyone in our community is paramount, as is strengthening connections with other communities that have influenced our work. Our Code of Conduct is heavily drawn from [Openscapes](https://www.openscapes.org/code-of-conduct).
 
 We commit to providing a safe, inclusive, welcoming, and harassment-free experience for everyone.
 
@@ -19,7 +19,7 @@ The scientific process demands that we speak directly when we disagree and when 
 
 # Be Inclusive
 
-Seek diverse perspectives. Diversity of views and of people on teams powers innovation, even if it is not always comfortable. Help new perspectives be heard and listen actively. If you find yourself dominating a discussion, it is especially important to step back and encourage other voices to join in. Be aware of how much time is taken up by dominant members of the group. Provide alternative ways to contribute or participate when possible.
+Seek varied perspectives. Diversity of views and of people on teams powers innovation, even if it is not always comfortable. Help new perspectives be heard and listen actively. If you find yourself dominating a discussion, it is especially important to step back and encourage other voices to join in. Be aware of how much time is taken up by dominant members of the group. Provide alternative ways to contribute or participate when possible.
 
 We will be inclusive of everyone in an interaction, respecting and facilitating people’s participation whether they are:
 
