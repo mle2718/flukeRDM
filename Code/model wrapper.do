@@ -87,7 +87,7 @@ global fed_holidays_y2 "inlist(day_y2,td(01jan2025), td(20jan2025), td(17feb2025
 global leap_yr_days "td(29feb2024)" 
 
 *Choose how many draws you want to create. Will create 150 for final version, from which 100 will be selected
-global ndraws 10
+global ndraws 5
 
 *Set the global length to pull either ionches or centimeters from MRIP (l_in_bin or l_cm_bin)
 global length_bin l_cm_bin

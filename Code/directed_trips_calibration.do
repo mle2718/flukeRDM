@@ -58,11 +58,11 @@ replace state="NC" if st==37
 tempfile basefile
 save `basefile', replace
 
-levelsof state, local(sts) 
+levelsof state, local(sts) clean
 foreach s of local sts{
 
 u `basefile', clear
-
+*local s "MA"
 keep if inlist(state,"`s'")
 
 // classify trips into dom_id=1 (DOMAIN OF INTEREST) and dom_id=2 ('OTHER' DOMAIN)
@@ -89,9 +89,6 @@ gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
 replace mode1="pr" if inlist(mode_fx, "7")
 replace mode1="fh" if inlist(mode_fx, "4", "5")
 
-levelsof state, clean 
-local my_state  ="`r(levels)'"
-di "`my_state'"
 
 // Deal with Group Catch: 
 	// This bit of code generates a flag for each year-strat_id psu_id leader. (equal to the lowest of the dom_id)
@@ -152,19 +149,22 @@ rename my_dom_id_string5 mode
 rename my_dom_id_string6 dom_id
 rename my_dom_id_string7 wave
 
-*drop my_dom_id_string
 rename b dtrip
 
 keep if dom_id=="1" // keep directed trip estimates for species group of interest 
 
 drop if dtrip==.
 
-// Deal with strata containing no estimated SEs. Strategy:
-	// 1) Take the average PSE in the previous two years for that domain years and apply it to the missing-SE stratum  
-	// 2) If there's only a SE in one of the previous two years, use that PSE and apply it to the missing-SE stratum
-	// 3) If there's no SE in either of the previous two years, repeat the process above but using the SEs from shouldering months of that stratum
-	// 4) If there's still no SE from the above methods, use the PSE from the same stratum but average of the other two fishing modes
-	
+// Deal with strata containing no estimated SEs. The estimation strata is: current year +  month + kind-of-day + state + mode 
+// For these strata, I'll impute a PSE from other strata and apply it to the missing-SE strata. Up to 7 rounds of imputation are conducted:
+	// 1) month + kind-of-day + state + mode, averaged across the last two prior years
+	// 2) month + kind-of-day + state + mode, most recent prior year
+	// 3) month + kind-of-day + state + mode, second-most recent prior year
+	// 4) current year + kind-of-day + state + mode, averaged across the prior month and the next month 
+	// 5) current year + kind-of-day + state + mode, prior month 
+	// 6) current year + kind-of-day + state + mode, next month 
+	// 7) current year + month + kind-of-day + state, averaged across all other fishing modes
+
 	*browse if se==.
 	destring month1, gen(month2)
 	destring year, gen(year2)
@@ -181,11 +181,24 @@ drop if dtrip==.
 	gen one_yr_prev=ym-12
 	gen two_yr_prev=ym-24
 	
+	gen missing_SE_imputation=""
+	
 	format one_yr_prev two_yr_prev %tm
+
+	gen round1=.
+	gen round2=.
+	gen round3=.
+	gen round4=.
+	gen round5=.
+	gen round6=.
+	gen round7=.
 
 	levelsof my_dom if se==. & $calibration_year , local(missings)
 	foreach m of local missings{
 		di "`m'"
+		
+		*local m "MA_2023_11_we_pr_1_6"
+		
 		levelsof kod if my_dom=="`m'", clean
 		local kod="`r(levels)'"
 		di "`kod'"
@@ -220,68 +233,77 @@ drop if dtrip==.
 
 		su pse if kod=="`kod'" & state=="`state'" & mode=="`mode'" & (ym==`one_yr_prev' | ym==`two_yr_prev') 
 		return list
-		
-		if `r(N)'==2{
-		replace pse_impute=`r(mean)'  if my_dom=="`m'"
+		if `r(N)'>1{
+		replace round1=`r(mean)' if my_dom=="`m'"
 		}
 		
-		else{
 		su pse if kod=="`kod'" & state=="`state'" & mode=="`mode'" & (ym==`one_yr_prev') 
 		return list
+		if `r(N)'>0{
+		replace round2=`r(mean)' if my_dom=="`m'"
+		}	
 		
-		if `r(N)'==1{
-		replace pse_impute=`r(mean)'  if my_dom=="`m'"
-		}
-		
-		else{
 		su pse if kod=="`kod'" & state=="`state'" & mode=="`mode'" & (ym==`two_yr_prev') 
 		return list
+		if `r(N)'>0{
+		replace round3=`r(mean)' if my_dom=="`m'"
+		}	
 		
-		if `r(N)'==1{
-		replace pse_impute=`r(mean)'  if my_dom=="`m'"
-		}
-		
-		else{
 		su pse if kod=="`kod'" & state=="`state'" & mode=="`mode'" & (ym==`ym_prev' | ym==`ym_next') 
 		return list
+		if `r(N)'>1{
+		replace round4=`r(mean)' if my_dom=="`m'"
+		}	
 		
-		if `r(N)'==2{
-		replace pse_impute=`r(mean)'  if my_dom=="`m'"
-		}
-		
-		else{
 		su pse if kod=="`kod'" & state=="`state'" & mode=="`mode'" & (ym==`ym_prev') 
 		return list
+		if `r(N)'>0{
+		replace round5=`r(mean)' if my_dom=="`m'"
+		}	
 		
-		if `r(N)'==1{
-		replace pse_impute=`r(mean)'  if my_dom=="`m'"
-		}
-		
-		else{
 		su pse if kod=="`kod'" & state=="`state'" & mode=="`mode'" & (ym==`ym_next') 
 		return list
+		if `r(N)'>0{
+		replace round6=`r(mean)' if my_dom=="`m'"
+		}	
 		
-		if `r(N)'==1{
-		replace pse_impute=`r(mean)'  if my_dom=="`m'"
-		}
-		
-		else{
-			
 		su pse if kod=="`kod'" & state=="`state'" & mode!="`mode'" & (ym==`ym') 
-		replace pse_impute=`r(mean)'  if my_dom=="`m'"
-
-			
-		}
-		}
-		}
-		}
-		}
-		}
-		}
+		return list
+		if `r(N)'>0{
+		replace round7=`r(mean)' if my_dom=="`m'"
+		}	
 		
+		replace pse_impute = round1 if my_dom=="`m'" & round1!=. & pse_impute==.
+				replace missing_SE_imputation="past two years avg." if my_dom=="`m'" & pse_impute==.
+
+		replace pse_impute = round2 if my_dom=="`m'" & round2!=. & pse_impute==.
+					replace missing_SE_imputation="last year" if my_dom=="`m'" & pse_impute==.
+
+		replace pse_impute = round3 if my_dom=="`m'" & round3!=. & pse_impute==.
+				replace missing_SE_imputation="two years previous" if my_dom=="`m'" & pse_impute==.
+		
+		replace pse_impute = round4 if my_dom=="`m'" & round4!=. & pse_impute==.
+				replace missing_SE_imputation="average of previous and next month" if my_dom=="`m'" & pse_impute==.
+
+		replace pse_impute = round5 if my_dom=="`m'" & round5!=. & pse_impute==.
+				replace missing_SE_imputation="previous month" if my_dom=="`m'" & pse_impute==.
+
+		replace pse_impute = round6 if my_dom=="`m'" & round6!=. & pse_impute==.
+				replace missing_SE_imputation="next month" if my_dom=="`m'" & pse_impute==.
+
+		replace pse_impute = round7 if my_dom=="`m'" & round7!=. & pse_impute==.
+				replace missing_SE_imputation="same month other modes" if my_dom=="`m'" & pse_impute==.
+		
+	}
 		
 keep if $calibration_year
 replace se=dtrip*pse_impute if se==.			
+
+preserve 
+keep my_dom_id_string  missing_SE_imputation
+duplicates drop 
+save "$iterative_input_data_cd\directed_trips_imputations_`s'.dta", replace
+restore 
 
 keep dtrip se state year month2 kod mode
 rename month2 month
@@ -499,6 +521,8 @@ su dtrip
 return list
 *call the regulations file	
 
+replace state="`s'" if state==""
+
 do "$input_code_cd/set regulations.do"	
 
 /*
@@ -555,6 +579,8 @@ global drawz "$drawz "`drawz`d''" "
 }
 
 dsconcat $drawz
+
+gen state="`s'" 
 
 mvencode expansion_factor, mv(1) override
 

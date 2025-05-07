@@ -14,7 +14,6 @@ drop if n_missing==16
 
 mvencode afuelexp arentexp ptransexp lodgexp grocexp restexp baitexp iceexp parkexp bfuelexp brentexp guideexp crewexp procexp feesexp giftsexp  othexp, mv(0) override
 egen total_exp=rowtotal(afuelexp arentexp ptransexp lodgexp grocexp restexp baitexp iceexp parkexp bfuelexp brentexp guideexp crewexp procexp feesexp giftsexp)
-egen total_exp2=rowtotal(afuelexp arentexp ptransexp lodgexp grocexp restexp baitexp iceexp parkexp bfuelexp brentexp guideexp crewexp procexp feesexp giftsexp)
 
 svyset psu_id [pweight= sample_wt], strata(var_id) singleunit(certainty)
 
@@ -73,37 +72,34 @@ tempfile new
 save `new', replace
 
 global costs
-levelsof mode1, local(modes)
-foreach m of local modes{
+levelsof state, local(sts)
+foreach s of local sts{
 u `new', clear 
 
-keep if mode1=="`m'"
+keep if state=="`s'"
 
-tempfile new`m'
-save `new`m'', replace
+tempfile new`s'
+save `new`s'', replace
 
-levelsof state, local(sts)
-	foreach s of local sts{
+levelsof mode1, local(modes)
+foreach m of local modes{
 	
-	u `new`m'', clear
-	keep if state=="`s'"
+	u `new`s'', clear
+	keep if mode1=="`m'"
 
+	replace wp_int=round(wp_int)
+	expand wp_int
+	count
+	if `r(N)'<10000{
+		local expand = round(10000/`r(N)')+1
+		expand `expand'
+		sample 10000, count
 
-	svy: mean total_exp 
-
-	mat b=e(b)'
-	mat v= e(V)
-
-	clear 
-	svmat b
-	rename b1 mean
-	svmat v
-	rename v1 st_error
-	replace st_error=sqrt(st_error)
-	gen mode1="`m'"
-	gen state="`s'"
-
-
+	}
+	else{
+	sample 10000, count
+	}
+	
 	tempfile costs`m'`s'
 	save `costs`m'`s'', replace
 	global costs "$costs "`costs`m'`s''" " 
@@ -111,24 +107,7 @@ levelsof state, local(sts)
 }
 clear
 dsconcat $costs
-
-/*
-su mean if mode1=="fh"
-global fh_cost_est`r(mean)'
-su st if mode1=="fh"
-global fh_cost_sd `r(mean)'
-
-
-su mean if mode1=="pr"
-global pr_cost_est `r(mean)'
-su st if mode1=="pr"
-global pr_cost_sd `r(mean)'
-
-
-su mean if mode1=="sh"
-global sh_cost_est `r(mean)'
-su st if mode1=="sh"
-global sh_cost_sd `r(mean)'
-*/
-
+keep mode1 state total_exp
+rename total_exp cost 
+save "$iterative_input_data_cd\trip_costs.dta", replace 
 
