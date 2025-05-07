@@ -1,7 +1,8 @@
 # Our Code of conduct
 May , 2025.
 
-Supporting a safe, respectful, welcoming, and harassment-free experience for everyone in our community is paramount, as is strengthening connections with other communities that have influenced our work. Our Code of Conduct is heavily drawn from from [Openscapes](https://www.openscapes.org/code-of-conduct).
+Supporting a safe, inclusive, welcoming, and harassment-free experience for everyone in our community is paramount, as is strengthening connections with other communities that have influenced our work. Our Code of Conduct is heavily drawn from [Openscapes](https://www.openscapes.org/code-of-conduct).
+
 
 We commit to providing a safe, respectful, welcoming, and harassment-free experience for everyone.
 
@@ -19,7 +20,7 @@ The scientific process demands that we speak directly when we disagree and when 
 
 # Be respectful
 
-Seek diverse perspectives. Diversity of views and of people on teams powers innovation, even if it is not always comfortable. Help new perspectives be heard and listen actively. If you find yourself dominating a discussion, it is especially important to step back and encourage other voices to join in. Be aware of how much time is taken up by dominant members of the group. Provide alternative ways to contribute or participate when possible.
+Seek varied perspectives. Diversity of views and of people on teams powers innovation, even if it is not always comfortable. Help new perspectives be heard and listen actively. If you find yourself dominating a discussion, it is especially important to step back and encourage other voices to join in. Be aware of how much time is taken up by dominant members of the group. Provide alternative ways to contribute or participate when possible.
 
 We will be respectful of everyone in an interaction, respecting and facilitating people’s participation whether they are:
 
@@ -48,4 +49,4 @@ This Code of Conduct applies to all people participating in this project.  It ap
 
 # Reporting Guidelines
 
-If you experience or witness unacceptable behavior, or have any other concerns, please report it by contacting the  Min-Yang Lee at Min-Yang.Lee@noaa.gov or Tammy.Murphy@noaa.gov with a description of what has occurred and any supporting information that would be helpful. After receiving a concise description of your situation, Min-Yang or Tammy will review the report and determine next steps. We will respect confidentiality requests for the purpose of protecting victims of abuse.
+If you experience or witness unacceptable behavior, or have any other concerns, please report it by contacting Min-Yang Lee at Min-Yang.Lee@noaa.gov or Tammy.Murphy@noaa.gov with a description of what has occurred and any supporting information that would be helpful. After receiving a concise description of your situation, Min-Yang or Tammy will review the report and determine next steps. We will respect confidentiality requests for the purpose of protecting victims of abuse.
