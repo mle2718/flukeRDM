@@ -3,7 +3,8 @@ May , 2025.
 
 Supporting a safe, inclusive, welcoming, and harassment-free experience for everyone in our community is paramount, as is strengthening connections with other communities that have influenced our work. Our Code of Conduct is heavily drawn from [Openscapes](https://www.openscapes.org/code-of-conduct).
 
-We commit to providing a safe, inclusive, welcoming, and harassment-free experience for everyone.
+
+We commit to providing a safe, respectful, welcoming, and harassment-free experience for everyone.
 
 We try to cultivate a tone where everyone in the community, no matter their backgrounds and accomplishments, comes with a mind open to learning from, with, and for each other. Questions are always welcome and always appropriate because they expose opportunities for clarification and challenge implicit assumptions. 
 
@@ -17,11 +18,11 @@ We value each other’s ideas, styles and viewpoints. We may not always agree, b
 
 The scientific process demands that we speak directly when we disagree and when we think we need to improve. Doing this respectfully is hard and hearing such comments as the recipient can be even harder still. We need to be honest and direct, as well as respectful.
 
-# Be Inclusive
+# Be respectful
 
 Seek varied perspectives. Diversity of views and of people on teams powers innovation, even if it is not always comfortable. Help new perspectives be heard and listen actively. If you find yourself dominating a discussion, it is especially important to step back and encourage other voices to join in. Be aware of how much time is taken up by dominant members of the group. Provide alternative ways to contribute or participate when possible.
 
-We will be inclusive of everyone in an interaction, respecting and facilitating people’s participation whether they are:
+We will be respectful of everyone in an interaction, respecting and facilitating people’s participation whether they are:
 
 1.    Remote (on video or phone)
 1.    Not native language speakers
@@ -39,7 +40,7 @@ We come from many cultures and backgrounds. Cultural differences can encompass e
 
 # Summary
 
-Be respectful, direct, inclusive, accommodating, appreciative, and open to learning from everyone else.
+Be respectful, direct, respectful, accommodating, appreciative, and open to learning from everyone else.
 
 Do not attack, demean, disrupt, harass, or threaten others or encourage such behavior.
 
