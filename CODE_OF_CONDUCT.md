@@ -21,16 +21,16 @@ The scientific process demands that we speak directly when we disagree and when 
 
 Seek varied perspectives. Different perspectives from all people on a team powers innovation, even if it is not always comfortable. Help new perspectives be heard and listen actively. If you find yourself dominating a discussion, it is especially important to step back and encourage other voices to join in. Be aware of how much time is taken up by dominant members of the group. Provide alternative ways to contribute or participate when possible.
 
-We will be welcoming of everyone in an interaction, respecting and facilitating people’s participation whether they are:
+We will be welcoming of everyone in an interaction, respecting and facilitating people’s participation without regard to a person's:
 
-1.    Remote (on video or phone)
-1.    Not native language speakers
-1.    Coming from a different culture
-1.    Using pronouns other than “he” or “she”
-1.    Living in a different time zone
-1.    Facing other challenges to participate
+1.    Location or Time Zone 
+1.    Native language speakers
+1.    Culture
+1.    Titles, degrees, honorifics, or salutations 
+1.    Participation method
+1.    Other challenges to participate
 
-Think about how you might facilitate alternative ways to contribute or participate.  Make way for other voices and listen actively to them.
+Please think about how you might facilitate alternative ways to contribute or participate.  Make way for other voices and listen actively to them.
 
 # Appreciate and Accommodate Our Differences
 
