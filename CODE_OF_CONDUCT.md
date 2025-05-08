@@ -12,7 +12,7 @@ In order for us to do our best science, we must:
 
 # Be Respectful
 
-We value each other’s ideas, styles and viewpoints. We may not always agree, but we can do so with grace and good manners.  We are open to being wrong. We are respectful in all interactions and communications.  We are constructive, collaborative,  and positive. We take responsibility for our impact and our mistakes – if someone says they have been harmed through our words or actions, we listen carefully,  apologize sincerely, and correct the behavior going forward.
+We value each other’s ideas, styles, and viewpoints. We may not always agree, but we can do so with grace and good manners.  We are open to being wrong. We are respectful in all interactions and communications.  We are constructive, collaborative, and positive. We take responsibility for our impact and our mistakes – if someone says they have been harmed through our words or actions, we listen carefully,  apologize sincerely, and correct the behavior going forward.
 
 # Be Direct 
 
