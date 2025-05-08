@@ -20,7 +20,7 @@ The scientific process demands that we speak directly when we disagree and when 
 
 # Be respectful
 
-Seek varied perspectives. Diversity of views and of people on teams powers innovation, even if it is not always comfortable. Help new perspectives be heard and listen actively. If you find yourself dominating a discussion, it is especially important to step back and encourage other voices to join in. Be aware of how much time is taken up by dominant members of the group. Provide alternative ways to contribute or participate when possible.
+Seek varied perspectives. Different perspectives from all people on a team powers innovation, even if it is not always comfortable. Help new perspectives be heard and listen actively. If you find yourself dominating a discussion, it is especially important to step back and encourage other voices to join in. Be aware of how much time is taken up by dominant members of the group. Provide alternative ways to contribute or participate when possible.
 
 We will be respectful of everyone in an interaction, respecting and facilitating people’s participation whether they are:
 
