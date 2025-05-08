@@ -5,7 +5,7 @@ Supporting a safe, inclusive, welcoming, and harassment-free experience for ever
 
 We commit to providing a safe, respectful, welcoming, and harassment-free experience for everyone.
 
-We try to cultivate a work environment where everyone in the community participates with a mind open to learning from, with, and for each other. Questions are always welcome and always appropriate because they expose opportunities for clarification and challenge implicit assumptions.
+We try to cultivate a work environment where everyone in the community, regardless of their experience or background, participates with a mind open to learning from, with, and for each other. Questions are always welcome and always appropriate because they expose opportunities for clarification and challenge implicit assumptions.
 
 In order for us to do our best science, we must:
 
