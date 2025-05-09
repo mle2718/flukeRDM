@@ -37,13 +37,12 @@ gen day = day((date))
 * Exclude days where there was no directed trips 
 * drop if dtrip==0
 
-replace state="`s''" if state==""
 * Create season indicator variables for each state and species
-
+levelsof state, clean 
 ****************
 ***** MASSACHUSETTS (MA)
 ****************
-if "`s'" == "MA" {
+if "`r(levels)'" == "MA" {
     * SF (Fluke) - MA
     replace fluke_bag = 5 if mode == "Private" & inrange(month, 5, 9) & (month > 5 | day >= 24) & (month < 9 | day <= 23)
     replace fluke_min = 17.5 if mode == "Private" & inrange(month, 5, 9) & (month > 5 | day >= 24) & (month < 9 | day <= 23)
@@ -81,7 +80,7 @@ if "`s'" == "MA" {
 ****************
 ***** RHODE ISLAND (RI)
 ****************
-if "`s'" == "RI" {
+if "`r(levels)'" == "RI" {
     * SF (Fluke) - RI
     replace fluke_bag = 6 if inrange(month, 4, 12)
     replace fluke_min = 19 if inrange(month, 4, 12)
@@ -125,7 +124,7 @@ if "`s'" == "RI" {
 ****************
 ***** CONNECTICUT (CT)
 ****************
-if "`s'" == "CT" {
+if "`r(levels)'" == "CT" {
     * SF (Fluke) - CT
     replace fluke_bag = 3 if ((month == 5 & day >= 4) | (month == 6) | (month == 7) | (month == 8 & day <= 1))
     replace fluke_min = 19 if ((month == 5 & day >= 4) | (month == 6) | (month == 7) | (month == 8 & day <= 1))
@@ -172,7 +171,7 @@ if "`s'" == "CT" {
 ****************
 ***** NEW YORK (NY)
 ****************
-if "`s'" == "NY" {
+if "`r(levels)'" == "NY" {
     * SF (Fluke) - NY
     replace fluke_bag = 3 if ((month == 5 & day >= 4) | (month == 6) | (month == 7) | (month == 8 & day <= 1))
     replace fluke_min = 19 if ((month == 5 & day >= 4) | (month == 6) | (month == 7) | (month == 8 & day <= 1))
@@ -207,7 +206,7 @@ if "`s'" == "NY" {
 ****************
 ***** NEW JERSEY (NJ)
 ****************
-if "`s'" == "NJ" {
+if "`r(levels)'" == "NJ" {
     * SF (Fluke) - NJ
     replace fluke_bag = 3 if ((month == 5 & day >= 4) | inrange(month, 6, 8) | (month == 9 & day <= 25))
     replace fluke_min = 18 if ((month == 5 & day >= 4) | inrange(month, 6, 8) | (month == 9 & day <= 25))
@@ -233,7 +232,7 @@ if "`s'" == "NJ" {
 ****************
 ***** DELAWARE (DE)
 ****************
-if "`s'" == "DE" {
+if "`r(levels)'" == "DE" {
     * SF (Fluke) - DE
     replace fluke_bag = 4 if inrange(month, 1, 5)
     replace fluke_min = 16 if inrange(month, 1, 5)
@@ -253,7 +252,7 @@ if "`s'" == "DE" {
 ****************
 ***** MARYLAND (MD)
 ****************
-if "`s'" == "MD" {
+if "`r(levels)'" == "MD" {
     * SF (Fluke) - MD
     replace fluke_bag = 4 if inrange(month, 1, 5)
     replace fluke_min = 16 if inrange(month, 1, 5)
@@ -273,7 +272,7 @@ if "`s'" == "MD" {
 ****************
 ***** VIRGINIA (VA)
 ****************
-if "`s'" == "VA" {
+if "`r(levels)'" == "VA" {
     * SF (Fluke) - VA
     replace fluke_bag = 4 if inrange(month, 1, 5)
     replace fluke_min = 16 if inrange(month, 1, 5)
@@ -293,7 +292,7 @@ if "`s'" == "VA" {
 ****************
 ***** NORTH CAROLINA (NC)
 ****************
-if "`s'" == "NC" {
+if "`r(levels)'" == "NC" {
     * SF (Fluke) - NC
     replace fluke_bag = 1 if ((month == 8 & day >= 16) | (month == 9 & day <= 3))
     replace fluke_min = 15 if ((month == 8 & day >= 16) | (month == 9 & day <= 3))
