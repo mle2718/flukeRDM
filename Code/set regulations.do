@@ -1,16 +1,13 @@
 
 
 
-****Set regulations for the calibration period and the projection period****
-*These need to be changed every year 
+***********Set regulations for the calibration period and status-quo regulations for projection period***********
+* These need to be changed every year 
 
 
-***********Create the baseline regulations for the calibration period***************
-
-* Final model calibration period covers (year==2025 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2024 & inlist(wave, 6)).
-* Test model calibration period covers (year==2024 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2023 & inlist(wave, 6)).
-
-* The following  coded below are for 2024 and 2025, so do not have to change them for the FY2026 model
+* Generate regulations for the calibration period
+* Calibration period covers (year==2024 & inlist(wave, 1, 2, 3, 4, 5, 6))
+* The regulations coded below are for FY 2024 and 2025, so do not have to change them for the FY2026 model
 * Only need to change the input MRIP data when running the final model
 
 * Generate variables for bag limits and minimum sizes

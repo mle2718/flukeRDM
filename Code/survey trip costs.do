@@ -1,19 +1,21 @@
 
-***This code creates trip cost distributions based on the Sabrina's 2017 trip expenditure survey data
+***This code creates trip cost distributions based on the 2017 trip expenditure survey data (data from Sabrina Lovell)
 
-*Enter a directory with the expenditure survey data 
+* Pull in expenditure survey data 
 u "$input_data_cd\atl_states_2017_expsurvey.dta", clear
 renvarlab *, lower
 
-
-// ensure only relevant states 
+* Keep relevant states 
 keep if inlist(st, 25, 44, 9,  36 , 34, 10, 24, 51, 37)
 
+* 16 variable trip cost categories - drop if all 16 categories are missing
 egen n_missing_cats=rowmiss(afuelexp arentexp ptransexp lodgexp grocexp restexp baitexp iceexp parkexp bfuelexp brentexp guideexp crewexp procexp feesexp giftsexp)
-drop if n_missing==16
+drop if n_missing==16 
 
 mvencode afuelexp arentexp ptransexp lodgexp grocexp restexp baitexp iceexp parkexp bfuelexp brentexp guideexp crewexp procexp feesexp giftsexp  othexp, mv(0) override
-egen total_exp=rowtotal(afuelexp arentexp ptransexp lodgexp grocexp restexp baitexp iceexp parkexp bfuelexp brentexp guideexp crewexp procexp feesexp giftsexp)
+
+* Compute total trip expenditure
+egen total_exp=rowtotal(afuelexp arentexp ptransexp lodgexp grocexp restexp baitexp iceexp parkexp bfuelexp brentexp guideexp crewexp procexp feesexp giftsexp) 
 
 svyset psu_id [pweight= sample_wt], strata(var_id) singleunit(certainty)
 
@@ -30,15 +32,16 @@ replace state="RI" if st2=="44"
 replace state="VA" if st2=="51"
 replace state="NH" if st2=="33"
 
-*Sabrina's definition of for-hire mode include both headboat and charter boats
-*Survey mode definitions:
-	*3=shore
-	*4=headboat
-	*5=charter
-	*7=private boat
+* Sabrina's definition of for-hire mode include both headboat and charter boats
+* Survey mode definitions: 3=shore, 4=headboat,5=charter, =private boat
+	
+gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
+replace mode1="fh" if inlist(mode_fx, "4", "5")
+replace mode1="pr" if inlist(mode_fx,  "7")
+svy: mean total_exp
+
 /*
-svy: tabstat total_exp, stat(mean sd) by(state)
-svy: mean total_exp if state=="MA"
+svy: mean total_exp if state=="MA" & mode1=="pr"
 svy: mean total_exp if state=="RI"
 svy: mean total_exp if state=="CT"
 svy: mean total_exp if state=="NY"
@@ -48,26 +51,11 @@ svy: mean total_exp if state=="MD"
 svy: mean total_exp if state=="VA"
 svy: mean total_exp if state=="NC"
 */
-/*
-mat b=e(b)'
-mat v= e(V)
 
-clear 
-svmat b
-rename b1 mean
-svmat v
-rename v1 st_error
-replace st_error=sqrt(st_error)
-*/
-
-gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
-replace mode1="fh" if inlist(mode_fx, "4", "5")
-replace mode1="pr" if inlist(mode_fx,  "7")
-
-*Adjust for inflation
+* Adjust for inflation
 replace total_exp = total_exp*$inflation_expansion
 
-*Now generate total expenditures each state/mode combination
+* Generate total expenditures each state/mode combination
 tempfile new
 save `new', replace
 
@@ -110,4 +98,3 @@ dsconcat $costs
 keep mode1 state total_exp
 rename total_exp cost 
 save "$iterative_input_data_cd\trip_costs.dta", replace 
-

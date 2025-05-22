@@ -43,15 +43,17 @@ global yearlist 2021 2022 2023 2024
 global wavelist 1 2 3 4 5 6
 
 
-global calibration_year "(year==2024 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2023 & inlist(wave, 6))"
+global calibration_year "(year==2024 & inlist(wave, 1, 2, 3, 4, 5, 6))"
+*global calibration_year "(year==2024 & inlist(wave, 1, 2, 3, 4, 5, 6)) | (year==2023 & inlist(wave, 6))"
+
 global calibration_catch_per_trip_years "(year==2024 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2023 & inlist(wave, 6)) | (year==2023 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2022 & inlist(wave, 6))"
 global rec_selectivity_year "(year==2024 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2023 & inlist(wave, 6))"
 
-global calibration_date_start td(01nov2023)
-global calibration_date_end td(31oct2024)
+global calibration_start_date td(01jan2024)
+global calibration_end_date td(31dec2024)
 
-global projection_date_start td(01jan2025)
-global projection_date_end td(31dec2025)
+global projection_date_start td(01jan2026)
+global projection_date_end td(31dec2026)
 
 
 *Add federal holidays, as these are considered "weekend" days by the MRIP and we estimate fishing effort at the month and kind-of-day level
@@ -77,17 +79,17 @@ global fed_holidays "inlist(day, td(02jan2023), td(16jan2023), td(20feb2023), td
 " td(01jan2026), td(19jan2026), td(16feb2026), td(25may2026))"
 */
 
-*Fed holidays in the calibration year CHECK
+*Fed holidays in the calibration year 
 global fed_holidays "inlist(day, td(10nov2023), td(23nov2023), td(25dec2023), td(01jan2024), td(15jan2024), td(19feb2024), td(27may2024), td(19jun2024), td(04jul2024), td(02sep2024), td(14oct2024), td(11nov2024), td(28nov2024), td(25dec2024))" 
 
-*Fed holidays in the projection year CHECK
-global fed_holidays_y2 "inlist(day_y2,td(01jan2025), td(20jan2025), td(17feb2025), td(26may2025), td(19jun2025), td(04jul2025), td(01sep2025), td(13oct2025), td(11nov2025), td(27nov2025), td(25dec2025))"
+*Fed holidays in the projection year 
+global fed_holidays_y2 "inlist(day_y2, td(01jan2026), td(19jan2026), td(16feb2026), td(25may2026), td(19jun2026), td(03jul2026), td(07sep2026), td(12oct2026), td(11nov2026), td(26nov2026), td(25dec2026))"
 
 *Put leap-year days here
 global leap_yr_days "td(29feb2024)" 
 
 *Choose how many draws you want to create. Will create 150 for final version, from which 100 will be selected
-global ndraws 5
+global ndraws 150
 
 *Set the global length to pull either ionches or centimeters from MRIP (l_in_bin or l_cm_bin)
 global length_bin l_cm_bin
@@ -135,9 +137,10 @@ do "$input_code_cd\MRIP data wrapper.do"
 
 
 // 2) Estimate directed trips at the month, mode, kind-of day level
-		*Note this file calls "set regulations.do". In it you must enter the regulations in the calibration + projection year. THIS NEEDS TO BE ADJUSTED EVERY YEAR. 
 
 do "$input_code_cd\directed_trips_calibration.do"
+		*Note this file calls "set regulations.do". In it you must enter the regulations in the calibration + projection year. 
+		*THIS NEEDS TO BE ADJUSTED EVERY YEAR. 
 
 
 // 3) Create distirbutions of costs per trip across strata
@@ -147,16 +150,15 @@ do "$input_code_cd\survey trip costs.do"
 // 4) Estimate catch-per- trips at the month and mode level
 		*datasets needed:
 			*atl_states_2017_expsurvey.dta - expenditure survey data
-			*(old) ma site allocation.dta - allocating MRIP sites to GoM stock area.
-			*(new) ma_site_list_updated_SS.xlsx - allocating MRIP sites to GoM stock area. 
 			*$input_data_cd\population ages.xlsx - distribution of angler ages 
 			*$input_data_cd\population avidity.xlsx"- distribution of angler avidity metrics collected in the choice experiment survey 
 
-do "$input_code_cd\catch_per_trip_calibration.do"
+do "$input_code_cd\catch_per_trip_calibration_part1.do"
 		
+do "$input_code_cd\catch_per_trip_calibration_part2.do"
 
 // 5) Generate total harvest and catch estimates based on the directed trips/catch draws - will use this to calibrate the model
-do "$input_code_cd\simulated_catch_keep_totals_open_seasons.do"
+do "$input_code_cd\simulated_catch_totals.do"
 
 
 
