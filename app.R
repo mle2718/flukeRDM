@@ -3752,47 +3752,47 @@ server <- function(input, output, session) {
     
     #if(any( )) will run all selected check boxes on UI-regulations selection tab
     if(any("MA" == input$state)){
-      source(here::here(paste0("model_run_MA.R")), local = TRUE)
+      source(here::here(paste0("recDST/model_run_MA.R")), local = TRUE)
       predictions_1 <- predictions_1 %>% rbind(predictions)
     }
     
     if(any("RI" == input$state)){
-      source(here::here(paste0("model_run_RI.R")), local = TRUE)
+      source(here::here(paste0("recDST/model_run_RI.R")), local = TRUE)
       predictions_1 <- predictions_1 %>% rbind(predictions)
     }
     
     if(any("CT" == input$state)){
-      source(here::here(paste0("model_run_CT.R")), local = TRUE)
+      source(here::here(paste0("recDST/model_run_CT.R")), local = TRUE)
       predictions_1 <- predictions_1 %>% rbind(predictions)
     }
     
     if(any("NY" == input$state)){
-      source(here::here(paste0("model_run_NY.R")), local = TRUE)
+      source(here::here(paste0("recDST/model_run_NY.R")), local = TRUE)
       predictions_1 <- predictions_1 %>% rbind(predictions)
     }
     
     if(any("NJ" == input$state)){
-      source(here::here(paste0("model_run_NJ.R")), local = TRUE)
+      source(here::here(paste0("recDST/model_run_NJ.R")), local = TRUE)
       predictions_1 <- predictions_1 %>% rbind(predictions)
     }
     
     if(any("DE" == input$state)){
-      source(here::here(paste0("model_run_DE.R")), local = TRUE)
+      source(here::here(paste0("recDST/model_run_DE.R")), local = TRUE)
       predictions_1 <- predictions_1 %>% rbind(predictions)
     }
     
     if(any("MD" == input$state)){
-      source(here::here(paste0("model_run_MD.R")), local = TRUE)
+      source(here::here(paste0("recDST/model_run_MD.R")), local = TRUE)
       predictions_1 <- predictions_1 %>% rbind(predictions)
     }
     
     if(any("VA" == input$state)){
-      source(here::here(paste0("model_run_VA.R")), local = TRUE)
+      source(here::here(paste0("recDST/model_run_VA.R")), local = TRUE)
       predictions_1 <- predictions_1 %>% rbind(predictions)
     }
     
     if(any("NC" == input$state)){
-      source(here::here(paste0("model_run_NC.R")), local = TRUE)
+      source(here::here(paste0("recDST/model_run_NC.R")), local = TRUE)
       predictions_1 <- predictions_1 %>% rbind(predictions)
     }
     
