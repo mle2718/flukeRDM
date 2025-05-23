@@ -5,7 +5,9 @@
 states <- c("MA", "RI")
 mode_draw <- c("sh", "pr", "fh")
 draws <- 1:2
-
+ i<-1
+ s="MA"
+ md="fh"
 # Create an empty list to collect results
 calib_comparison <- list()
 
@@ -18,7 +20,7 @@ for (s in states) {
       dtripz<-feather::read_feather(file.path(input_data_cd, paste0("directed_trips_calibration_", s, ".feather"))) %>% 
         tibble::tibble() %>%
         dplyr::filter(draw == i) %>%
-        dplyr::select(mode, date, bsb_bag, bsb_min, fluke_bag,fluke_min, scup_bag, scup_min) %>% 
+        dplyr::select(mode, dtrip, date, bsb_bag, bsb_min, fluke_bag,fluke_min, scup_bag, scup_min) %>% 
         dplyr::filter(mode==md)
       
       catch_data <- feather::read_feather(file.path(iterative_input_data_cd, paste0("calib_catch_draws_",s, "_", i,".feather"))) %>% 
@@ -73,6 +75,29 @@ for (s in states) {
       sf_catch_check<-base::sum(catch_data$sf_cat)
       bsb_catch_check<-base::sum(catch_data$bsb_cat)
       scup_catch_check<-base::sum(catch_data$scup_cat)
+      
+      calib_comparison<-feather::read_feather(file.path(iterative_input_data_cd, "calibration_comparison.feather")) %>% 
+        dplyr::filter(state==s & draw==i)
+      #& mode==md)
+      
+      for (p in 1:nrow(calib_comparison)) {
+        sp <- calib_comparison$species[p]
+        
+        assign(paste0("rel_to_keep_", sp), calib_comparison$rel_to_keep[p])
+        assign(paste0("keep_to_rel_", sp), calib_comparison$keep_to_rel[p])
+        
+        
+        if (calib_comparison$rel_to_keep[p] == 1) {
+          assign(paste0("p_rel_to_keep_", sp), calib_comparison$p_rel_to_keep[p])
+        }
+        
+        if (calib_comparison$keep_to_rel[p] == 1) {
+          assign(paste0("p_keep_to_rel_", sp), calib_comparison$p_keep_to_rel[p])
+        }
+      }
+      
+      
+      
       
       # Summer flounder trip simulation
       
