@@ -2,10 +2,29 @@
 # Global Variables: You'll need to define iterative_input_data_cd and input_data_cd paths
 
 
+packages <- c("tidyr",  "magrittr", "tidyverse", "reshape2", "splitstackshape","doBy","WriteXLS","Rcpp",
+              "ggplot2","dplyr","rlist","fitdistrplus","MASS","psych","rgl","copula","VineCopula","scales",
+              "univariateML","logspline","readr","data.table","conflicted", "readxl", "writexl", "fs",
+              "purrr", "readr", "here","plyr" , "furrr", "profvis", "future", "magrittr", "feather", "RStata", "haven")
+
+# Install only those not already installed
+installed <- packages %in% rownames(installed.packages())
+if (any(!installed)) {
+  install.packages(packages[!installed])
+}
+lapply(packages, library, character.only = TRUE)
+
+conflicts_prefer(dplyr::mutate)
+conflicts_prefer(here::here)
+conflicts_prefer(dplyr::summarize)
+conflicts_prefer(dplyr::select)
+conflicts_prefer(dplyr::filter)
+conflicts_prefer(dplyr::rename)
+
 
 # Adjust project paths based on user
-project_path<-"C:\Users\andrew.carr-harris\Desktop\Git\flukeRDM"  #  Lou's project path 
-iterative_data_path<-"C:\Users\andrew.carr-harris\Desktop\flukeRDM_iterative_data" # Lou's path for iterative catch data that is too large to upload to GitHub*/
+project_path<-"C:/Users/andrew.carr-harris/Desktop/Git/flukeRDM"  #  Lou's project path 
+iterative_data_path<-"C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data" # Lou's path for iterative catch data that is too large to upload to GitHub*/
 
 input_data_cd<-file.path(project_path,"Data")
 input_code_cd<-file.path(project_path,"Code")
@@ -15,22 +34,24 @@ figure_cd<-file.path(project_path,"figures")
 
 library(tidyverse)
 library(readr)
+library(haven)
 
 # Initialize variables
 tripz_files <- c()
 statez <- c("MA", "RI")
-
+#i=1
+#s<-"MA"
 # Main processing loop
 for (s in statez) {
   for (i in 1:5) {
     
     # Load calibration catch draws data
-    catch_data <- read_csv(paste0(iterative_input_data_cd, "/calib_catch_draws_", s, "_", i, ".dta"))
+    catch_data <- read_dta(paste0(iterative_input_data_cd, "/calib_catch_draws_", s, "_", i, ".dta"))
     
     # Collapse (aggregate) by date, day_i, mode, state
     catch_collapsed <- catch_data %>%
       group_by(date, day_i, mode, state) %>%
-      summarise(
+      dplyr::summarise(
         sf_keep_sim = mean(sf_keep_sim, na.rm = TRUE),
         sf_cat = mean(sf_cat, na.rm = TRUE),
         sf_rel_sim = mean(sf_rel_sim, na.rm = TRUE),
@@ -44,7 +65,7 @@ for (s in statez) {
       )
     
     # Load directed trips data
-    dtrip_data <- read_csv(paste0(input_data_cd, "/directed_trips_calibration_", s)) %>%
+    dtrip_data <- read_csv(paste0(input_data_cd, "/directed_trips_calibration_", s, ".csv"), show_col_types = FALSE) %>%
       filter(draw == i) %>%
       select(mode, date, dtrip)
     
@@ -73,7 +94,7 @@ for (s in statez) {
     # Collapse by mode
     trip_totals <- merged_data %>%
       group_by(mode) %>%
-      summarise(
+      dplyr::summarise(
         across(starts_with("tot_"), sum, na.rm = TRUE),
         tot_dtrip_sim = sum(dtrip, na.rm = TRUE),
         .groups = 'drop'
@@ -100,37 +121,38 @@ file.remove(tripz_files)
 all_trips <- all_trips %>%
   select(state, mode, draw, everything())
 
-saveRDS(all_trips, paste0(iterative_input_data_cd, "/simulated_catch_totals.rds"))
+#saveRDS(all_trips, paste0(iterative_input_data_cd, "/simulated_catch_totals.rds"))
 
 # Load the simulated catch totals
-simulated_totals <- readRDS(paste0(iterative_input_data_cd, "/simulated_catch_totals.rds"))
+#simulated_totals <- readRDS(paste0(iterative_input_data_cd, "/simulated_catch_totals.rds"))
+simulated_totals<- all_trips
 
 # Calculate means and standard deviations by state and mode
 catch_summary <- simulated_totals %>%
-  group_by(state, mode) %>%
-  summarise(
+  dplyr::group_by(state, mode) %>%
+  dplyr::summarise(
     # Means
-    tot_sf_keep_sim = mean(tot_sf_keep_sim, na.rm = TRUE),
-    tot_sf_cat_sim = mean(tot_sf_cat_sim, na.rm = TRUE),
-    tot_sf_rel_sim = mean(tot_sf_rel_sim, na.rm = TRUE),
-    tot_bsb_keep_sim = mean(tot_bsb_keep_sim, na.rm = TRUE),
-    tot_bsb_rel_sim = mean(tot_bsb_rel_sim, na.rm = TRUE),
-    tot_bsb_cat_sim = mean(tot_bsb_cat_sim, na.rm = TRUE),
-    tot_scup_keep_sim = mean(tot_scup_keep_sim, na.rm = TRUE),
-    tot_scup_rel_sim = mean(tot_scup_rel_sim, na.rm = TRUE),
-    tot_scup_cat_sim = mean(tot_scup_cat_sim, na.rm = TRUE),
-    tot_dtrip_sim = mean(tot_dtrip_sim, na.rm = TRUE),
+    mean_tot_sf_keep_sim = mean(tot_sf_keep_sim),
+    mean_tot_sf_cat_sim = mean(tot_sf_cat_sim),
+    mean_tot_sf_rel_sim = mean(tot_sf_rel_sim),
+    mean_tot_bsb_keep_sim = mean(tot_bsb_keep_sim),
+    mean_tot_bsb_rel_sim = mean(tot_bsb_rel_sim),
+    mean_tot_bsb_cat_sim = mean(tot_bsb_cat_sim),
+    mean_tot_scup_keep_sim = mean(tot_scup_keep_sim),
+    mean_tot_scup_rel_sim = mean(tot_scup_rel_sim),
+    mean_tot_scup_cat_sim = mean(tot_scup_cat_sim),
+    mean_tot_dtrip_sim = mean(tot_dtrip_sim),
     # Standard deviations
-    sd_sf_keep_sim = sd(tot_sf_keep_sim, na.rm = TRUE),
-    sd_sf_cat_sim = sd(tot_sf_cat_sim, na.rm = TRUE),
-    sd_sf_rel_sim = sd(tot_sf_rel_sim, na.rm = TRUE),
-    sd_bsb_keep_sim = sd(tot_bsb_keep_sim, na.rm = TRUE),
-    sd_bsb_rel_sim = sd(tot_bsb_rel_sim, na.rm = TRUE),
-    sd_bsb_cat_sim = sd(tot_bsb_cat_sim, na.rm = TRUE),
-    sd_scup_keep_sim = sd(tot_scup_keep_sim, na.rm = TRUE),
-    sd_scup_rel_sim = sd(tot_scup_rel_sim, na.rm = TRUE),
-    sd_scup_cat_sim = sd(tot_scup_cat_sim, na.rm = TRUE),
-    sd_dtrip_sim = sd(tot_dtrip_sim, na.rm = TRUE),
+    sd_sf_keep_sim = sd(tot_sf_keep_sim),
+    sd_sf_cat_sim = sd(tot_sf_cat_sim),
+    sd_sf_rel_sim = sd(tot_sf_rel_sim),
+    sd_bsb_keep_sim = sd(tot_bsb_keep_sim),
+    sd_bsb_rel_sim = sd(tot_bsb_rel_sim),
+    sd_bsb_cat_sim = sd(tot_bsb_cat_sim),
+    sd_scup_keep_sim = sd(tot_scup_keep_sim),
+    sd_scup_rel_sim = sd(tot_scup_rel_sim),
+    sd_scup_cat_sim = sd(tot_scup_cat_sim),
+    sd_dtrip_sim = sd(tot_dtrip_sim),
     .groups = 'drop'
   )
 
@@ -166,7 +188,7 @@ catch_long <- catch_summary %>%
   select(-extra)
 
 # Load MRIP catch total calibration data
-mrip_catch <- read_csv(paste0(iterative_input_data_cd, "/catch_total_calib_mrip.dta"))
+mrip_catch <- read_dta(paste0(iterative_input_data_cd, "/catch_total_calib_mrip.dta"))
 
 # Reshape MRIP data
 mrip_long <- mrip_catch %>%
