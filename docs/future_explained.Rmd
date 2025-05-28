@@ -1,0 +1,69 @@
+---
+title: "Managing Multiple Runs"
+output: html_document
+date: "2025-05-27"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## RecDST Multiple Simulation Management
+
+The way that we have managed the 100 model runs for the RDM has changed over time. In the process of getting things running initially, then migrating to the cloud, and then hopefully further optimizing the cloud performance, we have moved from a traditional for loop to parallel processing in futures. Below is an outline of how we have adapted the code to hand these changes. 
+
+## Original
+
+```{r forloop}
+
+df <- data.frame()
+for (x in 1:10) {
+  y <- 2 * x + 1
+  df <- rbind(df, data.frame(x = x, y = y)) 
+}
+```
+
+The original takes an empty dataframe and iteratively adds output to the data frame until you have a complete datset of all runs. This happens one after the next making for a slow run time when the model is more complicated and computationally heavy. 
+
+## Current
+
+```{r future}
+# Define number of workers (number of cores)
+future::plan(future::multisession, workers = 3)
+
+# Create function to run iterative code
+get_model_output <- function(x){
+  y = 2*x+1
+  data.frame(x, y)
+}
+
+# Get dataframe of compiled x and y outputs
+df2<- furrr::future_map_dfr(1:10, ~get_model_output(.))
+```
+
+The current system lets us run each iteration of the model simultaneously. The larger the number of `workers` the to more model runs can be calculated at the same time. 
+
+## Proposed
+
+```{r future2, eval = FALSE}
+
+# Define cluster (list of hostnames or IPs)
+cl <- parallel::makeCluster(
+  c("remote1.domain.com", "remote2.domain.com", "localhost"),
+  user = "your-username"  # Optional if same username
+)
+
+# Use the cluster plan
+future::plan(future::cluster, workers = cl)
+
+# Create function to run iterative code
+get_model_output <- function(x){
+  y = 2*x+1
+  data.frame(x, y)
+}
+
+
+df3<- furrr::future_map_dfr(1:10, ~get_model_output(.))
+```
+
+The proposed plan will send each iteration to a Virtual Machine instead of a core on one large VM. This will reduce the cost and runtime of the DST in the cloud. The only change is a defining of the machine in the cluster and changing `future::multisesson` to `future::cluster`. 
