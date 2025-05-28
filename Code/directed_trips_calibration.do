@@ -63,7 +63,8 @@ levelsof state, local(sts) clean
 foreach s of local sts{
 
 u `basefile', clear
-*local s "MA"
+
+*local s "DE"
 keep if inlist(state,"`s'")
 
 // classify trips into dom_id=1 (DOMAIN OF INTEREST) and dom_id=2 ('OTHER' DOMAIN)
@@ -115,7 +116,6 @@ keep if count_obs1==1
 replace wp_int=0 if wp_int<=0
 svyset psu_id [pweight= wp_int], strata(strat_id) singleunit(certainty)
 
-
 // retain estimation strata names (xsvmat below seems to retain encoded rather than string strata names)
 preserve
 keep my_dom_id my_dom_id_string
@@ -139,6 +139,7 @@ rename rname21 my_dom_id2
 merge 1:1 my_dom_id2 using `domains' // merge back to strata names dataset 
 drop rname my_dom_id2 _merge 
 order my_dom_id_string
+// estimate total # trips by domain
 
 keep my b se 
 
@@ -156,6 +157,7 @@ rename b dtrip
 keep if dom_id=="1" // keep directed trip estimates for species group of interest 
 
 drop if dtrip==.
+replace se=. if dtrip==se
 
 // Deal with strata containing no estimated SEs. The estimation strata is: current year +  month + kind-of-day + state + mode 
 // For these strata, I'll impute a PSE from other strata and apply it to the missing-SE strata. Up to 7 rounds of imputation are conducted:
@@ -199,7 +201,7 @@ drop if dtrip==.
 	foreach m of local missings{
 		di "`m'"
 		
-		*local m "MA_2023_11_we_pr_1_6"
+		*local m "DE_2024_11_wd_sh_1_6"
 		
 		levelsof kod if my_dom=="`m'", clean
 		local kod="`r(levels)'"
@@ -275,31 +277,37 @@ drop if dtrip==.
 		replace round7=`r(mean)' if my_dom=="`m'"
 		}	
 		
+		
 		replace pse_impute = round1 if my_dom=="`m'" & round1!=. & pse_impute==.
-				replace missing_SE_imputation="past two years avg." if my_dom=="`m'" & pse_impute==.
-
+			replace missing_SE_imputation="past two years avg." if my_dom=="`m'" & round1!=.
+			
 		replace pse_impute = round2 if my_dom=="`m'" & round2!=. & pse_impute==.
-					replace missing_SE_imputation="last year" if my_dom=="`m'" & pse_impute==.
+			replace missing_SE_imputation="last year" if my_dom=="`m'" & round1==. & round2!=.
 
 		replace pse_impute = round3 if my_dom=="`m'" & round3!=. & pse_impute==.
-				replace missing_SE_imputation="two years previous" if my_dom=="`m'" & pse_impute==.
+			replace missing_SE_imputation="two years previous" if my_dom=="`m'" & round1==. & round2==. & round3!=.
 		
 		replace pse_impute = round4 if my_dom=="`m'" & round4!=. & pse_impute==.
-				replace missing_SE_imputation="average of previous and next month" if my_dom=="`m'" & pse_impute==.
+			replace missing_SE_imputation="average of previous and next month" if my_dom=="`m'" & round1==. & round2==. & round3==. & round4!=.
 
 		replace pse_impute = round5 if my_dom=="`m'" & round5!=. & pse_impute==.
-				replace missing_SE_imputation="previous month" if my_dom=="`m'" & pse_impute==.
+			replace missing_SE_imputation="previous month" if my_dom=="`m'" & pse_impute!=. & round1==. & round2==. & round3==. & round4==.  & round5!=. 
 
 		replace pse_impute = round6 if my_dom=="`m'" & round6!=. & pse_impute==.
-				replace missing_SE_imputation="next month" if my_dom=="`m'" & pse_impute==.
+			replace missing_SE_imputation="next month" if my_dom=="`m'" & pse_impute!=.  & round1==. & round2==. & round3==. & round4==.  & round5==. & round6!=. 
 
 		replace pse_impute = round7 if my_dom=="`m'" & round7!=. & pse_impute==.
-				replace missing_SE_imputation="same month other modes" if my_dom=="`m'" & pse_impute==.
-		
+			replace missing_SE_imputation="same month other modes" if my_dom=="`m'" & pse_impute!=. & round1==. & round2==. & round3==. & round4==.  & round5==. & round6==. & round7!=. 
+				
+				
+		replace missing_SE_imputation="no imputation" if my_dom=="`m'" & pse_impute==.  & round1==. & round2==. & round3==. & round4==.  & round5==. & round6==. & round7==. 
 	}
 		
 keep if $calibration_year
 replace se=dtrip*pse_impute if se==.			
+
+* If SE still missing, set SE=mean, so pse=100% (highly uncertain)
+replace se=dtrip if se==.
 
 preserve 
 keep my_dom_id_string  missing_SE_imputation
@@ -334,14 +342,10 @@ gen dtrip_not_trunc=rnormal(`est', `sd')
 gen dtrip_new=max(dtrip_not_trunc, 0)
 
 /*
-scalar m = `est'
-scalar se = `sd'
-scalar sigma2 = ln(1 + (se^2 / m^2))
-scalar sigma = sqrt(sigma2)
-scalar mu = ln(m) - (sigma2 / 2)
-gen normdraw = rnormal(mu, sigma)
-gen dtrip_logn_draw = exp(normdraw)
-drop normdraw
+*simulate using lognormal 
+scalar mu_log = log((`est'^2)/sqrt(`sd'^2+`est'^2))
+scalar sigma_log =sqrt(log(1 + (`sd'^2 / `est'^2)))
+gen dtrip_logn_draw = exp(rnormal(mu_log, sigma_log))
  */
 gen draw=_n
 
@@ -353,23 +357,6 @@ global drawz "$drawz "`drawz`d''" "
 clear
 dsconcat $drawz
 
-/*
-su dtrip
-return list
-
-su dtrip_not 
-return list
-
-su dtrip_logn_draw 
-return list
-
-su dtrip_new
-return list
-local new = `r(sum)'
-
-local not_truc = `r(sum)'
-di ((`new'-`not_truc')/`not_truc')*100
-*/
 
 
 /*The following attempts to correct for bias that occurs when drawing from uncertain MRIP estimates. 
