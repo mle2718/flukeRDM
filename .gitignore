@@ -3,3 +3,4 @@ output*
 recDST/documentation.md
 .Rproj.user
 .Rhistory
+Data/*
