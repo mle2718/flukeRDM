@@ -4,7 +4,7 @@
 # Run predict_rec_catch_data_read testing. 
      
  
-predict_rec_catch <- function(state, mode, draw, directed_trips, catch_data, 
+predict_rec_catch <- function(st, md, dr, directed_trips, catch_data, 
                               sf_size_data, bsb_size_data, scup_size_data, 
                               l_w_conversion, calib_comparison, n_choice_occasions, 
                               base_outcomes){
@@ -855,5 +855,7 @@ predict_rec_catch <- function(state, mode, draw, directed_trips, catch_data,
         dplyr::select(category, mode, everything() ) %>% 
         dplyr::mutate(state = st, draw= dr)
       
+      
+     return(predictions) 
 }
 
