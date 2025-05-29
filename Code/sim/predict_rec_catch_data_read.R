@@ -12,9 +12,13 @@ test_data_cd <- here::here("Data/")
 # Variables to change 
 dr<-1
 st="MA"
-
-
 library(magrittr)
+
+
+
+
+
+
 ############# To Run in Loop 
 
 #for (st in c("MA", "RI")){
