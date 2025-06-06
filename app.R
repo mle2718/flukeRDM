@@ -3799,6 +3799,7 @@ server <- function(input, output, session) {
       predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
     
+    predictions_1 <- predictions_1 %>% dplyr::mutate(number_weight = dplyr::recode(number_weight, "numbers" = "number"))
     return(predictions_1)
   
   })
@@ -3824,42 +3825,67 @@ server <- function(input, output, session) {
   
   
   #### keep ####
-  keep <- reactive({
-    keep_output<- predictions_1 %>% 
-          #dat %>%
-          dplyr::filter(keep_release %in% c("keep", "release"),
-                        param == "discmort") %>%
-          dplyr::group_by(model, Category, draw) %>%
-          dplyr::summarise(Value = sum(Value)) %>%
-          dplyr::mutate(under_rhl = dplyr::case_when(Category == "sf" & Value <= sf_rhl() ~ 1, TRUE ~ 0),
-                        under_rhl = dplyr::case_when(Category == "bsb" & Value <= bsb_rhl() ~ 1, TRUE ~ under_acl), 
-                        under_rhl = dplyr::case_when(Category == "scup" & Value <= scup_rhl() ~ 1, TRUE ~ under_acl)) %>%
-          dplyr::group_by(model, Category) %>%
-          dplyr::summarise(under_acl = sum(under_acl),
-                           Value = median(Value)) %>%
-          tidyr::pivot_wider(names_from = c(option), values_from = c(Value, under_acl)) %>%
-          dplyr::mutate(Category = dplyr::recode(Category, "sf" = "Summer Flounder",
-                                                 "bsb" = "BSB", 
-                                                 "scup" = "Scup")) %>%
-          dplyr::select(Category, Value_SQ, under_acl_SQ, Value_alt, under_acl_alt) %>%
-          dplyr::rename(Species = Category, `SQ Total Mortality (mt)` = Value_SQ, `SQ % Under ACL (Out of 100 runs)` = under_acl_SQ,
-                        `Alternative Total Mortality (mt)` = Value_alt, `Atlernative % Under ACL (Out of 100 runs)` = under_acl_alt)
-        
-        return(keep_output)
-      })
-      
-      
-      
-      
-      
-      dplyr::filter(draw %in% c("Summary", "All selected"), 
-                    Statistic %in% c("harvest pounds", "harvest numbers")) %>% 
-      dplyr::arrange(factor(Statistic, levels = c("harvest pounds", "harvest numbers"))) %>% 
-      dplyr::mutate( `% difference from status-quo outcome (median)` = prettyNum(`% difference from status-quo outcome (median)`, big.mark = ",", scientific = FALSE),
-                     `Alternative option value` = prettyNum(`Alternative option value`, big.mark = ",", scientific = FALSE), 
-                     `Status-quo value (median)` = prettyNum(`Status-quo value (median)`, big.mark = ",", scientific = FALSE))
-    return(keep_output)
+  # keep <- reactive({
+  #   keep_output<- predictions_1 %>% 
+  #     dplyr::mutate(keep_release = paste(keep_release, param)) %>% 
+  #     dplyr::filter(keep_release %in% c("keep total")) %>%
+  #         dplyr::group_by(model, category, draw, state) %>%
+  #         dplyr::summarise(Value = sum(value)) %>%
+  #         dplyr::mutate(under_rhl = dplyr::case_when(category == "sf" & Value <= sf_rhl() ~ 1, TRUE ~ 0),
+  #                       under_rhl = dplyr::case_when(category == "bsb" & Value <= bsb_rhl() ~ 1, TRUE ~ under_rhl), 
+  #                       under_rhl = dplyr::case_when(category == "scup" & Value <= scup_rhl() ~ 1, TRUE ~ under_rhl)) %>%
+  #         dplyr::group_by(model, category, state) %>%
+  #         dplyr::summarise(under_rhl = sum(under_rhl),
+  #                          Value = median(Value)) %>%
+  #         tidyr::pivot_wider(names_from = c(model), values_from = c(Value, under_rhl)) %>%
+  #         dplyr::mutate(Category = dplyr::recode(category, "sf" = "Summer Flounder",
+  #                                                "bsb" = "BSB", 
+  #                                                "scup" = "Scup")) %>%
+  #         dplyr::select(state, category, Value_SQ, under_rhl_SQ, Value_Alt, under_rhl_Alt) %>%
+  #         dplyr::rename(Species = category, `SQ Total Harvest (mt)` = Value_SQ, `SQ % Under RHL (Out of 100 runs)` = under_rhl_SQ,
+  #                       `Alternative Total Harvest (mt)` = Value_Alt, `Atlernative % Under RHL (Out of 100 runs)` = under_rhl_Alt)
+  #       
+  #       return(keep_output)
+  #     })
+  # 
+  
+  #### keep release discards ####
+  which_keep_out<- reactiveVal(TRUE)
+  
+  keep_by_mode <- reactive({
+    keep_by_mode<- predictions_1() %>%
+      dplyr::mutate(keep_release = paste(keep_release, param)) %>% 
+      dplyr::filter(keep_release %in% c("keep total", "release total", "release discmort")) %>%
+      dplyr::group_by(state, model, category, keep_release, number_weight, draw, mode) %>%
+      dplyr::summarise(Value = sum(as.numeric(value))) %>%
+      dplyr::group_by(state, model, category, keep_release, number_weight, mode) %>%
+      dplyr::summarise(Value = median(Value)) %>%
+      tidyr::pivot_wider(names_from = c(model, number_weight), values_from = Value) %>%
+      dplyr::mutate(perc_diff_num = ((Alt_number-SQ_number)/SQ_number) * 100,
+                    perc_diff_wt = ((Alt_weight-SQ_weight)/SQ_weight) * 100) %>%
+      dplyr::group_by(state, category, keep_release, mode) %>%
+      dplyr::filter(!perc_diff_num == "NA",
+                    !perc_diff_wt == "NA") %>%
+      dplyr::summarise(SQ_Number = median(SQ_number), SQ_Weight = median(SQ_weight),
+                       alt_Number = median(Alt_number), alt_Weight = median(Alt_weight),
+                       perc_diff_num = median(perc_diff_num), perc_diff_wt = median(perc_diff_wt)) %>%
+      dplyr::select(!c(SQ_Number, SQ_Weight)) %>%
+      dplyr::mutate(category = dplyr::recode(category, "sf" = "Summer Flounder",
+                                             "bsb" = "BSB", 
+                                             "scup" = "Scup"),
+                    keep_release = dplyr::recode(keep_release, "keep total" = "Harvest",
+                                                      "release discmort" = "Dead Discards", 
+                                                 "release total" = "Discards"),
+                    mode = dplyr::recode(mode, "fh" = "For Hire",
+                                         "pr" = "Private", 
+                                         "sh" = "Shore")) %>%
+      dplyr::select(state, category, keep_release, mode, alt_Number, perc_diff_num, alt_Weight, perc_diff_wt) %>%
+      dplyr::rename(Species = category, Variable = keep_release,
+                    `Total Number of fish` = alt_Number, `% difference in number of fish` = perc_diff_num,
+                    `Total Weight (mt)` = alt_Weight, `% difference in weight of fish` = perc_diff_wt, `Mode` = mode)
+    return(keep_by_mode)
   })
+  #####################
   
   #### release ####
   release<- reactive({
