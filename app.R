@@ -3753,71 +3753,105 @@ server <- function(input, output, session) {
     #if(any( )) will run all selected check boxes on UI-regulations selection tab
     if(any("MA" == input$state)){
       source(here::here(paste0("recDST/model_run_MA.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      
+      SQ<- read.csv(here::here("output/output_MA_SQ_20250606_093640.csv"))
+      
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10, SQ)
     }
     
     if(any("RI" == input$state)){
       source(here::here(paste0("recDST/model_run_RI.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
     
     if(any("CT" == input$state)){
       source(here::here(paste0("recDST/model_run_CT.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
     
     if(any("NY" == input$state)){
       source(here::here(paste0("recDST/model_run_NY.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
     
     if(any("NJ" == input$state)){
       source(here::here(paste0("recDST/model_run_NJ.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
     
     if(any("DE" == input$state)){
       source(here::here(paste0("recDST/model_run_DE.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
     
     if(any("MD" == input$state)){
       source(here::here(paste0("recDST/model_run_MD.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
     
     if(any("VA" == input$state)){
       source(here::here(paste0("recDST/model_run_VA.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
     
     if(any("NC" == input$state)){
       source(here::here(paste0("recDST/model_run_NC.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
-    
-    predictions_coastwide<- predictions_1 %>% 
-      dplyr::filter(draw == "Summary") %>% 
-      dplyr::group_by(Statistic, Mode, Species, draw) %>%
-      dplyr::summarise(`Status-quo value (median)` = sum(as.numeric(`Status-quo value (median)`)), 
-                       `Alternative option value` = sum(as.numeric(`Alternative option value`))) %>% 
-      dplyr::mutate(State = "All selected", 
-                    `% difference from status-quo outcome (median)` = dplyr::case_when(Statistic != "CV" ~ (as.numeric(`Alternative option value`) - as.numeric(`Status-quo value (median)`))/ as.numeric(`Status-quo value (median)`), 
-                                                                                     TRUE ~ as.numeric(`Alternative option value`) - as.numeric(`Status-quo value (median)`)),
-                    `% under harvest target (out of 100 simulations)` = "NA", 
-                    `% difference from status-quo outcome (median)` = prettyNum(`% difference from status-quo outcome (median)`, big.mark = ",", format = "f", digits = 2, scientific = FALSE),
-                    `Alternative option value` = prettyNum(`Alternative option value`, big.mark = ",", scientific = FALSE), 
-                    `Status-quo value (median)` = prettyNum(`Status-quo value (median)`, big.mark = ",", scientific = FALSE))
-  
-    predictions_1 <- predictions_1 %>% rbind(predictions_coastwide)
     
     return(predictions_1)
   
   })
   
+  
+  
+  ### Recreational Harvest Limit Values
+  sf_rhl <- function(){
+    sf_rhl = 99
+    return(sf_rhl)
+  }
+  
+  bsb_rhl <- function(){
+    bsb_rhl = 99
+    return(bsb_rhl)
+  }
+  
+  scup_rhl <- function(){
+    scup_rhl = 99
+    return(scup_rhl)
+  }
+  
+  
+  
   #### keep ####
   keep <- reactive({
-    keep_output<- predictions_1() %>% 
+    keep_output<- predictions_1 %>% 
+          #dat %>%
+          dplyr::filter(keep_release %in% c("keep", "release"),
+                        param == "discmort") %>%
+          dplyr::group_by(model, Category, draw) %>%
+          dplyr::summarise(Value = sum(Value)) %>%
+          dplyr::mutate(under_rhl = dplyr::case_when(Category == "sf" & Value <= sf_rhl() ~ 1, TRUE ~ 0),
+                        under_rhl = dplyr::case_when(Category == "bsb" & Value <= bsb_rhl() ~ 1, TRUE ~ under_acl), 
+                        under_rhl = dplyr::case_when(Category == "scup" & Value <= scup_rhl() ~ 1, TRUE ~ under_acl)) %>%
+          dplyr::group_by(model, Category) %>%
+          dplyr::summarise(under_acl = sum(under_acl),
+                           Value = median(Value)) %>%
+          tidyr::pivot_wider(names_from = c(option), values_from = c(Value, under_acl)) %>%
+          dplyr::mutate(Category = dplyr::recode(Category, "sf" = "Summer Flounder",
+                                                 "bsb" = "BSB", 
+                                                 "scup" = "Scup")) %>%
+          dplyr::select(Category, Value_SQ, under_acl_SQ, Value_alt, under_acl_alt) %>%
+          dplyr::rename(Species = Category, `SQ Total Mortality (mt)` = Value_SQ, `SQ % Under ACL (Out of 100 runs)` = under_acl_SQ,
+                        `Alternative Total Mortality (mt)` = Value_alt, `Atlernative % Under ACL (Out of 100 runs)` = under_acl_alt)
+        
+        return(keep_output)
+      })
+      
+      
+      
+      
+      
       dplyr::filter(draw %in% c("Summary", "All selected"), 
                     Statistic %in% c("harvest pounds", "harvest numbers")) %>% 
       dplyr::arrange(factor(Statistic, levels = c("harvest pounds", "harvest numbers"))) %>% 
@@ -3920,6 +3954,14 @@ server <- function(input, output, session) {
     return(ntrips_draws_output)
   })
    
+  
+  
+  
+  
+  
+  
+  
+  
   
   #### Regulations ####
   regulations <- eventReactive(input$runmeplease,{
