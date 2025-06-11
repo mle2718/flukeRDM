@@ -12,12 +12,13 @@ ui <- fluidPage(
     #### Summary Page ####
     tabPanel("Sumary Page",
              shinyWidgets::awesomeCheckboxGroup( # Select which state(s) to run
-               inputId = "state", 
+               inputId = "stateID", 
                label = "State", 
                choices = c("MA", "RI", "CT", "NY", "NJ", "DE",  "MD", "VA", "NC"),
                inline = TRUE,
                status = "danger"),
-             uiOutput("outputMA"),
+             uiOutput("outputMAfig"),
+             uiOutput("outputMAtab"),
              uiOutput("outputRI"),
              uiOutput("outputCT"), 
              uiOutput("outputNY"),
@@ -3766,6 +3767,7 @@ server <- function(input, output, session) {
   
   output$DToutMA <- DT::renderDT({
     
+    Regs_out<- outputs()
     # df3<- outputs() %>% dplyr::filter(!Category %in% c("CV", "ntrips", "nchoiceoccasions","cod" , "had")) %>%
     #   dplyr::select(Category, Value, run_number) %>%
     #   dplyr::left_join(SQ_regulations, by = c("Category"))
@@ -3857,8 +3859,9 @@ server <- function(input, output, session) {
     #                 `Difference from haddock SQ` = Diff_from_SQ_had)
     # 
     # 
-    # DT::datatable(Regs_out)
+     DT::datatable(Regs_out)
   })
+  
   output$figoutMA <- plotly::renderPlotly({
     
     harvest_dat<- outputs()  %>% 
@@ -3874,35 +3877,43 @@ server <- function(input, output, session) {
                     diff_perc = ((Value - SQ_value)/SQ_value) *100) %>% 
       dplyr::group_by(run_number, state, category) %>% 
       dplyr::summarise(Value = median(Value), 
-                       diff_perc = sum(dplyr::case_when(category == "bsb" ~ diff_perc > 1, 
+                       perc_under = sum(dplyr::case_when(category == "bsb" ~ diff_perc > 1, 
                                                         category == "sf" ~ diff_perc > 0.5, 
-                                                        category == "scup" ~ diff_perc > 0.25))) %>%
-      tidyr::pivot_wider(names_from = category, values_from = c(Value, diff_perc) )
+                                                        category == "scup" ~ diff_perc > 0.25)), 
+                       diff_perc = median(diff_perc)) %>%
+      tidyr::pivot_wider(names_from = category, values_from = c(Value, diff_perc, perc_under) )
     
     p<- harvest_dat %>% 
       #dplyr::mutate(under_acl_cod = as.numeric(under_acl_cod)) %>%
-      ggplot2::ggplot(ggplot2::aes(x = `diff_perc_sf`, y = `diff_perc_bsb`))+
+      ggplot2::ggplot(ggplot2::aes(x = diff_perc_sf, y = diff_perc_bsb, color = as.character(perc_under_sf), shape = as.character(perc_under_bsb), label = run_number)) +
       ggplot2::geom_point() +
+      ggplot2::geom_text(vjust = -1) + 
       ggplot2::geom_vline( xintercept =1, linetype="dashed")+
       ggplot2::geom_hline( yintercept =1, color="grey45")+
       ggplot2::annotate(geom="text", x=1.2, label="SF RHL reduction", y=1) +
-      ggplot2::annotate(geom="text", y=1.2, label="BSB RHL reduction", x=1) +
+      ggplot2::annotate(geom="text", y=1.3, label="BSB RHL reduction", x=1.5) +
       ggplot2::guides(size = "none")+
       ggplot2::ggtitle("Fluke and BSB percent differenct in Harvest from SQ")+
-      ggplot2::ylab("Median Recreational BSB % diff ")+
-      ggplot2::xlab("Median Recreational SF % diff ")
+      ggplot2::ylab("Median Recreational BSB % diff")+
+      ggplot2::xlab("Median Recreational SF % diff")
     
     fig<- plotly::ggplotly(p) %>% #,
       #tooltip = c("x", "y", "colour")) %>%
       plotly::style(textposition = "top center")
     fig
   })
-  output$outputMA <- renderUI({
-    DT::DTOutput(outputId = "DToutMA")
-    plotly::plotlyOutput(outputId = "figoutMA")
+  output$outputMAtab <- renderUI({
+    if(any("MA" == input$stateID)){
+      DT::DTOutput(outputId = "DToutMA")
+    }
+  })
+  output$outputMAfig <- renderUI({
+    if(any("MA" == input$stateID)){
+      plotly::plotlyOutput(outputId = "figoutMA")
+    }
   })
    
-    
+
   
   
   
