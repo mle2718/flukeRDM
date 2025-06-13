@@ -44,6 +44,8 @@ global wavelist 1 2 3 4 5 6
 
 
 global calibration_year "(year==2024 & inlist(wave, 1, 2, 3, 4, 5, 6))"
+global calibration_year_num 2024
+
 *global calibration_year "(year==2024 & inlist(wave, 1, 2, 3, 4, 5, 6)) | (year==2023 & inlist(wave, 6))"
 
 global calibration_catch_per_trip_years "(year==2024 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2023 & inlist(wave, 6)) | (year==2023 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2022 & inlist(wave, 6))"
@@ -124,8 +126,8 @@ global project_path "C:\Users\andrew.carr-harris\Desktop\Git\flukeRDM" /* Lou's 
 global iterative_data_path "C:\Users\andrew.carr-harris\Desktop\flukeRDM_iterative_data" /* Lou's path for iterative catch data that is too large to upload to GitHub*/
 *global project_path "C:\Users\min-yang.lee\Documents\rdmtool\lou_files\cod_haddock"  /* Min-Yang's project path */
 
-global input_data_cd "${project_path}\Data"
-global input_code_cd "${project_path}\Code"
+global input_data_cd "C:\Users\andrew.carr-harris\Desktop\MRIP_data_2025" /* Lou's local data path */
+global input_code_cd "${project_path}\Code\pre_sim"
 global iterative_input_data_cd "${iterative_data_path}"
 global figure_cd  "${project_path}\figures"
 
