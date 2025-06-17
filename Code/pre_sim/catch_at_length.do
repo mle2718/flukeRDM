@@ -2,6 +2,7 @@
 * This file generates catch-at-length distributions for each species for:
 		* a) the calibration year. 
 		* b) the projection year, which is created using (a) along with stock assessment numbers-at-age projections 
+
 * The general strategy is:
 		* a) 
 			* 1) pull release length data and compute proportion released-at-length
@@ -9,12 +10,12 @@
 			* 3) pull harvest length data and compute proportion harvest-at-length
 			* 4) multiply (3) by an estimate of total harvest to get numbers released-at-length 
 			* 5) sum (2) and (5) across length categories to get catch-at-length 
+		* b) 
+			* 1) use the catch-at-length distribution from a) and projected N_l to compute recreational selectivity-at-length (q_l=catch_l/N_l) in calibation year 
+			* 2) Multiply q_l by next year's projection of N_l to compute projected N_l over 100 draws from the projected numbers-at-length distribution
+			
 
-* Define local macro
-local region_logic `""cond(inlist(state, "MA", "RI", "CT", "NY"), "NO", cond(state == "NJ", "NJ", cond(inlist(state, "DE", "MD", "VA", "NC"), "SO")))""'
-
-
-
+* a) calibration year catch-at-length
 
 * CT VAS
 cd "C:\Users\andrew.carr-harris\Desktop\MRIP_data_2025\length_data"
@@ -663,5 +664,130 @@ gen catch=harvest+discards
 collapse catch, by(region species length_cm)
 sort region species length_cm
 
+gen domain=region+"_"+species 
+egen sumcatch=sum(catch), by(domain)
+gen observed_prob = catch/sumcatch
+drop sumcatch 
 
+* estimate gamma parameters for each catch-at-length distribution
+* note: I restrict the range of fitted values to within the min/max length of observed catch
+preserve 
+rename length fitted_length
+keep fitted_length observed_prob catch species region domain
+duplicates drop
+tempfile observed_prob
+save `observed_prob', replace
+restore
+
+
+tempfile new
+save `new', replace
+global fitted_sizes
+
+levelsof domain , local(regs)
+foreach r of local regs{
+u `new', clear
+
+keep if domain=="`r'"
+keep length catch
+su length if catch!=0
+local minL=`r(min)'
+local maxL=`r(max)'
+
+su catch
+if `r(sum)'<100000{
+	egen sumfish=sum(catch)
+	gen expand=100000/sumfish
+	replace catch=catch*expand
+	drop sumfish expand
+}
+
+else{
+}
+
+replace catch=round(catch)
+expand catch
+drop if catch==0
+gammafit length
+local alpha=e(alpha)
+local beta=e(beta)
+
+gen gammafit=rgamma(`alpha', `beta')
+*replace gammafit=round(gammafit, .5)
+replace gammafit=round(gammafit)
+
+gen nfish=1
+
+*restrict catch to within range of observed values
+keep if gammafit>=`minL' & gammafit<=`maxL'
+
+collapse (sum) nfish, by(gammafit)
+egen sumnfish=sum(nfish)
+gen fitted_prob=nfish/sumnfish
+gen domain="`r'"
+drop nfish sumnfish
+
+tempfile fitted_sizes`r'
+save `fitted_sizes`r'', replace
+global fitted_sizes "$fitted_sizes "`fitted_sizes`r''" " 
+}
+clear
+dsconcat $fitted_sizes
+rename gammafit fitted_length		   
+
+merge 1:1 fitted_length domain using `observed_prob'
+sort domain fitted_length 
+mvencode fitted_prob observed_prob, mv(0) override 
+
+split domain, parse(_)
+replace species=domain2
+replace region=domain1
+drop domain1 domain2
+
+*drop if _merge==2
+*drop _merge 
+
+egen sum_nfish_catch=sum(catch), by(species region)
+replace observed_prob = catch/sum_nfish_catch
+
+drop observed_prob2
+rename fitted_l length
+encode domain, gen(domain2)
+
+gen nfish_catch_from_fitted=fitted_prob*sum_nfish_catch
+gen nfish_catch_from_raw=observed_prob*sum_nfish_catch
+
+drop _merge
+
+save "$input_data_cd/baseline_catch_at_length.dta", replace 
+
+* Graphs of the fitted observed/fitted probabilities
+/*
+levelsof domain, local(domz)
+foreach d of local domz{
+	
+levelsof species if domain=="`d'", local(spec)  
+
+su length if species==`spec' & fitted_prob!=0
+local min_fitted=`r(min)'
+su observed_prob if species==`spec' & observed_prob!=0
+local min_obs=`r(min)'
+local min=min(`min_fitted',`min_obs')
+
+su length if species==`spec' & fitted_prob!=0
+local max_fitted=`r(max)'
+su observed_prob if species==`spec' & observed_prob!=0
+local max_obs=`r(max)'
+local max=max(`max_fitted',`max_obs')
+
+twoway (scatter observed_prob length if domain=="`d'" & length>=`min' & length<=`max',   cmissing(no) connect(direct) lcol(gray) lwidth(med)  lpat(solid) msymbol(o) mcol(gray) $graphoptions) ///
+		    (scatter fitted_prob length if  domain=="`d'"   & length>=`min' & length<=`max', cmissing(no) connect(direct) lcol(black)   lwidth(med)  lpat(solid) msymbol(i)   ///
+			xtitle("Length (cm)", yoffset(-2)) ytitle("Prob")    ylab(, angle(horizontal) labsize(vsmall)) ///
+			legend(lab(1 "raw data") lab(2 "fitted (gamma) data") cols() yoffset(-2) region(color(none)))   title("`d'", size(small))  name(dom`d', replace))
+ local graphnames `graphnames' dom`d'
+}
+
+grc1leg `graphnames'
+graph export "$figure_cd/catch_at_length_calib.png", as(png) replace
+*/
 
