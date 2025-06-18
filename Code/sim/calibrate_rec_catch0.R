@@ -6,6 +6,9 @@ states <- c("MA", "RI")
 mode_draw <- c("sh", "pr", "fh")
 draws <- 1:2
 
+# i<-1
+# s<-"MA"
+# md<-"fh"
 # Create an empty list to collect results
 calib_comparison <- list()
 
@@ -26,7 +29,8 @@ for (s in states) {
       
       catch_data <- feather::read_feather(file.path(iterative_input_data_cd, paste0("calib_catch_draws_",s, "_", i,".feather"))) %>% 
         dplyr::left_join(dtripz, by=c("mode", "date"))%>% 
-        dplyr::filter(mode==md)
+        dplyr::filter(mode==md) %>% 
+        dplyr::select(-sf_keep_sim, -sf_rel_sim, -scup_keep_sim, -scup_rel_sim, -bsb_keep_sim, -bsb_rel_sim)
       
       angler_dems<-catch_data %>% 
         dplyr::select(date, mode, tripid, total_trips_12, age, cost)%>% 
@@ -34,23 +38,23 @@ for (s in states) {
       
       angler_dems<-dplyr::distinct(angler_dems)
       
-      sf_size_data <- read_csv(file.path(test_data_cd, "fluke_projected_catch_at_lengths.csv"), show_col_types = FALSE)  %>% 
-        dplyr::filter(state == s, draw==0 ) %>% 
+      sf_size_data <- read_csv(file.path(input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+        dplyr::filter(state == s, species=="sf", draw==i) %>% 
         dplyr::filter(!is.na(fitted_prob)) %>% 
         dplyr::select(state, fitted_prob, length)
       
-      bsb_size_data <- read_csv(file.path(test_data_cd, "bsb_projected_catch_at_lengths.csv"), show_col_types = FALSE)  %>% 
-        dplyr::filter(state == s, draw==0 ) %>% 
+      bsb_size_data <- read_csv(file.path(input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+        dplyr::filter(state == s, species=="bsb" , draw==i) %>% 
         dplyr::filter(!is.na(fitted_prob)) %>% 
         dplyr::select(state, fitted_prob, length)
       
-      scup_size_data <- read_csv(file.path(test_data_cd, "scup_projected_catch_at_lengths.csv"), show_col_types = FALSE)  %>% 
-        dplyr::filter(state == s, draw==0 ) %>% 
+      scup_size_data <- read_csv(file.path(input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+        dplyr::filter(state == s, species=="scup", draw==i) %>% 
         dplyr::filter(!is.na(fitted_prob)) %>% 
         dplyr::select(state,  fitted_prob, length)
       
       
-    # begin trip simulation
+      # begin trip simulation
       
       # subset trips with zero catch, as no size draws are required
       sf_zero_catch <- dplyr::filter(catch_data, sf_cat == 0)
@@ -78,9 +82,7 @@ for (s in states) {
         dplyr::mutate(fitted_length = sample(sf_size_data$length,
                                              nrow(.),
                                              prob = sf_size_data$fitted_prob,
-                                             replace = TRUE)) %>%  
-        dplyr::mutate(fitted_length=fitted_length*2.54)
-      
+                                             replace = TRUE)) 
       
       # Impose regulations, calculate keep and release per trip
       catch_size_data <- catch_size_data %>%
@@ -152,8 +154,8 @@ for (s in states) {
         dplyr::mutate(fitted_length = sample(bsb_size_data$length,
                                              nrow(.),
                                              prob = bsb_size_data$fitted_prob,
-                                             replace = TRUE)) %>%     #dplyr::arrange(period2, tripid, catch_draw) 
-        dplyr::mutate(fitted_length=fitted_length*2.54)
+                                             replace = TRUE)) 
+      
       
       # Impose regulations, calculate keep and release per trip
       catch_size_data <- catch_size_data %>%
@@ -215,8 +217,7 @@ for (s in states) {
         dplyr::mutate(fitted_length = sample(scup_size_data$length,
                                              nrow(.),
                                              prob = scup_size_data$fitted_prob,
-                                             replace = TRUE)) %>% 
-        dplyr::mutate(fitted_length=fitted_length*2.54)
+                                             replace = TRUE)) 
       
 
       # Impose regulations, calculate keep and release per trip

@@ -110,16 +110,19 @@ local statez "MA RI CT NY NJ DE MD VA NC"
 
 local statez "MA RI CT NY NJ DE"
 local statez "MA"
-local statez "NY NJ DE MD VA NC"
+local statez "DE MD VA NC"
+local statez "MD"
+local statez "VA NC"
+local statez "NC"
 
 foreach s of local statez{
 
 mata: mata clear
 	
-forv i=1/150{
+forv i=137/150{
 
-*local i=1
-*local s="MA"
+*local i=99
+*local s="MD"
 
 * Pull in simulated catch draws
 import excel using "$iterative_input_data_cd\catch_draws_`s'_`i'.xlsx", clear firstrow
@@ -174,9 +177,9 @@ save `trips', replace
 global tripz
 
 foreach d of local domains{
-*local i=1
-*local s="MA"
-*local d="MA_6_pr_SF"
+*local i=99
+*local s="MD"
+*local d="MD_4_pr_SF"
 	u `trips', clear
 	keep if my_dom_id_string=="`d'"
 	di "`d'"
@@ -278,6 +281,8 @@ foreach d of local domains{
 			mode month date day_i dtrip wave tripid catch_draw age state total_trips_12 day cost
 			
 	order draw my_dom_id_string mode date month day wave  day_i tripid catch_draw dtrip
+
+	*drop my_dom_id_string wave day_i dtrip state date 
 	
 	sort date tripid catch_draw
 	
@@ -295,6 +300,9 @@ export delimited using "$iterative_input_data_cd\calib_catch_draws_`s'_`i'.csv",
 
 }
 }
+
+
+
 
 
 

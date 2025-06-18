@@ -159,6 +159,15 @@ do "$input_code_cd\catch_per_trip_calibration_part1.do"
 		
 do "$input_code_cd\catch_per_trip_calibration_part2.do"
 
+// 5) compare calibration output to MRIP, and retain total simulated harvest and discards to apply to the baseline catch-at-length distribution
+
+do "$input_code_cd\compare calibration output to MRIP.do" 
+
+// 6) Generate baseline-year catch-at-length, using the simulated harvest/discard totals from step 5
+do "$input_code_cd\catch_at_length.do"
+
+
+
 // 5) Generate total harvest and catch estimates based on the directed trips/catch draws - will use this to calibrate the model
 do "$input_code_cd\simulated_catch_totals.do"
 
@@ -181,7 +190,6 @@ do "$input_code_cd\simulated_catch_totals.do"
 	
 				*Projected stock structure for next year - WGOM_Cod_projected_NAA_2024Assessment.dta and GOM_Haddock_projected_NAA_2024Assessment.dta		
 
-do "$input_code_cd\rec selectivity at length - open_seasons.do"
 
 
 // Steps 7-10 are not necessary to run. They compare the disaggregated simulated catch and effort data to aggreagte MRIP estimates, and compute catch weight totals in the calibration year 

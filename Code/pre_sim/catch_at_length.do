@@ -325,12 +325,10 @@ append using `ri_vas'
 append using `nj_vas'
 append using `ct_vas'
 
-* Group the data into regions
-*gen region = `region_logic'
-
-gen region="NO" if inlist(state, "MA", "RI", "CT", "NY")
-replace region="NJ" if inlist(state, "NJ")
-replace region="SO" if inlist(state, "DE", "MD", "VA", "NC")
+gen region="NO" if inlist(state, "MA", "RI", "CT", "NY") & inlist(species, "sf", "bsb")
+replace region="NJ" if inlist(state, "NJ") & inlist(species, "sf", "bsb")
+replace region="SO" if inlist(state, "DE", "MD", "VA", "NC") & inlist(species, "sf", "bsb")
+replace region="CST" if inlist(species, "scup")
 
 drop if  length_cm==. | length_in==.
 
@@ -383,8 +381,8 @@ replace state="VA" if st==51
 replace state="NC" if st==37
 
 drop region
-gen region="NO" if inlist(state, "MA", "RI", "CT", "NY")
-replace region="NJ" if inlist(state, "NJ")
+gen region="NO" if inlist(state, "MA", "RI", "CT", "NY") 
+replace region="NJ" if inlist(state, "NJ") 
 replace region="SO" if inlist(state, "DE", "MD", "VA", "NC")
 
 
@@ -453,6 +451,18 @@ replace species="scup" if species=="SC"
 order region species l n
 sort region species l n
 drop if length_cm==0
+
+preserve
+keep if species=="scup"
+replace region="CST"
+collapse (sum) n, by(species region l)
+tempfile scup
+save `scup',replace
+restore
+
+drop if species=="scup"
+append using `scup'
+
 egen sumfish=sum(nfish), by(species region)
 gen prop_ab1=nfish/sumfish
 
@@ -463,12 +473,47 @@ save `prop_ab1', replace
 merge 1:1 species region length using `prop_b2'
 drop _merge spec_reg sumfish
 
+expand 150
+bysort region species l: gen draw=_n
 tempfile props
 save `props', replace 
 
 *Pull estimates of total harvest and discards from MRIP by region  
-cd $input_data_cd
+u "$iterative_input_data_cd\simulated_catch_totals.dta", clear 
+collapse (sum) tot_sf_keep_sim tot_sf_rel_sim tot_bsb_keep_sim tot_bsb_rel_sim tot_scup_keep_sim tot_scup_rel_sim, by(state draw)
+rename tot_sf_keep_sim harvest_sf
+rename tot_bsb_keep_sim harvest_bsb
+rename tot_scup_keep_sim harvest_scup
 
+rename tot_sf_rel_sim discards_sf
+rename tot_bsb_rel_sim discards_bsb
+rename tot_scup_rel_sim discards_scup
+
+reshape long harvest discards, i(draw state) j(disp) string
+rename disp species
+replace species="bsb" if species=="_bsb"
+replace species="sf" if species=="_sf"
+replace species="scup" if species=="_scup"
+
+gen region="NO" if inlist(state, "MA", "RI", "CT", "NY") 
+replace region="NJ" if inlist(state, "NJ") 
+replace region="SO" if inlist(state, "DE", "MD", "VA", "NC")
+
+collapse (sum) harvest discards, by(species region draw)
+
+preserve
+keep if species=="scup"
+replace region="CST"
+collapse (sum) harvest discards, by(species region draw)
+tempfile scup
+save `scup',replace
+restore
+
+drop if species=="scup"
+append using `scup'
+
+
+/*
 clear
 mata: mata clear
 
@@ -506,9 +551,9 @@ replace state="VA" if st==51
 replace state="NC" if st==37
 
 drop region
-gen region="NO" if inlist(state, "MA", "RI", "CT", "NY")
-replace region="NJ" if inlist(state, "NJ")
-replace region="SO" if inlist(state, "DE", "MD", "VA", "NC")
+gen region="NO" if inlist(state, "MA", "RI", "CT", "NY") 
+replace region="NJ" if inlist(state, "NJ") 
+replace region="SO" if inlist(state, "DE", "MD", "VA", "NC") 
 
 // classify trips that I care about into the things I care about (caught or targeted sf/bsb) and things I don't care about "ZZ" 
 replace prim1_common=subinstr(lower(prim1_common)," ","",.)
@@ -653,18 +698,32 @@ rename my_dom_id_string1 region
 drop  my_dom_id_string2  my_dom_id_string
 order region species 
 
-merge 1:m species region using `props'
+preserve
+keep if species=="scup"
+replace region="CST"
+collapse (sum) totalcat totalkeep totalrel, by(species region)
+tempfile scup
+save `scup',replace
+restore
+
+drop if species=="scup"
+append using `scup'
+*/
+
+
+merge 1:m species region draw using `props'
 drop _merge
 replace prop_ab1=0 if prop_ab1==.
 replace prop_b2=0 if prop_b2==.
 
-gen harvest=totalkeep*prop_ab1
-gen discards=totalrel*prop_b2
+replace harvest=harvest*prop_ab1
+replace discards=discards*prop_b2
 gen catch=harvest+discards
-collapse catch, by(region species length_cm)
+collapse catch, by(region species length_cm draw)
 sort region species length_cm
+tostring draw, gen(draw2)
 
-gen domain=region+"_"+species 
+gen domain=region+"_"+species +"_"+draw2
 egen sumcatch=sum(catch), by(domain)
 gen observed_prob = catch/sumcatch
 drop sumcatch 
@@ -679,6 +738,7 @@ tempfile observed_prob
 save `observed_prob', replace
 restore
 
+gen sim_catch=5000*observed_prob
 
 tempfile new
 save `new', replace
@@ -689,25 +749,14 @@ foreach r of local regs{
 u `new', clear
 
 keep if domain=="`r'"
-keep length catch
-su length if catch!=0
+keep length sim_catch
+su length if sim_catch!=0
 local minL=`r(min)'
 local maxL=`r(max)'
 
-su catch
-if `r(sum)'<100000{
-	egen sumfish=sum(catch)
-	gen expand=100000/sumfish
-	replace catch=catch*expand
-	drop sumfish expand
-}
-
-else{
-}
-
-replace catch=round(catch)
-expand catch
-drop if catch==0
+replace sim_catch=round(sim_catch)
+expand sim_catch
+drop if sim_catch==0
 gammafit length
 local alpha=e(alpha)
 local beta=e(beta)
@@ -743,14 +792,13 @@ split domain, parse(_)
 replace species=domain2
 replace region=domain1
 drop domain1 domain2
-
+rename domain3 draw
 *drop if _merge==2
 *drop _merge 
 
-egen sum_nfish_catch=sum(catch), by(species region)
+egen sum_nfish_catch=sum(catch), by(species region draw)
 replace observed_prob = catch/sum_nfish_catch
 
-drop observed_prob2
 rename fitted_l length
 encode domain, gen(domain2)
 
@@ -759,7 +807,6 @@ gen nfish_catch_from_raw=observed_prob*sum_nfish_catch
 
 drop _merge
 
-save "$input_data_cd/baseline_catch_at_length.dta", replace 
 
 * Graphs of the fitted observed/fitted probabilities
 /*
@@ -790,4 +837,83 @@ twoway (scatter observed_prob length if domain=="`d'" & length>=`min' & length<=
 grc1leg `graphnames'
 graph export "$figure_cd/catch_at_length_calib.png", as(png) replace
 */
+
+save "$input_data_cd/baseline_catch_at_length.dta", replace 
+
+u "$input_data_cd/baseline_catch_at_length.dta", clear 
+* Prepare the data for export to simulation
+keep length fitted species region draw
+drop if fitted==0
+
+preserve
+keep if species=="scup"
+expand 9 
+bysort species length draw: gen n=_n 
+gen state="MA" if n==1
+replace state="MD" if n==2
+replace state="RI" if n==3
+replace state="CT" if n==4
+replace state="NY" if n==5
+replace state="NJ" if n==6
+replace state="DE" if n==7
+replace state="VA" if n==8
+replace state="NC" if n==9
+drop n
+tempfile scup
+save `scup', replace 
+restore 
+
+preserve
+keep if species=="sf"
+expand 4 if region=="NO"
+bysort region length draw: gen n=_n if region=="NO"
+gen state="MA" if n==1
+replace state="RI" if n==2
+replace state="CT" if n==3
+replace state="NY" if n==4
+drop n
+
+expand 4 if region=="SO"
+bysort region length draw: gen n=_n if region=="SO"
+replace state="MD" if n==1
+replace state="VA" if n==2
+replace state="DE" if n==3
+replace state="NC" if n==4
+drop n
+replace state="NJ" if region=="NJ"
+tempfile sf
+save `sf', replace 
+restore 
+
+preserve
+keep if species=="bsb"
+expand 4 if region=="NO"
+bysort region length draw: gen n=_n if region=="NO"
+gen state="MA" if n==1
+replace state="RI" if n==2
+replace state="CT" if n==3
+replace state="NY" if n==4
+drop n
+
+expand 4 if region=="SO"
+bysort region length draw: gen n=_n if region=="SO"
+replace state="MD" if n==1
+replace state="VA" if n==2
+replace state="DE" if n==3
+replace state="NC" if n==4
+drop n
+replace state="NJ" if region=="NJ"
+tempfile bsb
+save `bsb', replace 
+restore 
+
+clear
+u `scup', clear 
+append using `sf'
+append using `bsb'
+
+destring draw, replace
+drop region
+order state species draw length
+export delimited using "$input_data_cd/baseline_catch_at_length.csv", replace 
 
