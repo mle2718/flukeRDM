@@ -38,18 +38,18 @@ for (s in states) {
       
       angler_dems<-dplyr::distinct(angler_dems)
       
-      sf_size_data <- read_csv(file.path(test_data_cd, "fluke_projected_catch_at_lengths.csv"), show_col_types = FALSE)  %>% 
-        dplyr::filter(state == s, draw==0 ) %>% 
+      sf_size_data <- read_csv(file.path(input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+        dplyr::filter(state == s, species=="sf", draw==i) %>% 
         dplyr::filter(!is.na(fitted_prob)) %>% 
         dplyr::select(state, fitted_prob, length)
       
-      bsb_size_data <- read_csv(file.path(test_data_cd, "bsb_projected_catch_at_lengths.csv"), show_col_types = FALSE)  %>% 
-        dplyr::filter(state == s, draw==0 ) %>% 
+      bsb_size_data <- read_csv(file.path(input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+        dplyr::filter(state == s, species=="bsb" , draw==i) %>% 
         dplyr::filter(!is.na(fitted_prob)) %>% 
         dplyr::select(state, fitted_prob, length)
       
-      scup_size_data <- read_csv(file.path(test_data_cd, "scup_projected_catch_at_lengths.csv"), show_col_types = FALSE)  %>% 
-        dplyr::filter(state == s, draw==0 ) %>% 
+      scup_size_data <- read_csv(file.path(input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+        dplyr::filter(state == s, species=="scup", draw==i) %>% 
         dplyr::filter(!is.na(fitted_prob)) %>% 
         dplyr::select(state,  fitted_prob, length)
       

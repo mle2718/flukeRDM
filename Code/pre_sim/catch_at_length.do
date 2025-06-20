@@ -2,6 +2,7 @@
 * This file generates catch-at-length distributions for each species for:
 		* a) the calibration year. 
 		* b) the projection year, which is created using (a) along with stock assessment numbers-at-age projections 
+
 * The general strategy is:
 		* a) 
 			* 1) pull release length data and compute proportion released-at-length
@@ -9,12 +10,12 @@
 			* 3) pull harvest length data and compute proportion harvest-at-length
 			* 4) multiply (3) by an estimate of total harvest to get numbers released-at-length 
 			* 5) sum (2) and (5) across length categories to get catch-at-length 
+		* b) 
+			* 1) use the catch-at-length distribution from a) and projected N_l to compute recreational selectivity-at-length (q_l=catch_l/N_l) in calibation year 
+			* 2) Multiply q_l by next year's projection of N_l to compute projected N_l over 100 draws from the projected numbers-at-length distribution
+			
 
-* Define local macro
-local region_logic `""cond(inlist(state, "MA", "RI", "CT", "NY"), "NO", cond(state == "NJ", "NJ", cond(inlist(state, "DE", "MD", "VA", "NC"), "SO")))""'
-
-
-
+* a) calibration year catch-at-length
 
 * CT VAS
 cd "C:\Users\andrew.carr-harris\Desktop\MRIP_data_2025\length_data"
@@ -324,12 +325,10 @@ append using `ri_vas'
 append using `nj_vas'
 append using `ct_vas'
 
-* Group the data into regions
-*gen region = `region_logic'
-
-gen region="NO" if inlist(state, "MA", "RI", "CT", "NY")
-replace region="NJ" if inlist(state, "NJ")
-replace region="SO" if inlist(state, "DE", "MD", "VA", "NC")
+gen region="NO" if inlist(state, "MA", "RI", "CT", "NY") & inlist(species, "sf", "bsb")
+replace region="NJ" if inlist(state, "NJ") & inlist(species, "sf", "bsb")
+replace region="SO" if inlist(state, "DE", "MD", "VA", "NC") & inlist(species, "sf", "bsb")
+replace region="CST" if inlist(species, "scup")
 
 drop if  length_cm==. | length_in==.
 
@@ -382,8 +381,8 @@ replace state="VA" if st==51
 replace state="NC" if st==37
 
 drop region
-gen region="NO" if inlist(state, "MA", "RI", "CT", "NY")
-replace region="NJ" if inlist(state, "NJ")
+gen region="NO" if inlist(state, "MA", "RI", "CT", "NY") 
+replace region="NJ" if inlist(state, "NJ") 
 replace region="SO" if inlist(state, "DE", "MD", "VA", "NC")
 
 
@@ -452,6 +451,18 @@ replace species="scup" if species=="SC"
 order region species l n
 sort region species l n
 drop if length_cm==0
+
+preserve
+keep if species=="scup"
+replace region="CST"
+collapse (sum) n, by(species region l)
+tempfile scup
+save `scup',replace
+restore
+
+drop if species=="scup"
+append using `scup'
+
 egen sumfish=sum(nfish), by(species region)
 gen prop_ab1=nfish/sumfish
 
@@ -462,12 +473,47 @@ save `prop_ab1', replace
 merge 1:1 species region length using `prop_b2'
 drop _merge spec_reg sumfish
 
+expand 150
+bysort region species l: gen draw=_n
 tempfile props
 save `props', replace 
 
 *Pull estimates of total harvest and discards from MRIP by region  
-cd $input_data_cd
+u "$iterative_input_data_cd\simulated_catch_totals.dta", clear 
+collapse (sum) tot_sf_keep_sim tot_sf_rel_sim tot_bsb_keep_sim tot_bsb_rel_sim tot_scup_keep_sim tot_scup_rel_sim, by(state draw)
+rename tot_sf_keep_sim harvest_sf
+rename tot_bsb_keep_sim harvest_bsb
+rename tot_scup_keep_sim harvest_scup
 
+rename tot_sf_rel_sim discards_sf
+rename tot_bsb_rel_sim discards_bsb
+rename tot_scup_rel_sim discards_scup
+
+reshape long harvest discards, i(draw state) j(disp) string
+rename disp species
+replace species="bsb" if species=="_bsb"
+replace species="sf" if species=="_sf"
+replace species="scup" if species=="_scup"
+
+gen region="NO" if inlist(state, "MA", "RI", "CT", "NY") 
+replace region="NJ" if inlist(state, "NJ") 
+replace region="SO" if inlist(state, "DE", "MD", "VA", "NC")
+
+collapse (sum) harvest discards, by(species region draw)
+
+preserve
+keep if species=="scup"
+replace region="CST"
+collapse (sum) harvest discards, by(species region draw)
+tempfile scup
+save `scup',replace
+restore
+
+drop if species=="scup"
+append using `scup'
+
+
+/*
 clear
 mata: mata clear
 
@@ -505,9 +551,9 @@ replace state="VA" if st==51
 replace state="NC" if st==37
 
 drop region
-gen region="NO" if inlist(state, "MA", "RI", "CT", "NY")
-replace region="NJ" if inlist(state, "NJ")
-replace region="SO" if inlist(state, "DE", "MD", "VA", "NC")
+gen region="NO" if inlist(state, "MA", "RI", "CT", "NY") 
+replace region="NJ" if inlist(state, "NJ") 
+replace region="SO" if inlist(state, "DE", "MD", "VA", "NC") 
 
 // classify trips that I care about into the things I care about (caught or targeted sf/bsb) and things I don't care about "ZZ" 
 replace prim1_common=subinstr(lower(prim1_common)," ","",.)
@@ -652,16 +698,222 @@ rename my_dom_id_string1 region
 drop  my_dom_id_string2  my_dom_id_string
 order region species 
 
-merge 1:m species region using `props'
+preserve
+keep if species=="scup"
+replace region="CST"
+collapse (sum) totalcat totalkeep totalrel, by(species region)
+tempfile scup
+save `scup',replace
+restore
+
+drop if species=="scup"
+append using `scup'
+*/
+
+
+merge 1:m species region draw using `props'
 drop _merge
 replace prop_ab1=0 if prop_ab1==.
 replace prop_b2=0 if prop_b2==.
 
-gen harvest=totalkeep*prop_ab1
-gen discards=totalrel*prop_b2
+replace harvest=harvest*prop_ab1
+replace discards=discards*prop_b2
 gen catch=harvest+discards
-collapse catch, by(region species length_cm)
+collapse catch, by(region species length_cm draw)
 sort region species length_cm
+tostring draw, gen(draw2)
+
+gen domain=region+"_"+species +"_"+draw2
+egen sumcatch=sum(catch), by(domain)
+gen observed_prob = catch/sumcatch
+drop sumcatch 
+
+* estimate gamma parameters for each catch-at-length distribution
+* note: I restrict the range of fitted values to within the min/max length of observed catch
+preserve 
+rename length fitted_length
+keep fitted_length observed_prob catch species region domain
+duplicates drop
+tempfile observed_prob
+save `observed_prob', replace
+restore
+
+gen sim_catch=5000*observed_prob
+
+tempfile new
+save `new', replace
+global fitted_sizes
+
+levelsof domain , local(regs)
+foreach r of local regs{
+u `new', clear
+
+keep if domain=="`r'"
+keep length sim_catch
+su length if sim_catch!=0
+local minL=`r(min)'
+local maxL=`r(max)'
+
+replace sim_catch=round(sim_catch)
+expand sim_catch
+drop if sim_catch==0
+gammafit length
+local alpha=e(alpha)
+local beta=e(beta)
+
+gen gammafit=rgamma(`alpha', `beta')
+*replace gammafit=round(gammafit, .5)
+replace gammafit=round(gammafit)
+
+gen nfish=1
+
+*restrict catch to within range of observed values
+keep if gammafit>=`minL' & gammafit<=`maxL'
+
+collapse (sum) nfish, by(gammafit)
+egen sumnfish=sum(nfish)
+gen fitted_prob=nfish/sumnfish
+gen domain="`r'"
+drop nfish sumnfish
+
+tempfile fitted_sizes`r'
+save `fitted_sizes`r'', replace
+global fitted_sizes "$fitted_sizes "`fitted_sizes`r''" " 
+}
+clear
+dsconcat $fitted_sizes
+rename gammafit fitted_length		   
+
+merge 1:1 fitted_length domain using `observed_prob'
+sort domain fitted_length 
+mvencode fitted_prob observed_prob, mv(0) override 
+
+split domain, parse(_)
+replace species=domain2
+replace region=domain1
+drop domain1 domain2
+rename domain3 draw
+*drop if _merge==2
+*drop _merge 
+
+egen sum_nfish_catch=sum(catch), by(species region draw)
+replace observed_prob = catch/sum_nfish_catch
+
+rename fitted_l length
+encode domain, gen(domain2)
+
+gen nfish_catch_from_fitted=fitted_prob*sum_nfish_catch
+gen nfish_catch_from_raw=observed_prob*sum_nfish_catch
+
+drop _merge
 
 
+* Graphs of the fitted observed/fitted probabilities
+/*
+levelsof domain, local(domz)
+foreach d of local domz{
+	
+levelsof species if domain=="`d'", local(spec)  
+
+su length if species==`spec' & fitted_prob!=0
+local min_fitted=`r(min)'
+su observed_prob if species==`spec' & observed_prob!=0
+local min_obs=`r(min)'
+local min=min(`min_fitted',`min_obs')
+
+su length if species==`spec' & fitted_prob!=0
+local max_fitted=`r(max)'
+su observed_prob if species==`spec' & observed_prob!=0
+local max_obs=`r(max)'
+local max=max(`max_fitted',`max_obs')
+
+twoway (scatter observed_prob length if domain=="`d'" & length>=`min' & length<=`max',   cmissing(no) connect(direct) lcol(gray) lwidth(med)  lpat(solid) msymbol(o) mcol(gray) $graphoptions) ///
+		    (scatter fitted_prob length if  domain=="`d'"   & length>=`min' & length<=`max', cmissing(no) connect(direct) lcol(black)   lwidth(med)  lpat(solid) msymbol(i)   ///
+			xtitle("Length (cm)", yoffset(-2)) ytitle("Prob")    ylab(, angle(horizontal) labsize(vsmall)) ///
+			legend(lab(1 "raw data") lab(2 "fitted (gamma) data") cols() yoffset(-2) region(color(none)))   title("`d'", size(small))  name(dom`d', replace))
+ local graphnames `graphnames' dom`d'
+}
+
+grc1leg `graphnames'
+graph export "$figure_cd/catch_at_length_calib.png", as(png) replace
+*/
+
+save "$input_data_cd/baseline_catch_at_length.dta", replace 
+
+u "$input_data_cd/baseline_catch_at_length.dta", clear 
+* Prepare the data for export to simulation
+keep length fitted species region draw
+drop if fitted==0
+
+preserve
+keep if species=="scup"
+expand 9 
+bysort species length draw: gen n=_n 
+gen state="MA" if n==1
+replace state="MD" if n==2
+replace state="RI" if n==3
+replace state="CT" if n==4
+replace state="NY" if n==5
+replace state="NJ" if n==6
+replace state="DE" if n==7
+replace state="VA" if n==8
+replace state="NC" if n==9
+drop n
+tempfile scup
+save `scup', replace 
+restore 
+
+preserve
+keep if species=="sf"
+expand 4 if region=="NO"
+bysort region length draw: gen n=_n if region=="NO"
+gen state="MA" if n==1
+replace state="RI" if n==2
+replace state="CT" if n==3
+replace state="NY" if n==4
+drop n
+
+expand 4 if region=="SO"
+bysort region length draw: gen n=_n if region=="SO"
+replace state="MD" if n==1
+replace state="VA" if n==2
+replace state="DE" if n==3
+replace state="NC" if n==4
+drop n
+replace state="NJ" if region=="NJ"
+tempfile sf
+save `sf', replace 
+restore 
+
+preserve
+keep if species=="bsb"
+expand 4 if region=="NO"
+bysort region length draw: gen n=_n if region=="NO"
+gen state="MA" if n==1
+replace state="RI" if n==2
+replace state="CT" if n==3
+replace state="NY" if n==4
+drop n
+
+expand 4 if region=="SO"
+bysort region length draw: gen n=_n if region=="SO"
+replace state="MD" if n==1
+replace state="VA" if n==2
+replace state="DE" if n==3
+replace state="NC" if n==4
+drop n
+replace state="NJ" if region=="NJ"
+tempfile bsb
+save `bsb', replace 
+restore 
+
+clear
+u `scup', clear 
+append using `sf'
+append using `bsb'
+
+destring draw, replace
+drop region
+order state species draw length
+export delimited using "$input_data_cd/baseline_catch_at_length.csv", replace 
 

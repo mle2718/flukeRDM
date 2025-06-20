@@ -107,14 +107,22 @@ if `r(N)'>0{
 * Create catch draw files 
 
 local statez "MA RI CT NY NJ DE MD VA NC"
-local statez "MA RI"
+
+local statez "MA RI CT NY NJ DE"
+local statez "MA"
+local statez "DE MD VA NC"
+local statez "MD"
+local statez "VA NC"
+local statez "NC"
 
 foreach s of local statez{
+
+mata: mata clear
 	
-forv i=1/100{
-	
-*local i=5
-*local s="MA"
+forv i=137/150{
+
+*local i=99
+*local s="MD"
 
 * Pull in simulated catch draws
 import excel using "$iterative_input_data_cd\catch_draws_`s'_`i'.xlsx", clear firstrow
@@ -167,12 +175,14 @@ tempfile trips
 save `trips', replace 
 
 global tripz
+
 foreach d of local domains{
-	*local i=6
-	*local s="MA"
-	*local d="MA_5_sh_SF"
+*local i=99
+*local s="MD"
+*local d="MD_4_pr_SF"
 	u `trips', clear
 	keep if my_dom_id_string=="`d'"
+	di "`d'"
 	*keep if my_dom_id_string=="MA_3_fh_SF"
 	
 	gen merge_id=_n 
@@ -190,11 +200,32 @@ foreach d of local domains{
 	
 	u `base', clear
 	keep if my_dom_id_string=="`d'"
-	*keep if my_dom_id_string=="MA_3_fh_SF"
+	*keep if my_dom_id_string=="MA_6_pr_SF"
 
+	count
+	if `r(N)'==0{
+		set obs `n'
+		replace id=_n
+		replace sf_keep_sim=0
+		replace sf_rel_sim=0
+		replace sf_cat=0
+		
+		replace bsb_keep_sim=0
+		replace bsb_rel_sim=0
+		replace bsb_cat=0
+		
+		replace scup_keep_sim=0
+		replace scup_rel_sim=0
+		replace scup_cat=0
+		gen merge_id=_n
+		replace my_dom_id_string="`d'" 
+
+	}
+	else{
 	expand `expand'
 	sample `n', count
 	gen merge_id=_n
+	}
 	
 	merge 1:1 merge_id using `trips2', keep(3) nogen 
 	
@@ -250,6 +281,8 @@ foreach d of local domains{
 			mode month date day_i dtrip wave tripid catch_draw age state total_trips_12 day cost
 			
 	order draw my_dom_id_string mode date month day wave  day_i tripid catch_draw dtrip
+
+	*drop my_dom_id_string wave day_i dtrip state date 
 	
 	sort date tripid catch_draw
 	
@@ -263,11 +296,13 @@ clear
 dsconcat $tripz
 compress
 
-save "$iterative_input_data_cd\calib_catch_draws_`s'_`i'.dta", replace 
-*export excel "$iterative_input_data_cd\calib_catch_draws_`s'_`i'.xlsx", firstrow(variables) replace
+export delimited using "$iterative_input_data_cd\calib_catch_draws_`s'_`i'.csv", replace
 
 }
 }
+
+
+
 
 
 

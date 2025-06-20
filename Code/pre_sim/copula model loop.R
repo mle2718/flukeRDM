@@ -17,11 +17,11 @@ library(dplyr)
 library(ggplot2)
 library(writexl)
 
-s<-"MA"
+#s<-"DE"
 
 state_datasets <- list()
-#statez<-c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
-statez<-c("MA", "RI")
+statez<-c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+
 
 for(s in statez) {
   
@@ -39,7 +39,7 @@ for(s in statez) {
   # I used copula model to simulate 1), whereas 2) and 3) are distributed NB
   
   n_sim <- 5000   # number of samples per draw
-  n_draws <- 100  # number of simulated datasets
+  n_draws <- 150  # number of simulated datasets
   
   
   ############ SUMMER FLOUNDER ############
@@ -94,6 +94,9 @@ for(s in statez) {
       }
       
       # Check for overdispersion. If present, use NB; otherwise, use Poisson
+      poisson_rel<-0
+      poisson_keep<-0
+      
       if (var_rel < mu_rel) {
         poisson_rel<-1
       }
@@ -177,7 +180,7 @@ for(s in statez) {
         cop <- frankCopula(dim = 2)
         cop_name <- "Frank"
       }
-      copula_fit <- fitCopula(cop, u_mat, method = "mpl")
+      copula_fit <- fitCopula(cop, u_mat, method = "mpl", start=1)
       
       # Simulate from the fitted copula
       sim_datasets <- list()
@@ -288,6 +291,7 @@ for(s in statez) {
         var_rel <- imputed_se^2
       }
       
+      poisson<-0
       if (var_rel < mu_rel) {
         poisson<-1
       }
@@ -407,6 +411,8 @@ for(s in statez) {
         var_keep <- imputed_se^2
       }
       
+      
+      poisson<-0
       if (var_keep < mu_keep) {
         poisson<-1
       }
@@ -551,7 +557,11 @@ for(s in statez) {
   # Combine all existing results into one data frame
   combined_results_SF <- do.call(rbind, results_list)
   
+  # List the objects you want to keep
+  keep <- c("n_sim", "n_draws", "combined_results_SF", "s")
   
+  # Remove everything else
+  rm(list = setdiff(ls(), keep))
   
   ############ BLACK SEA BASS ############
   
@@ -608,6 +618,9 @@ for(s in statez) {
       }
       
       # Check for overdispersion. If present, use NB; otherwise, use Poisson
+      poisson_rel<-0
+      poisson_keep<-0
+      
       if (var_rel < mu_rel) {
         poisson_rel<-1
       }
@@ -691,7 +704,7 @@ for(s in statez) {
         cop <- frankCopula(dim = 2)
         cop_name <- "Frank"
       }
-      copula_fit <- fitCopula(cop, u_mat, method = "mpl")
+      copula_fit <- fitCopula(cop, u_mat, method = "mpl", start=1)
       
       # Simulate from the fitted copula
       sim_datasets <- list()
@@ -801,6 +814,7 @@ for(s in statez) {
         var_rel <- imputed_se^2
       }
       
+      poisson<-0
       if (var_rel < mu_rel) {
         poisson<-1
       }
@@ -920,7 +934,7 @@ for(s in statez) {
         var_keep <- imputed_se^2
       }
       
-      
+      poisson<-0
       if (var_keep < mu_keep) {
         poisson<-1
       }
@@ -1066,7 +1080,11 @@ for(s in statez) {
   # Combine all existing results into one data frame
   combined_results_BSB <- do.call(rbind, results_list)
   
+  # List the objects you want to keep
+  keep <- c("n_sim", "n_draws", "combined_results_SF", "combined_results_BSB", "s")
   
+  # Remove everything else
+  rm(list = setdiff(ls(), keep))
   
   
   ############ SCUP ############
@@ -1096,6 +1114,11 @@ for(s in statez) {
       
       df <- df_full1 %>% filter(my_dom_id_string == dom)
       
+      if (sum(df$scup_keep, na.rm = TRUE) > 0 & sum(df$scup_keep, na.rm = TRUE) < 1) {
+        df <- df %>%
+          mutate(scup_keep = if_else(scup_keep > 0, 1L, as.integer(scup_keep)))
+      }
+      
       # Define survey design
       svy_design <- svydesign(ids=~psu_id,strata=~strat_id,
                               weights=~wp_int,nest=TRUE,data=df)
@@ -1123,7 +1146,11 @@ for(s in statez) {
         var_rel <- imputed_se^2
       }
       
+
       # Check for overdispersion. If present, use NB; otherwise, use Poisson
+      poisson_rel<-0
+      poisson_keep<-0
+      
       if (var_rel < mu_rel) {
         poisson_rel<-1
       }
@@ -1207,9 +1234,8 @@ for(s in statez) {
         cop <- frankCopula(dim = 2)
         cop_name <- "Frank"
       }
-      copula_fit <- fitCopula(cop, u_mat, method = "mpl")
-      
-      # Simulate from the fitted copula
+      copula_fit <- fitCopula(cop, u_mat, method = "mpl", start = 1)
+       # Simulate from the fitted copula
       sim_datasets <- list()
       i <- 1
       while (i <= n_draws) {
@@ -1317,6 +1343,7 @@ for(s in statez) {
         var_rel <- imputed_se^2
       }
       
+      poisson<-0
       if (var_rel < mu_rel) {
         poisson<-1
       }
@@ -1436,6 +1463,7 @@ for(s in statez) {
         var_keep <- imputed_se^2
       }
       
+      poisson<-0
       if (var_keep < mu_keep) {
         poisson<-1
       }
@@ -1579,6 +1607,12 @@ for(s in statez) {
   # Combine all existing results into one data frame
   combined_results_SCUP <- do.call(rbind, results_list)
   
+  # List the objects you want to keep
+  keep <- c("n_sim", "n_draws", "combined_results_SF", "combined_results_BSB", "combined_results_SCUP", "s")
+  
+  # Remove everything else
+  rm(list = setdiff(ls(), keep))
+  
   # Merge catch outcomes for the three species
   
   catch_draws<- combined_results_SF %>% 
@@ -1598,7 +1632,7 @@ for(s in statez) {
     write_xlsx(split_datasets[[name]], paste0("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/catch_draws_", s, "_", safe_name, ".xlsx"))
   }
   
-  rm(catch_draws, combined_results_BSB, combined_results_SF, combined_results_SCUP, split_datasets, results_list)
+  rm(catch_draws, combined_results_BSB, combined_results_SF, combined_results_SCUP, split_datasets)
 }
 
 

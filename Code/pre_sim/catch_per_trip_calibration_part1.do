@@ -174,7 +174,6 @@ save `basefile', replace
 
 
 * Here I will estimate mean catch/harvest/discards per trip for each strata in order to identify strata with missing SE
-
 * For strata with missing SE's, I'll follow similar approch to MRIP's hot and cold deck imputation for observations with missing lengths and weights
 
 /* From the MRIP data handbook:
@@ -190,8 +189,8 @@ save `basefile', replace
 * The calibration estimation strata is: current year + wave + state + mode, for harvest/discards/catch per trip
 
 * For strata with missing, I'll impute a PSE from other strata and apply it to the missing-SE strata. 
-	- Round 1: most recent two years + TWO WAVE PERIOD + state + mode
-	- Round 2: most recent two years + HALF YEAR PERIOD + state + mode
+	- Round 1: current year + TWO WAVE PERIOD + state + mode
+	- Round 2: current year + HALF YEAR PERIOD + state + mode
  */
 
 * Create a postfile to collect results
@@ -227,10 +226,11 @@ use `results', clear
 split domain, parse("@")
 drop domain1
 split domain2, parse(.)
-drop domain2 domain22
-replace domain21="1" if domain21=="1bn"
-destring domain21, replace
-rename domain21 my_dom_id
+split domain21, parse(b)
+
+drop domain2 domain21 domain22 domain212
+destring domain211, replace
+rename domain211 my_dom_id
 merge m:1 my_dom_id using `domains' 
 sort varname  my_dom_id
 keep varname mean se my_dom_id_string
@@ -467,9 +467,9 @@ mvencode se*, mv(0) override
 mvencode missing*, mv(0) override
 
 export excel "$iterative_input_data_cd\baseline_mrip_catch_processed.xlsx", firstrow(variables) replace
+import excel using "$iterative_input_data_cd\baseline_mrip_catch_processed.xlsx", clear first
 
-
-
+coll
 
 ************** Part B  **************
 
@@ -660,10 +660,10 @@ use `results1', clear
 split domain, parse("@")
 drop domain1
 split domain2, parse(.)
-drop domain2 domain22
-replace domain21="1" if domain21=="1bn"
-destring domain21, replace
-rename domain21 my_dom_id
+split domain21, parse(b)
+drop domain2 domain21 domain22 domain212
+destring domain211, replace
+rename domain211 my_dom_id
 merge m:1 my_dom_id using `domains' 
 sort varname  my_dom_id
 keep varname total se ll ul my_dom_id_string
