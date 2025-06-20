@@ -51,21 +51,21 @@ ui <- fluidPage(
               uiOutput("addVA"), 
               uiOutput("addNC")),
     #### Results ####
-    tabPanel("Results", 
-             
-             conditionalPanel(condition="$('html').hasClass('shiny-busy')",
-                              tags$div("Calculating...This will take ~15-20 min per state selected.",id="loadmessage")), #Warning for users
-             ## KB - ADD PROGRESS BUTTON HERE
-             
-             downloadButton(outputId = "downloadData", "Download"),
-             # Add table outputs
-             ## KB - Make tables DTs - should fix RMD documentation issue
-             tableOutput(outputId = "regtableout"),
-             tableOutput(outputId = "welfare_tableout"),
-             tableOutput(outputId = "keep_tableout"),
-             tableOutput(outputId = "releaseout"),
-             tableOutput(outputId = "ntrips_tableout"), 
-             plotOutput(outputId = "fig")), 
+    # tabPanel("Results", 
+    #          
+    #          conditionalPanel(condition="$('html').hasClass('shiny-busy')",
+    #                           tags$div("Calculating...This will take ~15-20 min per state selected.",id="loadmessage")), #Warning for users
+    #          ## KB - ADD PROGRESS BUTTON HERE
+    #          
+    #          downloadButton(outputId = "downloadData", "Download"),
+    #          # Add table outputs
+    #          ## KB - Make tables DTs - should fix RMD documentation issue
+    #          tableOutput(outputId = "regtableout"),
+    #          tableOutput(outputId = "welfare_tableout"),
+    #          tableOutput(outputId = "keep_tableout"),
+    #          tableOutput(outputId = "releaseout"),
+    #          tableOutput(outputId = "ntrips_tableout"), 
+    #          plotOutput(outputId = "fig")), 
     
    
     
