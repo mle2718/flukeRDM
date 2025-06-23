@@ -4306,12 +4306,8 @@ server <- function(input, output, session) {
                                            "SCUPnjFH_seas3_op", "SCUPnjFH_seas3_cl", "SCUPnjFH_3_bag", "SCUPnjFH_3_len", 
                                            "SCUPnjPR_seas3_op", "SCUPnjPR_seas3_cl", "SCUPnjPR_3_bag", "SCUPnjPR_3_len",
                                            "SCUPnjSH_seas3_op", "SCUPnjSH_seas3_cl", "SCUPnjSH_3_bag", "SCUPnjSH_3_len"),
-                                value =  c(as.character(input$SCUPnjFH_seas1[1]), as.character(input$SCUPnjFH_seas1[2]), as.character(input$SCUPnjFH_1_bag), as.character(input$SCUPnjFH_1_len), 
-                                           as.character(input$SCUPnjPR_seas1[1]), as.character(input$SCUPnjPR_seas1[2]), as.character(input$SCUPnjPR_1_bag), as.character(input$SCUPnjPR_1_len),
-                                           as.character(input$SCUPnjSH_seas1[1]), as.character(input$SCUPnjSH_seas1[2]), as.character(input$SCUPnjSH_1_bag), as.character(input$SCUPnjSH_1_len),
-                                           as.character(input$SCUPnjFH_seas2[1]), as.character(input$SCUPnjFH_seas2[2]), as.character(input$SCUPnjFH_2_bag), as.character(input$SCUPnjFH_2_len), 
-                                           as.character(input$SCUPnjPR_seas2[1]), as.character(input$SCUPnjPR_seas2[2]), as.character(input$SCUPnjPR_2_bag), as.character(input$SCUPnjPR_2_len),
-                                           as.character(input$SCUPnjSH_seas2[1]), as.character(input$SCUPnjSH_seas2[2]), as.character(input$SCUPnjSH_2_bag), as.character(input$SCUPnjSH_2_len),
+                                value =  c(as.character(input$SCUPnj_seas1[1]), as.character(input$SCUPnj_seas1[2]), as.character(input$SCUPnj_1_bag), as.character(input$SCUPnj_1_len),
+                                           as.character(input$SCUPnj_seas2[1]), as.character(input$SCUPnj_seas2[2]), as.character(input$SCUPnj_2_bag), as.character(input$SCUPnj_2_len), 
                                            as.character(input$SCUPnjFH_seas3[1]), as.character(input$SCUPnjFH_seas3[2]), as.character(input$SCUPnjFH_3_bag), as.character(input$SCUPnjFH_3_len), 
                                            as.character(input$SCUPnjPR_seas3[1]), as.character(input$SCUPnjPR_seas3[2]), as.character(input$SCUPnjPR_3_bag), as.character(input$SCUPnjPR_3_len),
                                            as.character(input$SCUPnjSH_seas3[1]), as.character(input$SCUPnjSH_seas3[2]), as.character(input$SCUPnjSH_3_bag), as.character(input$SCUPnjSH_3_len)))
@@ -4339,21 +4335,310 @@ server <- function(input, output, session) {
       regulations <- regulations %>% rbind(sfNJregs, bsbNJregs, scupNJregs)
       
     }
-    # 
-    # if(any("DE" == input$state)){
-    #   source(here::here(paste0("recDST/model_run_DE.R")), local = TRUE)
-    #   predictions_1 <- predictions_1 %>% rbind(predictions_out10)
-    # }
-    # 
-    # if(any("MD" == input$state)){
-    #   source(here::here(paste0("recDST/model_run_MD.R")), local = TRUE)
-    #   predictions_1 <- predictions_1 %>% rbind(predictions_out10)
-    # }
-    # 
-    # if(any("VA" == input$state)){
-    #   source(here::here(paste0("recDST/model_run_VA.R")), local = TRUE)
-    #   predictions_1 <- predictions_1 %>% rbind(predictions_out10)
-    # }
+
+    
+    
+    
+    if(any("DE" == input$state)){
+      if(input$SF_DE_input_type == "All Modes Combined"){
+        sfDEregs <- data.frame(run_name = c(Run_Name()), 
+                               input =  c("SFde_seas1_op", "SFde_seas1_cl", "SFde_1_bag", "SFde_1_len", 
+                                          "SFde_seas2_op", "SFde_seas2_cl", "SFde_2_bag", "SFde_2_len", 
+                                          "SFdeFH_seas3_op", "SFdeFH_seas3_cl", "SFdeFH_3_bag", "SFdeFH_3_len", 
+                                          "SFdePR_seas3_op", "SFdePR_seas3_cl", "SFdePR_3_bag", "SFdePR_3_len",
+                                          "SFdeSH_seas3_op", "SFdeSH_seas3_cl", "SFdeSH_3_bag", "SFdeSH_3_len"),
+                               value =  c(as.character(input$SFde_seas1[1]), as.character(input$SFde_seas1[2]), as.character(input$SFde_1_bag), as.character(input$SFde_1_len), 
+                                          as.character(input$SFde_seas2[1]), as.character(input$SFde_seas2[2]), as.character(input$SFde_2_bag), as.character(input$SFde_2_len),
+                                          as.character(input$SFdeFH_seas3[1]), as.character(input$SFdeFH_seas3[2]), as.character(input$SFdeFH_3_bag), as.character(input$SFdeFH_3_len), 
+                                          as.character(input$SFdePR_seas3[1]), as.character(input$SFdePR_seas3[2]), as.character(input$SFdePR_3_bag), as.character(input$SFdePR_3_len),
+                                          as.character(input$SFdeSH_seas3[1]), as.character(input$SFdeSH_seas3[2]), as.character(input$SFdeSH_3_bag), as.character(input$SFdeSH_3_len)))
+      }else{
+        sfDEregs <-  data.frame(run_name = c(Run_Name()), 
+                                input =  c("SFdeFH_seas1_op", "SFdeFH_seas1_cl", "SFdeFH_1_bag", "SFdeFH_1_len", 
+                                           "SFdePR_seas1_op", "SFdePR_seas1_cl", "SFdePR_1_bag", "SFdePR_1_len",
+                                           "SFdeSH_seas1_op", "SFdeSH_seas1_cl", "SFdeSH_1_bag", "SFdeSH_1_len",
+                                           "SFdeFH_seas2_op", "SFdeFH_seas2_cl", "SFdeFH_2_bag", "SFdeFH_2_len", 
+                                           "SFdePR_seas2_op", "SFdePR_seas2_cl", "SFdePR_2_bag", "SFdePR_2_len",
+                                           "SFdeSH_seas2_op", "SFdeSH_seas2_cl", "SFdeSH_2_bag", "SFdeSH_2_len", 
+                                           "SFdeFH_seas3_op", "SFdeFH_seas3_cl", "SFdeFH_3_bag", "SFdeFH_3_len", 
+                                           "SFdePR_seas3_op", "SFdePR_seas3_cl", "SFdePR_3_bag", "SFdePR_3_len",
+                                           "SFdeSH_seas3_op", "SFdeSH_seas3_cl", "SFdeSH_3_bag", "SFdeSH_3_len"),
+                                value = c( as.character(input$SFdeFH_seas1[1]), as.character(input$SFdeFH_seas1[2]), as.character(input$SFdeFH_1_bag), as.character(input$SFdeFH_1_len), 
+                                           as.character(input$SFdePR_seas1[1]), as.character(input$SFdePR_seas1[2]), as.character(input$SFdePR_1_bag), as.character(input$SFdePR_1_len),
+                                           as.character(input$SFdeSH_seas1[1]), as.character(input$SFdeSH_seas1[2]), as.character(input$SFdeSH_1_bag), as.character(input$SFdeSH_1_len),
+                                           as.character(input$SFdeFH_seas2[1]), as.character(input$SFdeFH_seas2[2]), as.character(input$SFdeFH_2_bag), as.character(input$SFdeFH_2_len), 
+                                           as.character(input$SFdePR_seas2[1]), as.character(input$SFdePR_seas2[2]), as.character(input$SFdePR_2_bag), as.character(input$SFdePR_2_len),
+                                           as.character(input$SFdeSH_seas2[1]), as.character(input$SFdeSH_seas2[2]), as.character(input$SFdeSH_2_bag), as.character(input$SFdeSH_2_len),
+                                           as.character(input$SFdeFH_seas3[1]), as.character(input$SFdeFH_seas3[2]), as.character(input$SFdeFH_3_bag), as.character(input$SFdeFH_3_len), 
+                                           as.character(input$SFdePR_seas3[1]), as.character(input$SFdePR_seas3[2]), as.character(input$SFdePR_3_bag), as.character(input$SFdePR_3_len),
+                                           as.character(input$SFdeSH_seas3[1]), as.character(input$SFdeSH_seas3[2]), as.character(input$SFdeSH_3_bag), as.character(input$SFdeSH_3_len)))
+      }
+      
+      
+      if(input$BSB_DE_input_type == "All Modes Combined"){
+        bsbDEgs <- data.frame(run_name = c(Run_Name()), 
+                              input =  c("BSBde_seas1_op", "BSBde_seas1_cl", "BSBde_1_bag", "BSBde_1_len", 
+                                         "BSBde_seas2_op", "BSBde_seas2_cl", "BSBde_2_bag", "BSBde_2_len", 
+                                         "BSBdeFH_seas3_op", "BSBdeFH_seas3_cl", "BSBdeFH_3_bag", "BSBdeFH_3_len", 
+                                         "BSBdePR_seas3_op", "BSBdePR_seas3_cl", "BSBdePR_3_bag", "BSBdePR_3_len",
+                                         "BSBdeSH_seas3_op", "BSBdeSH_seas3_cl", "BSBdeSH_3_bag", "BSBdeSH_3_len",),
+                              value =  c(as.character(input$BSBde_seas1[1]), as.character(input$BSBde_seas1[2]), as.character(input$BSBde_1_bag), as.character(input$BSBde_1_len), 
+                                         as.character(input$BSBde_seas2[1]), as.character(input$BSBde_seas2[2]), as.character(input$BSBde_2_bag), as.character(input$BSBde_2_len), 
+                                         as.character(input$BSBdeFH_seas3[1]), as.character(input$BSBdeFH_seas3[2]), as.character(input$BSBdeFH_3_bag), as.character(input$BSBdeFH_3_len), 
+                                         as.character(input$BSBdePR_seas3[1]), as.character(input$BSBdePR_seas3[2]), as.character(input$BSBdePR_3_bag), as.character(input$BSBdePR_3_len),
+                                         as.character(input$BSBdeSH_seas3[1]), as.character(input$BSBdeSH_seas3[2]), as.character(input$BSBdeSH_3_bag), as.character(input$BSBdeSH_3_len)))
+      }else{
+        bsbDEregs <-  data.frame(run_name = c(Run_Name()), 
+                                 input =  c( "BSBdeFH_seas1_op", "BSBdeFH_seas1_cl", "BSBdeFH_1_bag", "BSBdeFH_1_len",
+                                             "BSBdePR_seas1_op", "BSBdePR_seas1_cl", "BSBdePR_1_bag", "BSBdePR_1_len",
+                                             "BSBdeSH_seas1_op", "BSBdeSH_seas1_cl", "BSBdeSH_1_bag", "BSBdeSH_1_len",
+                                             "BSBdeFH_seas2_op", "BSBdeFH_seas2_cl", "BSBdeFH_2_bag", "BSBdeFH_2_len", 
+                                             "BSBdePR_seas2_op", "BSBdePR_seas2_cl", "BSBdePR_2_bag", "BSBdePR_2_len",
+                                             "BSBdeSH_seas2_op", "BSBdeSH_seas2_cl", "BSBdeSH_2_bag", "BSBdeSH_2_len",
+                                             "BSBdeFH_seas3_op", "BSBdeFH_seas3_cl", "BSBdeFH_3_bag", "BSBdeFH_3_len", 
+                                             "BSBdePR_seas3_op", "BSBdePR_seas3_cl", "BSBdePR_3_bag", "BSBdePR_3_len",
+                                             "BSBdeSH_seas3_op", "BSBdeSH_seas3_cl", "BSBdeSH_3_bag", "BSBdeSH_3_len"),
+                                 value = c( as.character(input$BSBdeFH_seas1[1]), as.character(input$BSBdeFH_seas1[2]), as.character(input$BSBdeFH_1_bag), as.character(input$BSBdeFH_1_len),
+                                            as.character(input$BSBdePR_seas1[1]), as.character(input$BSBdePR_seas1[2]), as.character(input$BSBdePR_1_bag), as.character(input$BSBdePR_1_len), 
+                                            as.character(input$BSBdeSH_seas1[1]), as.character(input$BSBdeSH_seas1[2]), as.character(input$BSBdeSH_1_bag), as.character(input$BSBdeSH_1_len), 
+                                            as.character(input$BSBdeFH_seas2[1]), as.character(input$BSBdeFH_seas2[2]), as.character(input$BSBdeFH_2_bag), as.character(input$BSBdeFH_2_len), 
+                                            as.character(input$BSBdePR_seas2[1]), as.character(input$BSBdePR_seas2[2]), as.character(input$BSBdePR_2_bag), as.character(input$BSBdePR_2_len),
+                                            as.character(input$BSBdeSH_seas2[1]), as.character(input$BSBdeSH_seas2[2]), as.character(input$BSBdeSH_2_bag), as.character(input$BSBdeSH_2_len), 
+                                            as.character(input$BSBdeFH_seas3[1]), as.character(input$BSBdeFH_seas3[2]), as.character(input$BSBdeFH_3_bag), as.character(input$BSBdeFH_3_len), 
+                                            as.character(input$BSBdePR_seas3[1]), as.character(input$BSBdePR_seas3[2]), as.character(input$BSBdePR_3_bag), as.character(input$BSBdePR_3_len),
+                                            as.character(input$BSBdeSH_seas3[1]), as.character(input$BSBdeSH_seas3[2]), as.character(input$BSBdeSH_3_bag), as.character(input$BSBdeSH_3_len)))
+      }
+      
+      
+      if(input$SCUP_DE_input_type == "All Modes Combined"){
+        scupDEregs <- data.frame(run_name = c(Run_Name()), 
+                                 input =  c("SCUPde_seas1_op", "SCUPde_seas1_cl", "SCUPde_1_bag", "SCUPde_1_len", 
+                                            "SCUPdeFH_seas2_op", "SCUPdeFH_seas2_cl", "SCUPdeFH_2_bag", "SCUPdeFH_2_len", 
+                                            "SCUPdePR_seas2_op", "SCUPdePR_seas2_cl", "SCUPdePR_2_bag", "SCUPdePR_2_len",
+                                            "SCUPdeSH_seas2_op", "SCUPdeSH_seas2_cl", "SCUPdeSH_2_bag", "SCUPdeSH_2_len"),
+                                 value =  c(as.character(input$SCUPde_seas1[1]), as.character(input$SCUPde_seas1[2]), as.character(input$SCUPde_1_bag), as.character(input$SCUPde_1_len), 
+                                            as.character(input$SCUPdeFH_seas2[1]), as.character(input$SCUPdeFH_seas2[2]), as.character(input$SCUPdeFH_2_bag), as.character(input$SCUPdeFH_2_len), 
+                                            as.character(input$SCUPdePR_seas2[1]), as.character(input$SCUPdePR_seas2[2]), as.character(input$SCUPdePR_2_bag), as.character(input$SCUPdePR_2_len),
+                                            as.character(input$SCUPdeSH_seas2[1]), as.character(input$SCUPdeSH_seas2[2]), as.character(input$SCUPdeSH_2_bag), as.character(input$SCUPdeSH_2_len)))
+      }else{
+        scupDEregs <-  data.frame(run_name = c(Run_Name()), 
+                                  input =  c( "SCUPdeFH_seas1_op", "SCUPdeFH_seas1_cl", "SCUPdeFH_1_bag", "SCUPdeFH_1_len", 
+                                              "SCUPdePR_seas1_op", "SCUPdePR_seas1_cl", "SCUPdePR_1_bag", "SCUPdePR_1_len",
+                                              "SCUPdeSH_seas1_op", "SCUPdeSH_seas1_cl", "SCUPdeSH_1_bag", "SCUPdeSH_1_len",
+                                              "SCUPdeFH_seas2_op", "SCUPdeFH_seas2_cl", "SCUPdeFH_2_bag", "SCUPdeFH_2_len", 
+                                              "SCUPdePR_seas2_op", "SCUPdePR_seas2_cl", "SCUPdePR_2_bag", "SCUPdePR_2_len",
+                                              "SCUPdeSH_seas2_op", "SCUPdeSH_seas2_cl", "SCUPdeSH_2_bag", "SCUPdeSH_2_len"),
+                                  value =  c(as.character(input$SCUPdeFH_seas1[1]), as.character(input$SCUPdeFH_seas1[2]), as.character(input$SCUPdeFH_1_bag), as.character(input$SCUPdeFH_1_len), 
+                                             as.character(input$SCUPdePR_seas1[1]), as.character(input$SCUPdePR_seas1[2]), as.character(input$SCUPdePR_1_bag), as.character(input$SCUPdePR_1_len),
+                                             as.character(input$SCUPdeSH_seas1[1]), as.character(input$SCUPdeSH_seas1[2]), as.character(input$SCUPdeSH_1_bag), as.character(input$SCUPdeSH_1_len),
+                                             as.character(input$SCUPdeFH_seas2[1]), as.character(input$SCUPdeFH_seas2[2]), as.character(input$SCUPdeFH_2_bag), as.character(input$SCUPdeFH_2_len), 
+                                             as.character(input$SCUPdePR_seas2[1]), as.character(input$SCUPdePR_seas2[2]), as.character(input$SCUPdePR_2_bag), as.character(input$SCUPdePR_2_len),
+                                             as.character(input$SCUPdeSH_seas2[1]), as.character(input$SCUPdeSH_seas2[2]), as.character(input$SCUPdeSH_2_bag), as.character(input$SCUPdeSH_2_len)))
+      }
+      regulations <- regulations %>% rbind(sfDEregs, bsbDEregs, scupDEregs)
+      
+    }
+    
+    
+    if(any("MD" == input$state)){
+      if(input$SF_MD_input_type == "All Momds Combined"){
+        sfMDregs <- data.frame(run_name = c(Run_Name()), 
+                               input =  c("SFmd_seas1_op", "SFmd_seas1_cl", "SFmd_1_bag", "SFmd_1_len", 
+                                          "SFmd_seas2_op", "SFmd_seas2_cl", "SFmd_2_bag", "SFmd_2_len", 
+                                          "SFmdFH_seas3_op", "SFmdFH_seas3_cl", "SFmdFH_3_bag", "SFmdFH_3_len", 
+                                          "SFmdPR_seas3_op", "SFmdPR_seas3_cl", "SFmdPR_3_bag", "SFmdPR_3_len",
+                                          "SFmdSH_seas3_op", "SFmdSH_seas3_cl", "SFmdSH_3_bag", "SFmdSH_3_len"),
+                               value =  c(as.character(input$SFmd_seas1[1]), as.character(input$SFmd_seas1[2]), as.character(input$SFmd_1_bag), as.character(input$SFmd_1_len), 
+                                          as.character(input$SFmd_seas2[1]), as.character(input$SFmd_seas2[2]), as.character(input$SFmd_2_bag), as.character(input$SFmd_2_len),
+                                          as.character(input$SFmdFH_seas3[1]), as.character(input$SFmdFH_seas3[2]), as.character(input$SFmdFH_3_bag), as.character(input$SFmdFH_3_len), 
+                                          as.character(input$SFmdPR_seas3[1]), as.character(input$SFmdPR_seas3[2]), as.character(input$SFmdPR_3_bag), as.character(input$SFmdPR_3_len),
+                                          as.character(input$SFmdSH_seas3[1]), as.character(input$SFmdSH_seas3[2]), as.character(input$SFmdSH_3_bag), as.character(input$SFmdSH_3_len)))
+      }else{
+        sfMDregs <-  data.frame(run_name = c(Run_Name()), 
+                                input =  c("SFmdFH_seas1_op", "SFmdFH_seas1_cl", "SFmdFH_1_bag", "SFmdFH_1_len", 
+                                           "SFmdPR_seas1_op", "SFmdPR_seas1_cl", "SFmdPR_1_bag", "SFmdPR_1_len",
+                                           "SFmdSH_seas1_op", "SFmdSH_seas1_cl", "SFmdSH_1_bag", "SFmdSH_1_len",
+                                           "SFmdFH_seas2_op", "SFmdFH_seas2_cl", "SFmdFH_2_bag", "SFmdFH_2_len", 
+                                           "SFmdPR_seas2_op", "SFmdPR_seas2_cl", "SFmdPR_2_bag", "SFmdPR_2_len",
+                                           "SFmdSH_seas2_op", "SFmdSH_seas2_cl", "SFmdSH_2_bag", "SFmdSH_2_len", 
+                                           "SFmdFH_seas3_op", "SFmdFH_seas3_cl", "SFmdFH_3_bag", "SFmdFH_3_len", 
+                                           "SFmdPR_seas3_op", "SFmdPR_seas3_cl", "SFmdPR_3_bag", "SFmdPR_3_len",
+                                           "SFmdSH_seas3_op", "SFmdSH_seas3_cl", "SFmdSH_3_bag", "SFmdSH_3_len"),
+                                value = c( as.character(input$SFmdFH_seas1[1]), as.character(input$SFmdFH_seas1[2]), as.character(input$SFmdFH_1_bag), as.character(input$SFmdFH_1_len), 
+                                           as.character(input$SFmdPR_seas1[1]), as.character(input$SFmdPR_seas1[2]), as.character(input$SFmdPR_1_bag), as.character(input$SFmdPR_1_len),
+                                           as.character(input$SFmdSH_seas1[1]), as.character(input$SFmdSH_seas1[2]), as.character(input$SFmdSH_1_bag), as.character(input$SFmdSH_1_len),
+                                           as.character(input$SFmdFH_seas2[1]), as.character(input$SFmdFH_seas2[2]), as.character(input$SFmdFH_2_bag), as.character(input$SFmdFH_2_len), 
+                                           as.character(input$SFmdPR_seas2[1]), as.character(input$SFmdPR_seas2[2]), as.character(input$SFmdPR_2_bag), as.character(input$SFmdPR_2_len),
+                                           as.character(input$SFmdSH_seas2[1]), as.character(input$SFmdSH_seas2[2]), as.character(input$SFmdSH_2_bag), as.character(input$SFmdSH_2_len),
+                                           as.character(input$SFmdFH_seas3[1]), as.character(input$SFmdFH_seas3[2]), as.character(input$SFmdFH_3_bag), as.character(input$SFmdFH_3_len), 
+                                           as.character(input$SFmdPR_seas3[1]), as.character(input$SFmdPR_seas3[2]), as.character(input$SFmdPR_3_bag), as.character(input$SFmdPR_3_len),
+                                           as.character(input$SFmdSH_seas3[1]), as.character(input$SFmdSH_seas3[2]), as.character(input$SFmdSH_3_bag), as.character(input$SFmdSH_3_len)))
+      }
+      
+      
+      if(input$BSB_MD_input_type == "All Momds Combined"){
+        bsbMDgs <- data.frame(run_name = c(Run_Name()), 
+                              input =  c("BSBmd_seas1_op", "BSBmd_seas1_cl", "BSBmd_1_bag", "BSBmd_1_len", 
+                                         "BSBmd_seas2_op", "BSBmd_seas2_cl", "BSBmd_2_bag", "BSBmd_2_len", 
+                                         "BSBmdFH_seas3_op", "BSBmdFH_seas3_cl", "BSBmdFH_3_bag", "BSBmdFH_3_len", 
+                                         "BSBmdPR_seas3_op", "BSBmdPR_seas3_cl", "BSBmdPR_3_bag", "BSBmdPR_3_len",
+                                         "BSBmdSH_seas3_op", "BSBmdSH_seas3_cl", "BSBmdSH_3_bag", "BSBmdSH_3_len",),
+                              value =  c(as.character(input$BSBmd_seas1[1]), as.character(input$BSBmd_seas1[2]), as.character(input$BSBmd_1_bag), as.character(input$BSBmd_1_len), 
+                                         as.character(input$BSBmd_seas2[1]), as.character(input$BSBmd_seas2[2]), as.character(input$BSBmd_2_bag), as.character(input$BSBmd_2_len), 
+                                         as.character(input$BSBmdFH_seas3[1]), as.character(input$BSBmdFH_seas3[2]), as.character(input$BSBmdFH_3_bag), as.character(input$BSBmdFH_3_len), 
+                                         as.character(input$BSBmdPR_seas3[1]), as.character(input$BSBmdPR_seas3[2]), as.character(input$BSBmdPR_3_bag), as.character(input$BSBmdPR_3_len),
+                                         as.character(input$BSBmdSH_seas3[1]), as.character(input$BSBmdSH_seas3[2]), as.character(input$BSBmdSH_3_bag), as.character(input$BSBmdSH_3_len)))
+      }else{
+        bsbMDregs <-  data.frame(run_name = c(Run_Name()), 
+                                 input =  c( "BSBmdFH_seas1_op", "BSBmdFH_seas1_cl", "BSBmdFH_1_bag", "BSBmdFH_1_len",
+                                             "BSBmdPR_seas1_op", "BSBmdPR_seas1_cl", "BSBmdPR_1_bag", "BSBmdPR_1_len",
+                                             "BSBmdSH_seas1_op", "BSBmdSH_seas1_cl", "BSBmdSH_1_bag", "BSBmdSH_1_len",
+                                             "BSBmdFH_seas2_op", "BSBmdFH_seas2_cl", "BSBmdFH_2_bag", "BSBmdFH_2_len", 
+                                             "BSBmdPR_seas2_op", "BSBmdPR_seas2_cl", "BSBmdPR_2_bag", "BSBmdPR_2_len",
+                                             "BSBmdSH_seas2_op", "BSBmdSH_seas2_cl", "BSBmdSH_2_bag", "BSBmdSH_2_len",
+                                             "BSBmdFH_seas3_op", "BSBmdFH_seas3_cl", "BSBmdFH_3_bag", "BSBmdFH_3_len", 
+                                             "BSBmdPR_seas3_op", "BSBmdPR_seas3_cl", "BSBmdPR_3_bag", "BSBmdPR_3_len",
+                                             "BSBmdSH_seas3_op", "BSBmdSH_seas3_cl", "BSBmdSH_3_bag", "BSBmdSH_3_len"),
+                                 value = c( as.character(input$BSBmdFH_seas1[1]), as.character(input$BSBmdFH_seas1[2]), as.character(input$BSBmdFH_1_bag), as.character(input$BSBmdFH_1_len),
+                                            as.character(input$BSBmdPR_seas1[1]), as.character(input$BSBmdPR_seas1[2]), as.character(input$BSBmdPR_1_bag), as.character(input$BSBmdPR_1_len), 
+                                            as.character(input$BSBmdSH_seas1[1]), as.character(input$BSBmdSH_seas1[2]), as.character(input$BSBmdSH_1_bag), as.character(input$BSBmdSH_1_len), 
+                                            as.character(input$BSBmdFH_seas2[1]), as.character(input$BSBmdFH_seas2[2]), as.character(input$BSBmdFH_2_bag), as.character(input$BSBmdFH_2_len), 
+                                            as.character(input$BSBmdPR_seas2[1]), as.character(input$BSBmdPR_seas2[2]), as.character(input$BSBmdPR_2_bag), as.character(input$BSBmdPR_2_len),
+                                            as.character(input$BSBmdSH_seas2[1]), as.character(input$BSBmdSH_seas2[2]), as.character(input$BSBmdSH_2_bag), as.character(input$BSBmdSH_2_len), 
+                                            as.character(input$BSBmdFH_seas3[1]), as.character(input$BSBmdFH_seas3[2]), as.character(input$BSBmdFH_3_bag), as.character(input$BSBmdFH_3_len), 
+                                            as.character(input$BSBmdPR_seas3[1]), as.character(input$BSBmdPR_seas3[2]), as.character(input$BSBmdPR_3_bag), as.character(input$BSBmdPR_3_len),
+                                            as.character(input$BSBmdSH_seas3[1]), as.character(input$BSBmdSH_seas3[2]), as.character(input$BSBmdSH_3_bag), as.character(input$BSBmdSH_3_len)))
+      }
+      
+      
+      if(input$SCUP_MD_input_type == "All Momds Combined"){
+        scupMDregs <- data.frame(run_name = c(Run_Name()), 
+                                 input =  c("SCUPmd_seas1_op", "SCUPmd_seas1_cl", "SCUPmd_1_bag", "SCUPmd_1_len", 
+                                            "SCUPmdFH_seas2_op", "SCUPmdFH_seas2_cl", "SCUPmdFH_2_bag", "SCUPmdFH_2_len", 
+                                            "SCUPmdPR_seas2_op", "SCUPmdPR_seas2_cl", "SCUPmdPR_2_bag", "SCUPmdPR_2_len",
+                                            "SCUPmdSH_seas2_op", "SCUPmdSH_seas2_cl", "SCUPmdSH_2_bag", "SCUPmdSH_2_len"),
+                                 value =  c(as.character(input$SCUPmd_seas1[1]), as.character(input$SCUPmd_seas1[2]), as.character(input$SCUPmd_1_bag), as.character(input$SCUPmd_1_len), 
+                                            as.character(input$SCUPmdFH_seas2[1]), as.character(input$SCUPmdFH_seas2[2]), as.character(input$SCUPmdFH_2_bag), as.character(input$SCUPmdFH_2_len), 
+                                            as.character(input$SCUPmdPR_seas2[1]), as.character(input$SCUPmdPR_seas2[2]), as.character(input$SCUPmdPR_2_bag), as.character(input$SCUPmdPR_2_len),
+                                            as.character(input$SCUPmdSH_seas2[1]), as.character(input$SCUPmdSH_seas2[2]), as.character(input$SCUPmdSH_2_bag), as.character(input$SCUPmdSH_2_len)))
+      }else{
+        scupMDregs <-  data.frame(run_name = c(Run_Name()), 
+                                  input =  c( "SCUPmdFH_seas1_op", "SCUPmdFH_seas1_cl", "SCUPmdFH_1_bag", "SCUPmdFH_1_len", 
+                                              "SCUPmdPR_seas1_op", "SCUPmdPR_seas1_cl", "SCUPmdPR_1_bag", "SCUPmdPR_1_len",
+                                              "SCUPmdSH_seas1_op", "SCUPmdSH_seas1_cl", "SCUPmdSH_1_bag", "SCUPmdSH_1_len",
+                                              "SCUPmdFH_seas2_op", "SCUPmdFH_seas2_cl", "SCUPmdFH_2_bag", "SCUPmdFH_2_len", 
+                                              "SCUPmdPR_seas2_op", "SCUPmdPR_seas2_cl", "SCUPmdPR_2_bag", "SCUPmdPR_2_len",
+                                              "SCUPmdSH_seas2_op", "SCUPmdSH_seas2_cl", "SCUPmdSH_2_bag", "SCUPmdSH_2_len"),
+                                  value =  c(as.character(input$SCUPmdFH_seas1[1]), as.character(input$SCUPmdFH_seas1[2]), as.character(input$SCUPmdFH_1_bag), as.character(input$SCUPmdFH_1_len), 
+                                             as.character(input$SCUPmdPR_seas1[1]), as.character(input$SCUPmdPR_seas1[2]), as.character(input$SCUPmdPR_1_bag), as.character(input$SCUPmdPR_1_len),
+                                             as.character(input$SCUPmdSH_seas1[1]), as.character(input$SCUPmdSH_seas1[2]), as.character(input$SCUPmdSH_1_bag), as.character(input$SCUPmdSH_1_len),
+                                             as.character(input$SCUPmdFH_seas2[1]), as.character(input$SCUPmdFH_seas2[2]), as.character(input$SCUPmdFH_2_bag), as.character(input$SCUPmdFH_2_len), 
+                                             as.character(input$SCUPmdPR_seas2[1]), as.character(input$SCUPmdPR_seas2[2]), as.character(input$SCUPmdPR_2_bag), as.character(input$SCUPmdPR_2_len),
+                                             as.character(input$SCUPmdSH_seas2[1]), as.character(input$SCUPmdSH_seas2[2]), as.character(input$SCUPmdSH_2_bag), as.character(input$SCUPmdSH_2_len)))
+      }
+      regulations <- regulations %>% rbind(sfMDregs, bsbMDregs, scupMDregs)
+    }
+    
+    
+    if(any("VA" == input$state)){
+      if(input$SF_VA_input_type == "All Movas Combined"){
+        sfVAregs <- data.frame(run_name = c(Run_Name()), 
+                               input =  c("SFva_seas1_op", "SFva_seas1_cl", "SFva_1_bag", "SFva_1_len", 
+                                          "SFva_seas2_op", "SFva_seas2_cl", "SFva_2_bag", "SFva_2_len", 
+                                          "SFvaFH_seas3_op", "SFvaFH_seas3_cl", "SFvaFH_3_bag", "SFvaFH_3_len", 
+                                          "SFvaPR_seas3_op", "SFvaPR_seas3_cl", "SFvaPR_3_bag", "SFvaPR_3_len",
+                                          "SFvaSH_seas3_op", "SFvaSH_seas3_cl", "SFvaSH_3_bag", "SFvaSH_3_len"),
+                               value =  c(as.character(input$SFva_seas1[1]), as.character(input$SFva_seas1[2]), as.character(input$SFva_1_bag), as.character(input$SFva_1_len), 
+                                          as.character(input$SFva_seas2[1]), as.character(input$SFva_seas2[2]), as.character(input$SFva_2_bag), as.character(input$SFva_2_len),
+                                          as.character(input$SFvaFH_seas3[1]), as.character(input$SFvaFH_seas3[2]), as.character(input$SFvaFH_3_bag), as.character(input$SFvaFH_3_len), 
+                                          as.character(input$SFvaPR_seas3[1]), as.character(input$SFvaPR_seas3[2]), as.character(input$SFvaPR_3_bag), as.character(input$SFvaPR_3_len),
+                                          as.character(input$SFvaSH_seas3[1]), as.character(input$SFvaSH_seas3[2]), as.character(input$SFvaSH_3_bag), as.character(input$SFvaSH_3_len)))
+      }else{
+        sfVAregs <-  data.frame(run_name = c(Run_Name()), 
+                                input =  c("SFvaFH_seas1_op", "SFvaFH_seas1_cl", "SFvaFH_1_bag", "SFvaFH_1_len", 
+                                           "SFvaPR_seas1_op", "SFvaPR_seas1_cl", "SFvaPR_1_bag", "SFvaPR_1_len",
+                                           "SFvaSH_seas1_op", "SFvaSH_seas1_cl", "SFvaSH_1_bag", "SFvaSH_1_len",
+                                           "SFvaFH_seas2_op", "SFvaFH_seas2_cl", "SFvaFH_2_bag", "SFvaFH_2_len", 
+                                           "SFvaPR_seas2_op", "SFvaPR_seas2_cl", "SFvaPR_2_bag", "SFvaPR_2_len",
+                                           "SFvaSH_seas2_op", "SFvaSH_seas2_cl", "SFvaSH_2_bag", "SFvaSH_2_len", 
+                                           "SFvaFH_seas3_op", "SFvaFH_seas3_cl", "SFvaFH_3_bag", "SFvaFH_3_len", 
+                                           "SFvaPR_seas3_op", "SFvaPR_seas3_cl", "SFvaPR_3_bag", "SFvaPR_3_len",
+                                           "SFvaSH_seas3_op", "SFvaSH_seas3_cl", "SFvaSH_3_bag", "SFvaSH_3_len"),
+                                value = c( as.character(input$SFvaFH_seas1[1]), as.character(input$SFvaFH_seas1[2]), as.character(input$SFvaFH_1_bag), as.character(input$SFvaFH_1_len), 
+                                           as.character(input$SFvaPR_seas1[1]), as.character(input$SFvaPR_seas1[2]), as.character(input$SFvaPR_1_bag), as.character(input$SFvaPR_1_len),
+                                           as.character(input$SFvaSH_seas1[1]), as.character(input$SFvaSH_seas1[2]), as.character(input$SFvaSH_1_bag), as.character(input$SFvaSH_1_len),
+                                           as.character(input$SFvaFH_seas2[1]), as.character(input$SFvaFH_seas2[2]), as.character(input$SFvaFH_2_bag), as.character(input$SFvaFH_2_len), 
+                                           as.character(input$SFvaPR_seas2[1]), as.character(input$SFvaPR_seas2[2]), as.character(input$SFvaPR_2_bag), as.character(input$SFvaPR_2_len),
+                                           as.character(input$SFvaSH_seas2[1]), as.character(input$SFvaSH_seas2[2]), as.character(input$SFvaSH_2_bag), as.character(input$SFvaSH_2_len),
+                                           as.character(input$SFvaFH_seas3[1]), as.character(input$SFvaFH_seas3[2]), as.character(input$SFvaFH_3_bag), as.character(input$SFvaFH_3_len), 
+                                           as.character(input$SFvaPR_seas3[1]), as.character(input$SFvaPR_seas3[2]), as.character(input$SFvaPR_3_bag), as.character(input$SFvaPR_3_len),
+                                           as.character(input$SFvaSH_seas3[1]), as.character(input$SFvaSH_seas3[2]), as.character(input$SFvaSH_3_bag), as.character(input$SFvaSH_3_len)))
+      }
+      
+      
+      if(input$BSB_VA_input_type == "All Movas Combined"){
+        bsbVAgs <- data.frame(run_name = c(Run_Name()), 
+                              input =  c("BSBva_seas1_op", "BSBva_seas1_cl", "BSBva_1_bag", "BSBva_1_len", 
+                                         "BSBva_seas2_op", "BSBva_seas2_cl", "BSBva_2_bag", "BSBva_2_len", 
+                                         "BSBvaFH_seas3_op", "BSBvaFH_seas3_cl", "BSBvaFH_3_bag", "BSBvaFH_3_len", 
+                                         "BSBvaPR_seas3_op", "BSBvaPR_seas3_cl", "BSBvaPR_3_bag", "BSBvaPR_3_len",
+                                         "BSBvaSH_seas3_op", "BSBvaSH_seas3_cl", "BSBvaSH_3_bag", "BSBvaSH_3_len",),
+                              value =  c(as.character(input$BSBva_seas1[1]), as.character(input$BSBva_seas1[2]), as.character(input$BSBva_1_bag), as.character(input$BSBva_1_len), 
+                                         as.character(input$BSBva_seas2[1]), as.character(input$BSBva_seas2[2]), as.character(input$BSBva_2_bag), as.character(input$BSBva_2_len), 
+                                         as.character(input$BSBvaFH_seas3[1]), as.character(input$BSBvaFH_seas3[2]), as.character(input$BSBvaFH_3_bag), as.character(input$BSBvaFH_3_len), 
+                                         as.character(input$BSBvaPR_seas3[1]), as.character(input$BSBvaPR_seas3[2]), as.character(input$BSBvaPR_3_bag), as.character(input$BSBvaPR_3_len),
+                                         as.character(input$BSBvaSH_seas3[1]), as.character(input$BSBvaSH_seas3[2]), as.character(input$BSBvaSH_3_bag), as.character(input$BSBvaSH_3_len)))
+      }else{
+        bsbVAregs <-  data.frame(run_name = c(Run_Name()), 
+                                 input =  c( "BSBvaFH_seas1_op", "BSBvaFH_seas1_cl", "BSBvaFH_1_bag", "BSBvaFH_1_len",
+                                             "BSBvaPR_seas1_op", "BSBvaPR_seas1_cl", "BSBvaPR_1_bag", "BSBvaPR_1_len",
+                                             "BSBvaSH_seas1_op", "BSBvaSH_seas1_cl", "BSBvaSH_1_bag", "BSBvaSH_1_len",
+                                             "BSBvaFH_seas2_op", "BSBvaFH_seas2_cl", "BSBvaFH_2_bag", "BSBvaFH_2_len", 
+                                             "BSBvaPR_seas2_op", "BSBvaPR_seas2_cl", "BSBvaPR_2_bag", "BSBvaPR_2_len",
+                                             "BSBvaSH_seas2_op", "BSBvaSH_seas2_cl", "BSBvaSH_2_bag", "BSBvaSH_2_len",
+                                             "BSBvaFH_seas3_op", "BSBvaFH_seas3_cl", "BSBvaFH_3_bag", "BSBvaFH_3_len", 
+                                             "BSBvaPR_seas3_op", "BSBvaPR_seas3_cl", "BSBvaPR_3_bag", "BSBvaPR_3_len",
+                                             "BSBvaSH_seas3_op", "BSBvaSH_seas3_cl", "BSBvaSH_3_bag", "BSBvaSH_3_len"),
+                                 value = c( as.character(input$BSBvaFH_seas1[1]), as.character(input$BSBvaFH_seas1[2]), as.character(input$BSBvaFH_1_bag), as.character(input$BSBvaFH_1_len),
+                                            as.character(input$BSBvaPR_seas1[1]), as.character(input$BSBvaPR_seas1[2]), as.character(input$BSBvaPR_1_bag), as.character(input$BSBvaPR_1_len), 
+                                            as.character(input$BSBvaSH_seas1[1]), as.character(input$BSBvaSH_seas1[2]), as.character(input$BSBvaSH_1_bag), as.character(input$BSBvaSH_1_len), 
+                                            as.character(input$BSBvaFH_seas2[1]), as.character(input$BSBvaFH_seas2[2]), as.character(input$BSBvaFH_2_bag), as.character(input$BSBvaFH_2_len), 
+                                            as.character(input$BSBvaPR_seas2[1]), as.character(input$BSBvaPR_seas2[2]), as.character(input$BSBvaPR_2_bag), as.character(input$BSBvaPR_2_len),
+                                            as.character(input$BSBvaSH_seas2[1]), as.character(input$BSBvaSH_seas2[2]), as.character(input$BSBvaSH_2_bag), as.character(input$BSBvaSH_2_len), 
+                                            as.character(input$BSBvaFH_seas3[1]), as.character(input$BSBvaFH_seas3[2]), as.character(input$BSBvaFH_3_bag), as.character(input$BSBvaFH_3_len), 
+                                            as.character(input$BSBvaPR_seas3[1]), as.character(input$BSBvaPR_seas3[2]), as.character(input$BSBvaPR_3_bag), as.character(input$BSBvaPR_3_len),
+                                            as.character(input$BSBvaSH_seas3[1]), as.character(input$BSBvaSH_seas3[2]), as.character(input$BSBvaSH_3_bag), as.character(input$BSBvaSH_3_len)))
+      }
+      
+      
+      if(input$SCUP_VA_input_type == "All Movas Combined"){
+        scupVAregs <- data.frame(run_name = c(Run_Name()), 
+                                 input =  c("SCUPva_seas1_op", "SCUPva_seas1_cl", "SCUPva_1_bag", "SCUPva_1_len", 
+                                            "SCUPvaFH_seas2_op", "SCUPvaFH_seas2_cl", "SCUPvaFH_2_bag", "SCUPvaFH_2_len", 
+                                            "SCUPvaPR_seas2_op", "SCUPvaPR_seas2_cl", "SCUPvaPR_2_bag", "SCUPvaPR_2_len",
+                                            "SCUPvaSH_seas2_op", "SCUPvaSH_seas2_cl", "SCUPvaSH_2_bag", "SCUPvaSH_2_len"),
+                                 value =  c(as.character(input$SCUPva_seas1[1]), as.character(input$SCUPva_seas1[2]), as.character(input$SCUPva_1_bag), as.character(input$SCUPva_1_len), 
+                                            as.character(input$SCUPvaFH_seas2[1]), as.character(input$SCUPvaFH_seas2[2]), as.character(input$SCUPvaFH_2_bag), as.character(input$SCUPvaFH_2_len), 
+                                            as.character(input$SCUPvaPR_seas2[1]), as.character(input$SCUPvaPR_seas2[2]), as.character(input$SCUPvaPR_2_bag), as.character(input$SCUPvaPR_2_len),
+                                            as.character(input$SCUPvaSH_seas2[1]), as.character(input$SCUPvaSH_seas2[2]), as.character(input$SCUPvaSH_2_bag), as.character(input$SCUPvaSH_2_len)))
+      }else{
+        scupVAregs <-  data.frame(run_name = c(Run_Name()), 
+                                  input =  c( "SCUPvaFH_seas1_op", "SCUPvaFH_seas1_cl", "SCUPvaFH_1_bag", "SCUPvaFH_1_len", 
+                                              "SCUPvaPR_seas1_op", "SCUPvaPR_seas1_cl", "SCUPvaPR_1_bag", "SCUPvaPR_1_len",
+                                              "SCUPvaSH_seas1_op", "SCUPvaSH_seas1_cl", "SCUPvaSH_1_bag", "SCUPvaSH_1_len",
+                                              "SCUPvaFH_seas2_op", "SCUPvaFH_seas2_cl", "SCUPvaFH_2_bag", "SCUPvaFH_2_len", 
+                                              "SCUPvaPR_seas2_op", "SCUPvaPR_seas2_cl", "SCUPvaPR_2_bag", "SCUPvaPR_2_len",
+                                              "SCUPvaSH_seas2_op", "SCUPvaSH_seas2_cl", "SCUPvaSH_2_bag", "SCUPvaSH_2_len"),
+                                  value =  c(as.character(input$SCUPvaFH_seas1[1]), as.character(input$SCUPvaFH_seas1[2]), as.character(input$SCUPvaFH_1_bag), as.character(input$SCUPvaFH_1_len), 
+                                             as.character(input$SCUPvaPR_seas1[1]), as.character(input$SCUPvaPR_seas1[2]), as.character(input$SCUPvaPR_1_bag), as.character(input$SCUPvaPR_1_len),
+                                             as.character(input$SCUPvaSH_seas1[1]), as.character(input$SCUPvaSH_seas1[2]), as.character(input$SCUPvaSH_1_bag), as.character(input$SCUPvaSH_1_len),
+                                             as.character(input$SCUPvaFH_seas2[1]), as.character(input$SCUPvaFH_seas2[2]), as.character(input$SCUPvaFH_2_bag), as.character(input$SCUPvaFH_2_len), 
+                                             as.character(input$SCUPvaPR_seas2[1]), as.character(input$SCUPvaPR_seas2[2]), as.character(input$SCUPvaPR_2_bag), as.character(input$SCUPvaPR_2_len),
+                                             as.character(input$SCUPvaSH_seas2[1]), as.character(input$SCUPvaSH_seas2[2]), as.character(input$SCUPvaSH_2_bag), as.character(input$SCUPvaSH_2_len)))
+      }
+      regulations <- regulations %>% rbind(sfVAregs, bsbVAregs, scupVAregs)
+    }
+    
     # 
     # if(any("NC" == input$state)){
     #   source(here::here(paste0("recDST/model_run_NC.R")), local = TRUE)
