@@ -3921,7 +3921,7 @@ server <- function(input, output, session) {
     print("where am i")
     #if(any( )) will run all selected check boxes on UI-regulations selection tab
     if(any("MA" == input$state)){
-      print("start")
+      print("start MA")
       
       if(input$BSB_MA_input_type == "All Modes Combined"){
         bsbMAregs <- data.frame(run_name = c(Run_Name()), 
@@ -3982,10 +3982,73 @@ server <- function(input, output, session) {
       regulations <- regulations %>% rbind(MA_reg, bsbMAregs)
     }
     
-    # if(any("RI" == input$state)){
-    #   source(here::here(paste0("recDST/model_run_RI.R")), local = TRUE)
-    #   predictions_1 <- predictions_1 %>% rbind(predictions_out10)
-    # }
+    if(any("RI" == input$state)){
+      if(input$SF_RI_input_type == "All Modes Combined"){
+        sfRIregs <- data.frame(run_name = c(Run_Name()), 
+                                input =  c("SFri_seas1_op", "SFri_seas1_cl", "SFri_1_bag", "SFri_1_len", 
+                                           "SFriFH_seas2_op", "SFriFH_seas2_cl", "SFriFH_2_bag", "SFriFH_2_len", 
+                                            "SFriPR_seas2_op", "SFriPR_seas2_cl", "SFriPR_2_bag", "SFriPR_2_len",
+                                            "SFriSH_seas2_op", "SFriSH_seas2_cl", "SFriSH_2_bag", "SFriSH_2_len"),
+                                value =  c(as.character(input$SFri_seas1[1]), as.character(input$SFri_seas1[2]), as.character(input$SFri_1_bag), as.character(input$SFri_1_len), 
+                                           as.character(input$SFriFH_seas2[1]), as.character(input$SFriFH_seas2[2]), as.character(input$SFriFH_2_bag), as.character(input$SFriFH_2_len), 
+                                           as.character(input$SFriPR_seas2[1]), as.character(input$SFriPR_seas2[2]), as.character(input$SFriPR_2_bag), as.character(input$SFriPR_2_len),
+                                           as.character(input$SFriSH_seas2[1]), as.character(input$SFriSH_seas2[2]), as.character(input$SFriSH_2_bag), as.character(input$SFriSH_2_len)))
+      }else
+        sfMAregs <-  data.frame(run_name = c(Run_Name()), 
+                                input =  c("SFriFH_seas1_op", "SFriFH_seas1_cl", "SFriFH_1_bag", "SFriFH_1_len", 
+                                            "SFriPR_seas1_op", "SFriPR_seas1_cl", "SFriPR_1_bag", "SFriPR_1_len",
+                                            "SFriSH_seas1_op", "SFriSH_seas1_cl", "SFriSH_1_bag", "SFriSH_1_len",
+                                            "SFriFH_seas2_op", "SFriFH_seas2_cl", "SFriFH_2_bag", "SFriFH_2_len", 
+                                            "SFriPR_seas2_op", "SFriPR_seas2_cl", "SFriPR_2_bag", "SFriPR_2_len",
+                                            "SFriSH_seas2_op", "SFriSH_seas2_cl", "SFriSH_2_bag", "SFriSH_2_len"),
+                                value = c( as.character(input$SFriFH_seas1[1]), as.character(input$SFriFH_seas1[2]), as.character(input$SFriFH_1_bag), as.character(input$SFriFH_1_len), 
+                                           as.character(input$SFriPR_seas1[1]), as.character(input$SFriPR_seas1[2]), as.character(input$SFriPR_1_bag), as.character(input$SFriPR_1_len),
+                                           as.character(input$SFriSH_seas1[1]), as.character(input$SFriSH_seas1[2]), as.character(input$SFriSH_1_bag), as.character(input$SFriSH_1_len),
+                                           as.character(input$SFriFH_seas2[1]), as.character(input$SFriFH_seas2[2]), as.character(input$SFriFH_2_bag), as.character(input$SFriFH_2_len), 
+                                           as.character(input$SFriPR_seas2[1]), as.character(input$SFriPR_seas2[2]), as.character(input$SFriPR_2_bag), as.character(input$SFriPR_2_len),
+                                           as.character(input$SFriSH_seas2[1]), as.character(input$SFriSH_seas2[2]), as.character(input$SFriSH_2_bag), as.character(input$SFriSH_2_len)))
+      }
+      
+      
+      RI_regs <- data.frame(run_name = c(Run_Name()), 
+                            input =  c( "BSBriFH_seas1_op", "BSBriFH_seas1_cl", "BSBriFH_1_bag", "BSBriFH_1_len",
+                                        "BSBriPR_seas1_op", "BSBriPR_seas1_cl", "BSBriPR_1_bag", "BSBriPR_1_len",
+                                        "BSBriSH_seas1_op", "BSBriSH_seas1_cl", "BSBriSH_1_bag", "BSBriSH_1_len",
+                                        "BSBriFH_seas2_op", "BSBriFH_seas2_cl", "BSBriFH_2_bag", "BSBriFH_2_len", 
+                                        "BSBriPR_seas2_op", "BSBriPR_seas2_cl", "BSBriPR_2_bag", "BSBriPR_2_len",
+                                        "BSBriSH_seas2_op", "BSBriSH_seas2_cl", "BSBriSH_2_bag", "BSBriSH_2_len",
+                                        "BSBriFH_seas3_op", "BSBriFH_seas3_cl", "BSBriFH_3_bag", "BSBriFH_3_len", 
+                                        "BSBriPR_seas3_op", "BSBriPR_seas3_cl", "BSBriPR_3_bag", "BSBriPR_3_len",
+                                        "BSBriSH_seas3_op", "BSBriSH_seas3_cl", "BSBriSH_3_bag", "BSBriSH_3_len",
+                                        
+                                       "SCUPriFH_seas1_op", "SCUPriFH_seas1_cl", "SCUPriFH_1_bag", "SCUPriFH_1_len", 
+                                       "SCUPriPR_seas1_op", "SCUPriPR_seas1_cl", "SCUPriPR_1_bag", "SCUPriPR_1_len",
+                                       "SCUPriSH_seas1_op", "SCUPriSH_seas1_cl", "SCUPriSH_1_bag", "SCUPriSH_1_len",
+                                       "SCUPriFH_seas2_op", "SCUPriFH_seas2_cl", "SCUPriFH_2_bag", "SCUPriFH_2_len", 
+                                       "SCUPriPR_seas2_op", "SCUPriPR_seas2_cl", "SCUPriPR_2_bag", "SCUPriPR_2_len",
+                                       "SCUPriSH_seas2_op", "SCUPriSH_seas2_cl", "SCUPriSH_2_bag", "SCUPriSH_2_len", 
+                                       "SCUPriFH_seas3_op", "SCUPriFH_seas3_cl", "SCUPriFH_3_bag", "SCUPriFH_3_len", 
+                                       "SCUPriFH_seas4_op", "SCUPriFH_seas4_cl", "SCUPriFH_4_bag", "SCUPriFH_4_len"),
+                            value =  c(as.character(input$BSBriFH_seas1[1]), as.character(input$BSBriFH_seas1[2]), as.character(input$BSBriFH_1_bag), as.character(input$BSBriFH_1_len),
+                                       as.character(input$BSBriPR_seas1[1]), as.character(input$BSBriPR_seas1[2]), as.character(input$BSBriPR_1_bag), as.character(input$BSBriPR_1_len), 
+                                       as.character(input$BSBriSH_seas1[1]), as.character(input$BSBriSH_seas1[2]), as.character(input$BSBriSH_1_bag), as.character(input$BSBriSH_1_len), 
+                                       as.character(input$BSBriFH_seas2[1]), as.character(input$BSBriFH_seas2[2]), as.character(input$BSBriFH_2_bag), as.character(input$BSBriFH_2_len), 
+                                       as.character(input$BSBriPR_seas2[1]), as.character(input$BSBriPR_seas2[2]), as.character(input$BSBriPR_2_bag), as.character(input$BSBriPR_2_len),
+                                       as.character(input$BSBriSH_seas2[1]), as.character(input$BSBriSH_seas2[2]), as.character(input$BSBriSH_2_bag), as.character(input$BSBriSH_2_len), 
+                                       as.character(input$BSBriFH_seas3[1]), as.character(input$BSBriFH_seas3[2]), as.character(input$BSBriFH_3_bag), as.character(input$BSBriFH_3_len), 
+                                       as.character(input$BSBriPR_seas3[1]), as.character(input$BSBriPR_seas3[2]), as.character(input$BSBriPR_3_bag), as.character(input$BSBriPR_3_len),
+                                       as.character(input$BSBriSH_seas3[1]), as.character(input$BSBriSH_seas3[2]), as.character(input$BSBriSH_3_bag), as.character(input$BSBriSH_3_len),
+                                       
+                                       as.character(input$SCUPriFH_seas1[1]), as.character(input$SCUPriFH_seas1[2]), as.character(input$SCUPriFH_1_bag), as.character(input$SCUPriFH_1_len), 
+                                       as.character(input$SCUPriPR_seas1[1]), as.character(input$SCUPriPR_seas1[2]), as.character(input$SCUPriPR_1_bag), as.character(input$SCUPriPR_1_len),
+                                       as.character(input$SCUPriSH_seas1[1]), as.character(input$SCUPriSH_seas1[2]), as.character(input$SCUPriSH_1_bag), as.character(input$SCUPriSH_1_len),
+                                       as.character(input$SCUPriFH_seas2[1]), as.character(input$SCUPriFH_seas2[2]), as.character(input$SCUPriFH_2_bag), as.character(input$SCUPriFH_2_len), 
+                                       as.character(input$SCUPriPR_seas2[1]), as.character(input$SCUPriPR_seas2[2]), as.character(input$SCUPriPR_2_bag), as.character(input$SCUPriPR_2_len),
+                                       as.character(input$SCUPriSH_seas2[1]), as.character(input$SCUPriSH_seas2[2]), as.character(input$SCUPriSH_2_bag), as.character(input$SCUPriSH_2_len),
+                                       as.character(input$SCUPriFH_seas3[1]), as.character(input$SCUPriFH_seas3[2]), as.character(input$SCUPriFH_3_bag), as.character(input$SCUPriFH_3_len), 
+                                       as.character(input$SCUPriFH_seas4[1]), as.character(input$SCUPriFH_seas4[2]), as.character(input$SCUPriFH_4_bag), as.character(input$SCUPriFH_4_len)))
+      regulations <- regulations %>% rbind(RI_reg, sfRIregs)
+    }
     # 
     # if(any("CT" == input$state)){
     #   source(here::here(paste0("recDST/model_run_CT.R")), local = TRUE)
