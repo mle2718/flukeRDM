@@ -149,7 +149,7 @@ do "$input_code_cd\directed_trips_calibration.do"
 do "$input_code_cd\survey trip costs.do"
 
 
-// 4) Estimate catch-per- trips at the month and mode level
+// 4) Estimate catch-per-trips at the month and mode level
 		*datasets needed:
 			*atl_states_2017_expsurvey.dta - expenditure survey data
 			*$input_data_cd\population ages.xlsx - distribution of angler ages 

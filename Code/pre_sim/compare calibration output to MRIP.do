@@ -1,14 +1,11 @@
 
 
 global tripz
-*local statez "MA RI CT NY NJ DE MD"
-local statez "DE MD"
-
+local statez "MA RI CT NY NJ DE MD VA NC"
 foreach s of local statez{
 	
 forv i=1/150{
 	
-
 *local i=1
 *local s="MA"
 
@@ -53,18 +50,19 @@ global tripz "$tripz "`tripz`i'`s''" "
 }
 dsconcat $tripz
 order state mode draw
-
-*save "$iterative_input_data_cd\simulated_catch_totals.dta", replace
-*save "$iterative_input_data_cd\simulated_catch_totals_VA.dta", replace
-*save "$iterative_input_data_cd\simulated_catch_totals_NC.dta", replace
-save "$iterative_input_data_cd\simulated_catch_totals_DEMD.dta", replace
+save "$iterative_input_data_cd\simulated_catch_totals.dta", replace 
 
 
-u "$iterative_input_data_cd\simulated_catch_totals.dta", clear 
-u "$iterative_input_data_cd\simulated_catch_totals_MD.dta", clear 
 
 
-/*
+
+
+
+
+
+
+u "$iterative_input_data_cd\simulated_catch_totals.dta", replace 
+
 collapse (mean) tot_sf_keep_sim tot_sf_cat_sim tot_sf_rel_sim ///
 						  tot_bsb_keep_sim tot_bsb_rel_sim tot_bsb_cat_sim ///
 						  tot_scup_keep_sim tot_scup_rel_sim tot_scup_cat_sim tot_dtrip_sim ///
@@ -144,20 +142,30 @@ replace disp="discards" if disp=="rel"
 replace disp="harvest" if disp=="keep"
 replace disp="catch" if disp=="cat"
 
+gen domain=species+"_"+disp
+replace domain="dtrip" if domain=="NA_dtrip"
 
-
-encode my_dom_id_string , gen(my_dom_id)  
-gen my_dom_id_mrip = my_dom_id+0.1 
-gen my_dom_id_sim = my_dom_id-0.1  
-	
+local vars mrip_total mrip_ll mrip_ul sim_total sim_ul sim_ll
+foreach v of local vars{
+	replace `v'=`v'/1000
+}
+/*
 tempfile new
-save `new',replace 
+save `new', replace 
 
-levelsof species, local(species_list)
-levelsof disp if disp=="catch", local(disp_list)
+levelsof state, local(state_list)
 
-foreach sp in `species_list' {
-  foreach disp in `disp_list' {
+foreach s in `state_list'{
+	u `new', clear 
+	keep if state=="`s'"
+	
+	encode my_dom_id_string , gen(my_dom_id)  
+	gen my_dom_id_mrip = my_dom_id+0.1 
+	gen my_dom_id_sim = my_dom_id-0.1  
+		
+	levelsof domain, local(domain_list)
+		foreach d in `domain_list' {
+
 
 * Start by clearing any existing macro
 local xlabels ""
@@ -171,20 +179,74 @@ foreach l of local levels {
 }
 
 
-twoway (rcap mrip_ul mrip_ll my_dom_id_mrip if species == "`sp'" & disp == "`disp'", color(blue)  ) ///
-			(scatter mrip_total my_dom_id_mrip if species == "`sp'" & disp == "`disp'",  msymbol(o) mcolor(blue)) ///
-			(rcap sim_ul sim_ll my_dom_id_sim if species == "`sp'" & disp == "`disp'",  color(red)) ///
-			(scatter sim_total my_dom_id_sim if species == "`sp'" & disp == "`disp'", msymbol(o) mcolor(red)), ///
+qui twoway (rcap mrip_ul mrip_ll my_dom_id_mrip if domain=="`d'", color(blue)  ) ///
+			(scatter mrip_total my_dom_id_mrip if domain=="`d'",  msymbol(o) mcolor(blue)) ///
+			(rcap sim_ul sim_ll my_dom_id_sim if domain=="`d'",  color(red)) ///
+			(scatter sim_total my_dom_id_sim if domain=="`d'", msymbol(o) mcolor(red)), ///
 			legend(order(2 "MRIP estimate" 4 "Simulated estimate")) ///
-			ytitle("# fish") xtitle("") ylabel(#10,  angle(horizontal) ) ///
+			ytitle("# ('000s)", xoffset(-3)) xtitle("") ylabel(#10,  angle(horizontal) ) ///
 			xlabel(`xlabels',  angle(45)) ///
-			title("`disp' totals for `sp'")
+			title("`d'", size(medium)) name(`d'_`s', replace) 
 			*graph export "`sp'_`disp'_rcap.png", name(graph_`sp'_`disp') width(1000) replace
-
+		}
   }
-}
-	  
 
+grc1leg  bsb_catch_MA sf_catch_MA  scup_catch_MA bsb_harvest_MA sf_harvest_MA   scup_harvest_MA , cols(3) //slightly higher			
+grc1leg  bsb_catch_RI sf_catch_RI scup_catch_RI  bsb_harvest_RI sf_harvest_RI scup_harvest_RI    , cols(3)	//looks good	 			
+grc1leg  bsb_catch_CT sf_catch_CT scup_catch_CT  bsb_harvest_CT sf_harvest_CT  scup_harvest_CT  , cols(3)	//slightly higher
+grc1leg  bsb_catch_NY sf_catch_NY scup_catch_NY  bsb_harvest_NY sf_harvest_NY  scup_harvest_NY  , cols(3)	//looks good	 
+grc1leg  bsb_catch_NJ sf_catch_NJ scup_catch_NJ  bsb_harvest_NJ sf_harvest_NJ  scup_harvest_NJ  , cols(3) // higher	
+grc1leg  bsb_catch_DE sf_catch_DE scup_catch_DE  bsb_harvest_DE sf_harvest_DE  scup_harvest_DE  , cols(3) //looks good	 	
+grc1leg  bsb_catch_MD sf_catch_MD scup_catch_MD  bsb_harvest_MD sf_harvest_MD  scup_harvest_MD  , cols(3)	//looks good	  
+grc1leg  bsb_catch_VA sf_catch_VA scup_catch_VA  bsb_harvest_VA sf_harvest_VA  scup_harvest_VA  , cols(3)	//slightly higher
+grc1leg  bsb_catch_NC sf_catch_NC scup_catch_NC  bsb_harvest_NC sf_harvest_NC  scup_harvest_NC  , cols(3) //looks good	   	
+*/
+
+tempfile new
+save `new', replace 
+
+levelsof state, local(state_list)
+
+foreach s in `state_list'{
+	u `new', clear 
+	keep if state=="`s'"
+	
+	encode my_dom_id_string , gen(my_dom_id)  
+	gen my_dom_id_mrip = my_dom_id+0.1 
+	gen my_dom_id_sim = my_dom_id-0.1  
+		
+	levelsof domain if domain=="dtrip", local(domain_list)
+		foreach d in `domain_list' {
+
+
+* Start by clearing any existing macro
+local xlabels ""
+
+* Loop over the levels of the encoded variable
+levelsof my_dom_id, local(levels)
+
+foreach l of local levels {
+    local label : label (my_dom_id) `l'
+    local xlabels `xlabels' `l' "`label'" 
+}
+
+
+qui twoway (rcap mrip_ul mrip_ll my_dom_id_mrip if domain=="`d'", color(blue)  ) ///
+			(scatter mrip_total my_dom_id_mrip if domain=="`d'",  msymbol(o) mcolor(blue)) ///
+			(rcap sim_ul sim_ll my_dom_id_sim if domain=="`d'",  color(red)) ///
+			(scatter sim_total my_dom_id_sim if domain=="`d'", msymbol(o) mcolor(red)), ///
+			legend(order(2 "MRIP estimate" 4 "Simulated estimate")) ///
+			ytitle("# ('000s)", xoffset(-3)) xtitle("") ylabel(#10,  angle(horizontal) ) ///
+			xlabel(`xlabels',  angle(45)) ///
+			title("`d'", size(medium)) name(`d'_`s', replace) 
+			*graph export "`sp'_`disp'_rcap.png", name(graph_`sp'_`disp') width(1000) replace
+		}
+  }
+  
+  grc1leg  dtrip_MA dtrip_RI dtrip_CT  dtrip_NY dtrip_NJ  dtrip_DE dtrip_MD dtrip_VA dtrip_NC , cols(3) //looks good
+
+				
+C:\Users\andrew.carr-harris\Desktop\Git\flukeRDM\figures
 
 
 encode my_dom_id_string, gen(my_dom_id)

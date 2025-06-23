@@ -415,7 +415,8 @@ for (s in states) {
       mean_trip_data2 <- mean_trip_data2 %>%
         dplyr::group_by(date, mode) %>%
         dplyr::mutate(id_within_group = row_number()) %>% 
-        dplyr::filter(id_within_group<=sims)
+        dplyr::filter(id_within_group<=sims) %>% 
+        dplyr::ungroup()
       
       results<-mean_trip_data1 %>% 
         dplyr::bind_rows(mean_trip_data2)
