@@ -33,7 +33,10 @@ gen year=year(tripdate)
 *tab year 
 gen state="CT"
 gen source="CT_VAS"
-keep year length* state source species nfish
+rename tripdate date 
+format date %td
+
+keep year length* state source species nfish /*date*/
 
 tempfile ct_vas
 save `ct_vas', replace
@@ -380,6 +383,7 @@ replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
 
+
 drop region
 gen region="NO" if inlist(state, "MA", "RI", "CT", "NY") 
 replace region="NJ" if inlist(state, "NJ") 
@@ -392,6 +396,30 @@ replace common_dom="SF" if strmatch(common, "summerflounder")
 replace common_dom="BS" if strmatch(common, "blackseabass") 
 replace common_dom="SC" if strmatch(common, "scup") 
 
+/*
+*Example of illegal harvest 
+keep if state  == "NJ" & strmatch(common, "summerflounder") 
+* Compute the number of imputated observations 
+drop if lngth_imp==1
+drop if area=="E"
+gen nfish=1
+collapse (sum) nfish, by(l_cm_bin)
+
+
+twoway scatter nfish l_cm_bin, ///
+    mcolor(red) ///
+    ylab(#20, angle(horizontal) labsize(small)) ///
+	xlab(#20, angle(horizontal) labsize(small)) ///
+    xtitle("length (cm's)") ///
+    xline(45.72, lcolor(black)) ///
+	ytitle("") ///
+    title("# of harvested fluke measured by MRIP in NJ in 2024", size(medium)) 
+	
+su nfish if l_cm_bin<45.72
+return list
+su nfish 
+return list
+*/
 tostring wave, gen(w2)
 tostring year, gen(year2)
 

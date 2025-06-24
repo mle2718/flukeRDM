@@ -1,20 +1,20 @@
 
 
 #This is the simulation model for the calibration year WITH adjustments for illegal harvest or voluntary release
-
-states <- c("MA", "RI")
-mode_draw <- c("sh", "pr", "fh")
-draws <- 1:2
- i<-1
- s="MA"
- md="fh"
+# 
+# states <- c("MA", "RI")
+# mode_draw <- c("sh", "pr", "fh")
+# draws <- 1:2
+#i<-1
+# s="MA"
+# md="pr"
 # Create an empty list to collect results
 calib_comparison <- list()
 
 # Loop over all combinations
-for (s in states) {
-  for (md in mode_draw) {
-    for (i in draws) {
+# for (s in states) {
+#   for (md in mode_draw) {
+#     for (i in draws) {
       
       # import necessary data
       dtripz<-feather::read_feather(file.path(input_data_cd, paste0("directed_trips_calibration_", s, ".feather"))) %>% 
@@ -24,7 +24,7 @@ for (s in states) {
         dplyr::filter(mode==md)
       
       catch_data <- feather::read_feather(file.path(iterative_input_data_cd, paste0("calib_catch_draws_",s, "_", i,".feather"))) %>% 
-        dplyr::left_join(dtripz, by=c("mode", "date"))%>% 
+        dplyr::left_join(dtripz, by=c("mode", "date")) %>% 
         dplyr::filter(mode==md)
       
       angler_dems<-catch_data %>% 
@@ -76,31 +76,32 @@ for (s in states) {
       bsb_catch_check<-base::sum(catch_data$bsb_cat)
       scup_catch_check<-base::sum(catch_data$scup_cat)
       
-      calib_comparison<-feather::read_feather(file.path(iterative_input_data_cd, "calibration_comparison.feather")) %>% 
-        dplyr::filter(state==s & draw==i)
-      #& mode==md)
+      calib_comparison<-feather::read_feather(file.path(iterative_input_data_cd, "calibration_comparison.feather")) %>%
+        dplyr::filter(state==s & draw==i & mode==md)
+
+      # for (p in 1:nrow(calib_comparison)) {
+      #   sp <- calib_comparison$species[p]
+      # 
+      #   assign(paste0("rel_to_keep_", sp), calib_comparison$rel_to_keep[p])
+      #   assign(paste0("keep_to_rel_", sp), calib_comparison$keep_to_rel[p])
+      # 
+      # 
+      #   if (calib_comparison$rel_to_keep[p] == 1) {
+      #     assign(paste0("p_rel_to_keep_", sp), calib_comparison$p_rel_to_keep[p])
+      #     assign(paste0("p_keep_to_rel_", sp), 0)
+      # 
+      #   }
+      # 
+      #   if (calib_comparison$keep_to_rel[p] == 1) {
+      #     assign(paste0("p_keep_to_rel_", sp), calib_comparison$p_keep_to_rel[p])
+      #     assign(paste0("p_rel_to_keep_", sp), 0)
+      # 
+      #   }
+      # }
+
       
-      for (p in 1:nrow(calib_comparison)) {
-        sp <- calib_comparison$species[p]
-        
-        assign(paste0("rel_to_keep_", sp), calib_comparison$rel_to_keep[p])
-        assign(paste0("keep_to_rel_", sp), calib_comparison$keep_to_rel[p])
-        
-        
-        if (calib_comparison$rel_to_keep[p] == 1) {
-          assign(paste0("p_rel_to_keep_", sp), calib_comparison$p_rel_to_keep[p])
-        }
-        
-        if (calib_comparison$keep_to_rel[p] == 1) {
-          assign(paste0("p_keep_to_rel_", sp), calib_comparison$p_keep_to_rel[p])
-        }
-      }
-      
-      
-      
-      
+    
       # Summer flounder trip simulation
-      
       #keep trips with positive sf catch
       sf_catch_data <- dplyr::filter(catch_data, sf_cat > 0)
       
@@ -115,9 +116,7 @@ for (s in states) {
         dplyr::mutate(fitted_length = sample(sf_size_data$length,
                                              nrow(.),
                                              prob = sf_size_data$fitted_prob,
-                                             replace = TRUE)) %>%  
-        dplyr::mutate(fitted_length=fitted_length*2.54)
-      
+                                             replace = TRUE)) 
       
       # Impose regulations, calculate keep and release per trip
       catch_size_data <- catch_size_data %>%
@@ -145,12 +144,16 @@ for (s in states) {
       
       sum_sf_rel<-sum(catch_size_data$release)
       sum_sf_keep<-sum(catch_size_data$keep)
+      sum_sf_rel
+      sum_sf_keep
       
       # reallocate a portion of all releases as kept if needed 
       if (rel_to_keep_sf==1 & sum_sf_rel>0){
         
         catch_size_data_re_allocate<- catch_size_data %>%
           dplyr::filter(subl_harv_indicator==1) 
+        
+        original_rel_sf<-sum(catch_size_data_re_allocate$release)
         
         catch_size_data_re_allocate_base<- catch_size_data %>%
           dplyr::filter(subl_harv_indicator==0) 
@@ -161,11 +164,15 @@ for (s in states) {
           dplyr::ungroup()
         
         n_row_re_allocate<-nrow(catch_size_data_re_allocate)
+        
         n_sub_sf_kept=round(p_rel_to_keep_sf*n_row_re_allocate)  
         
         catch_size_data_re_allocate <- catch_size_data_re_allocate %>% 
           dplyr::mutate(fishid2=1:n_row_re_allocate) %>% 
           dplyr::mutate(keep_new=case_when(fishid2<=n_sub_sf_kept~1, TRUE~ 0))
+        
+        n_rel_sf_kept<-sum(catch_size_data_re_allocate$keep_new)
+        
         
         catch_size_data_re_allocate <- catch_size_data_re_allocate %>% 
           dplyr::mutate(rel_new=case_when(keep_new==0~1, TRUE~ 0)) %>% 
@@ -176,15 +183,79 @@ for (s in states) {
         catch_size_data<- rbind.fill(catch_size_data_re_allocate,catch_size_data_re_allocate_base) %>% 
           dplyr::select(-subl_harv_indicator)
         
-        # sum(catch_size_data$keep)
-        # sum(catch_size_data_check$keep)
-        # 
-        # sum(catch_size_data$release)
-        # sum(catch_size_data_check$release)
+        n_kept_sf_rel<-0
+        prop_sf_rel_to_keep<-n_rel_sf_kept/original_rel_sf
+        n_rel_sf_kept
         
-        n_legal_sf_rel<-0
+        rm(catch_size_data_re_allocate,catch_size_data_re_allocate_base)
         
       }
+      
+      # Now reallocate a portion of all keeps as releases if needed 
+      if (keep_to_rel_sf==1 & sum_sf_keep>0){
+        
+        # If all kept must be release, p_keep_to_rel_sf==1
+        if (p_keep_to_rel_sf==1){
+          
+          n_kept_sf_rel<-sum(catch_size_data$keep) 
+          prop_kept_sf_rel_to_totcat<-n_kept_sf_rel/sum(catch_size_data$keep+catch_size_data$release)
+          
+          catch_size_data<-catch_size_data %>% 
+            dplyr::mutate(rel_new = keep+release, 
+                          keep_new = 0) %>% 
+            dplyr::select(-keep, -release) %>% 
+            dplyr::rename(release=rel_new,  keep=keep_new) 
+          
+          n_rel_sf_kept<-0
+
+        }
+        
+        #If not all kept must be release, p_keep_to_rel_sf<1
+        if (p_keep_to_rel_sf<1){
+          
+          catch_size_data_re_allocate<- catch_size_data %>%
+            dplyr::filter(keep==1)
+          
+          catch_size_data_re_allocate_base<- catch_size_data %>%
+            dplyr::filter(keep==0) 
+          
+          n_row_re_allocate<-nrow(catch_size_data_re_allocate)
+          
+          catch_size_data_re_allocate<-catch_size_data_re_allocate %>% 
+            dplyr::mutate(uniform=runif(n_row_re_allocate)) %>%
+            dplyr::arrange(uniform) %>% 
+            dplyr::mutate(fishid2=1:n_row_re_allocate)
+          
+          n_kept_sf_rel=round(p_keep_to_rel_sf*n_row_re_allocate)
+          prop_kept_sf_rel_to_totcat<-n_kept_sf_rel/sum(catch_size_data$keep+catch_size_data$release)
+          
+          catch_size_data_re_allocate<-catch_size_data_re_allocate %>% 
+            dplyr::mutate(rel_new=dplyr::case_when(fishid2<=n_kept_sf_rel~1, TRUE~ 0))
+          
+          catch_size_data_re_allocate<-catch_size_data_re_allocate %>% 
+            dplyr::mutate(keep_new=dplyr::case_when(rel_new==0~1, TRUE~ 0)) %>% 
+            dplyr::select(-keep, -release, -fishid2, -uniform) %>% 
+            dplyr::rename(keep=keep_new, release=rel_new)
+          
+          sum(catch_size_data$release)
+          sum(catch_size_data$keep)
+          
+          catch_size_data<-rbind.fill(catch_size_data_re_allocate,catch_size_data_re_allocate_base )
+          
+          sum(catch_size_data$release)
+          sum(catch_size_data$keep)
+          
+          rm(catch_size_data_re_allocate,catch_size_data_re_allocate_base)
+          
+          n_rel_sf_kept<-0
+          
+          # sum_sf_rel<-sum(catch_size_data$release)
+          # sum_sf_keep<-sum(catch_size_data$keep)
+          # sum_sf_rel
+          # sum_sf_keep
+        }
+      }
+      
       
       trip_data <- catch_size_data %>%
         dplyr::group_by(date, catch_draw, tripid, mode) %>%
@@ -206,6 +277,8 @@ for (s in states) {
       sf_trip_data<- sf_trip_data %>% dplyr::mutate(domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid))
       sf_trip_data<-data.table::as.data.table(sf_trip_data)
       data.table::setkey(sf_trip_data, "domain2")
+      
+      rm(catch_size_data, trip_data)
       
       
       # if (cod_catch_check==0 & had_catch_check!=0){
@@ -237,8 +310,7 @@ for (s in states) {
         dplyr::mutate(fitted_length = sample(bsb_size_data$length,
                                              nrow(.),
                                              prob = bsb_size_data$fitted_prob,
-                                             replace = TRUE)) %>%     #dplyr::arrange(period2, tripid, catch_draw) 
-        dplyr::mutate(fitted_length=fitted_length*2.54)
+                                             replace = TRUE)) 
       
       # Impose regulations, calculate keep and release per trip
       catch_size_data <- catch_size_data %>%
@@ -273,6 +345,8 @@ for (s in states) {
         catch_size_data_re_allocate<- catch_size_data %>%
           dplyr::filter(subl_harv_indicator==1) 
         
+        original_rel_bsb<-sum(catch_size_data_re_allocate$release)
+        
         catch_size_data_re_allocate_base<- catch_size_data %>%
           dplyr::filter(subl_harv_indicator==0) 
         
@@ -282,11 +356,15 @@ for (s in states) {
           dplyr::ungroup()
         
         n_row_re_allocate<-nrow(catch_size_data_re_allocate)
+        
         n_sub_bsb_kept=round(p_rel_to_keep_bsb*n_row_re_allocate)  
         
         catch_size_data_re_allocate <- catch_size_data_re_allocate %>% 
           dplyr::mutate(fishid2=1:n_row_re_allocate) %>% 
           dplyr::mutate(keep_new=case_when(fishid2<=n_sub_bsb_kept~1, TRUE~ 0))
+        
+        n_rel_bsb_kept<-sum(catch_size_data_re_allocate$keep_new)
+        
         
         catch_size_data_re_allocate <- catch_size_data_re_allocate %>% 
           dplyr::mutate(rel_new=case_when(keep_new==0~1, TRUE~ 0)) %>% 
@@ -297,14 +375,73 @@ for (s in states) {
         catch_size_data<- rbind.fill(catch_size_data_re_allocate,catch_size_data_re_allocate_base) %>% 
           dplyr::select(-subl_harv_indicator)
         
-        # sum(catch_size_data$keep)
-        # sum(catch_size_data_check$keep)
-        # 
-        # sum(catch_size_data$release)
-        # sum(catch_size_data_check$release)
+        n_kept_bsb_rel<-0
+        prop_bsb_rel_to_keep<-n_rel_bsb_kept/original_rel_bsb
+        n_rel_bsb_kept
         
-        n_legal_bsb_rel<-0
+        rm(catch_size_data_re_allocate,catch_size_data_re_allocate_base)
         
+      }
+      
+      ##Now reallocate a portion of all keeps as releases if needed 
+      if (keep_to_rel_bsb==1 & sum_bsb_keep>0){
+        
+        #If all kept must be release, p_keep_to_rel_bsb==1
+        if (p_keep_to_rel_bsb==1){
+          
+          n_kept_bsb_rel<-sum(catch_size_data$keep) 
+          prop_kept_bsb_rel_to_totcat<-n_kept_bsb_rel/sum(catch_size_data$keep+catch_size_data$release)
+          
+          catch_size_data<-catch_size_data %>% 
+            dplyr::mutate(rel_new = keep+release, 
+                          keep_new = 0) %>% 
+            dplyr::select(-keep, -release) %>% 
+            dplyr::rename(release=rel_new,  keep=keep_new) 
+          
+          n_rel_bsb_kept<-0
+          
+        }
+        
+        #If not all kept must be release, p_keep_to_rel_bsb<1
+        if (p_keep_to_rel_bsb<1){
+          
+          catch_size_data_re_allocate<- catch_size_data %>%
+            dplyr::filter(keep==1)
+          
+          catch_size_data_re_allocate_base<- catch_size_data %>%
+            dplyr::filter(keep==0) 
+          
+          n_row_re_allocate<-nrow(catch_size_data_re_allocate)
+          
+          catch_size_data_re_allocate<-catch_size_data_re_allocate %>% 
+            dplyr::mutate(uniform=runif(n_row_re_allocate)) %>%
+            dplyr::arrange(uniform) %>% 
+            dplyr::mutate(fishid2=1:n_row_re_allocate)
+          
+          n_kept_bsb_rel=round(p_keep_to_rel_bsb*n_row_re_allocate)
+          prop_kept_bsb_rel_to_totcat<-n_kept_bsb_rel/sum(catch_size_data$keep+catch_size_data$release)
+          
+          catch_size_data_re_allocate<-catch_size_data_re_allocate %>% 
+            dplyr::mutate(rel_new=dplyr::case_when(fishid2<=n_kept_bsb_rel~1, TRUE~ 0))
+          
+          catch_size_data_re_allocate<-catch_size_data_re_allocate %>% 
+            dplyr::mutate(keep_new=dplyr::case_when(rel_new==0~1, TRUE~ 0)) %>% 
+            dplyr::select(-keep, -release, -fishid2, -uniform) %>% 
+            dplyr::rename(keep=keep_new, release=rel_new)
+          
+          sum(catch_size_data$release)
+          sum(catch_size_data$keep)
+          
+          catch_size_data<-rbind.fill(catch_size_data_re_allocate,catch_size_data_re_allocate_base )
+          
+          sum(catch_size_data$release)
+          sum(catch_size_data$keep)
+          
+          rm(catch_size_data_re_allocate,catch_size_data_re_allocate_base)
+          
+          n_rel_bsb_kept<-0
+          
+        }
       }
       
       trip_data <- catch_size_data %>%
@@ -313,6 +450,7 @@ for (s in states) {
                          tot_rel_bsb_new = sum(release),
                          .groups = "drop") %>%
         dplyr::ungroup()
+      
       
       bsb_zero_catch<-bsb_zero_catch %>%
         dplyr::select(date, catch_draw, tripid, mode) %>%
@@ -331,9 +469,10 @@ for (s in states) {
       bsb_trip_data<-data.table::as.data.table(bsb_trip_data)
       data.table::setkey(bsb_trip_data, "domain2")
       
+      rm(catch_size_data,trip_data)
+      
       
       # Scup  trip simulation
-      
       #keep trips with positive scup catch
       scup_catch_data <- dplyr::filter(catch_data, scup_cat > 0)
       
@@ -348,9 +487,7 @@ for (s in states) {
         dplyr::mutate(fitted_length = sample(scup_size_data$length,
                                              nrow(.),
                                              prob = scup_size_data$fitted_prob,
-                                             replace = TRUE)) %>% 
-        dplyr::mutate(fitted_length=fitted_length*2.54)
-      
+                                             replace = TRUE)) 
       
       # Impose regulations, calculate keep and release per trip
       catch_size_data <- catch_size_data %>%
@@ -385,6 +522,8 @@ for (s in states) {
         catch_size_data_re_allocate<- catch_size_data %>%
           dplyr::filter(subl_harv_indicator==1) 
         
+        original_rel_scup<-sum(catch_size_data_re_allocate$release)
+        
         catch_size_data_re_allocate_base<- catch_size_data %>%
           dplyr::filter(subl_harv_indicator==0) 
         
@@ -400,6 +539,8 @@ for (s in states) {
           dplyr::mutate(fishid2=1:n_row_re_allocate) %>% 
           dplyr::mutate(keep_new=case_when(fishid2<=n_sub_scup_kept~1, TRUE~ 0))
         
+        new_kept_scup<-sum(catch_size_data_re_allocate$keep_new)
+        
         catch_size_data_re_allocate <- catch_size_data_re_allocate %>% 
           dplyr::mutate(rel_new=case_when(keep_new==0~1, TRUE~ 0)) %>% 
           dplyr::select(-keep, -release, -uniform, -fishid2, -uniform) %>% 
@@ -409,15 +550,75 @@ for (s in states) {
         catch_size_data<- rbind.fill(catch_size_data_re_allocate,catch_size_data_re_allocate_base) %>% 
           dplyr::select(-subl_harv_indicator)
         
-        # sum(catch_size_data$keep)
-        # sum(catch_size_data_check$keep)
-        # 
-        # sum(catch_size_data$release)
-        # sum(catch_size_data_check$release)
-        
         n_legal_scup_rel<-0
+        prop_scup_rel_to_keep<-new_kept_scup/original_rel_scup
+        
+        rm(catch_size_data_re_allocate,catch_size_data_re_allocate_base)
+        
         
       }
+      
+      ##Now reallocate a portion of all keeps as releases if needed 
+      if (keep_to_rel_scup==1 & sum_scup_keep>0){
+        
+        #If all kept must be release, p_keep_to_rel_scup==1
+        if (p_keep_to_rel_scup==1){
+          
+          n_kept_scup_rel<-sum(catch_size_data$keep) 
+          prop_kept_scup_rel_to_totcat<-n_kept_scup_rel/sum(catch_size_data$keep+catch_size_data$release)
+          
+          catch_size_data<-catch_size_data %>% 
+            dplyr::mutate(rel_new = keep+release, 
+                          keep_new = 0) %>% 
+            dplyr::select(-keep, -release) %>% 
+            dplyr::rename(release=rel_new,  keep=keep_new) 
+          
+          n_rel_scup_kept<-0
+          
+        }
+        
+        #If not all kept must be release, p_keep_to_rel_scup<1
+        if (p_keep_to_rel_scup<1){
+          
+          catch_size_data_re_allocate<- catch_size_data %>%
+            dplyr::filter(keep==1)
+          
+          catch_size_data_re_allocate_base<- catch_size_data %>%
+            dplyr::filter(keep==0) 
+          
+          n_row_re_allocate<-nrow(catch_size_data_re_allocate)
+          
+          catch_size_data_re_allocate<-catch_size_data_re_allocate %>% 
+            dplyr::mutate(uniform=runif(n_row_re_allocate)) %>%
+            dplyr::arrange(uniform) %>% 
+            dplyr::mutate(fishid2=1:n_row_re_allocate)
+          
+          n_kept_scup_rel=round(p_keep_to_rel_scup*n_row_re_allocate)
+          prop_kept_scup_rel_to_totcat<-n_kept_scup_rel/sum(catch_size_data$keep+catch_size_data$release)
+          
+          catch_size_data_re_allocate<-catch_size_data_re_allocate %>% 
+            dplyr::mutate(rel_new=dplyr::case_when(fishid2<=n_kept_scup_rel~1, TRUE~ 0))
+          
+          catch_size_data_re_allocate<-catch_size_data_re_allocate %>% 
+            dplyr::mutate(keep_new=dplyr::case_when(rel_new==0~1, TRUE~ 0)) %>% 
+            dplyr::select(-keep, -release, -fishid2, -uniform) %>% 
+            dplyr::rename(keep=keep_new, release=rel_new)
+          
+          sum(catch_size_data$release)
+          sum(catch_size_data$keep)
+          
+          catch_size_data<-rbind.fill(catch_size_data_re_allocate,catch_size_data_re_allocate_base )
+          
+          sum(catch_size_data$release)
+          sum(catch_size_data$keep)
+          
+          rm(catch_size_data_re_allocate,catch_size_data_re_allocate_base)
+          
+          n_rel_scup_kept<-0
+          
+        }
+      }
+      
       
       trip_data <- catch_size_data %>%
         dplyr::group_by(date, catch_draw, tripid, mode) %>%
@@ -442,6 +643,7 @@ for (s in states) {
       scup_trip_data<-data.table::as.data.table(scup_trip_data)
       data.table::setkey(scup_trip_data, "domain2") 
       
+      rm(catch_size_data,trip_data)
       
       # merge the hadd trip data with the rest of the trip data
       trip_data<- sf_trip_data[bsb_trip_data, on = "domain2"]
@@ -451,7 +653,7 @@ for (s in states) {
         dplyr::mutate(tot_scup_catch = tot_keep_scup_new + tot_rel_scup_new, 
                       tot_bsb_catch = tot_keep_bsb_new + tot_rel_bsb_new, 
                       tot_sf_catch = tot_keep_sf_new + tot_rel_sf_new)
-      #}
+
       
       parameters <- trip_data %>% 
         dplyr::select(date, mode, tripid) 
@@ -599,7 +801,8 @@ for (s in states) {
       mean_trip_data2 <- mean_trip_data2 %>%
         dplyr::group_by(date, mode) %>%
         dplyr::mutate(id_within_group = row_number()) %>% 
-        dplyr::filter(id_within_group<=sims)
+        dplyr::filter(id_within_group<=sims) %>% 
+        dplyr::ungroup()
       
       results<-mean_trip_data1 %>% 
         dplyr::bind_rows(mean_trip_data2)
@@ -624,6 +827,9 @@ for (s in states) {
                       bsb_rel=tot_rel_bsb_new, 
                       scup_rel=tot_rel_scup_new)
       
+      #saveRDS(aggregate_trip_data, file = paste0(output_data_cd, "calibration_data_", s,"_", i, ".rds")) 
+      
+      
       list_names = c("bsb_catch","bsb_keep","bsb_rel", 
                      "scup_catch", "scup_keep","scup_rel", 
                      "sf_catch", "sf_keep","sf_rel",
@@ -633,13 +839,153 @@ for (s in states) {
         data.table::as.data.table() %>%
         .[,lapply(.SD, sum),  by = c("mode"), .SDcols = list_names]
       
+      
       aggregate_trip_data<-aggregate_trip_data %>% 
         dplyr::select(date, mode, n_choice_occasions)
       
       write_feather(aggregate_trip_data, file.path(iterative_input_data_cd, paste0("n_choice_occasions_", s,"_", md, "_", i, ".feather")))
       
-    }
-  }
-}
+      
+      
+      # list_names = c("tot_bsb_catch","tot_keep_bsb_new","tot_keep_scup_new","tot_keep_sf_new","tot_rel_bsb_new",   
+      #                "tot_rel_scup_new","tot_rel_sf_new","tot_scup_catch","tot_sf_catch",
+      #                "probA","n_choice_occasions")
+      # 
+      # aggregate_trip_data <- results %>%
+      #   data.table::as.data.table() %>%
+      #   .[,lapply(.SD, sum),  by = c("date", "mode"), .SDcols = list_names]
+      # 
+      # aggregate_trip_data<-aggregate_trip_data %>% 
+      #   dplyr::rename(estimated_trips=probA, 
+      #                 sf_catch=tot_sf_catch, 
+      #                 bsb_catch=tot_bsb_catch, 
+      #                 scup_catch=tot_scup_catch, 
+      #                 sf_keep=tot_keep_sf_new, 
+      #                 bsb_keep=tot_keep_bsb_new, 
+      #                 scup_keep=tot_keep_scup_new,
+      #                 sf_rel=tot_rel_sf_new, 
+      #                 bsb_rel=tot_rel_bsb_new, 
+      #                 scup_rel=tot_rel_scup_new)
+      # 
+      # list_names = c("bsb_catch","bsb_keep","bsb_rel", 
+      #                "scup_catch", "scup_keep","scup_rel", 
+      #                "sf_catch", "sf_keep","sf_rel",
+      #                "estimated_trips","n_choice_occasions")
+      # 
+      # summed_results <- aggregate_trip_data %>%
+      #   data.table::as.data.table() %>%
+      #   .[,lapply(.SD, sum),  by = c("mode"), .SDcols = list_names]
+      
+
+      
+      
+      ########
+      #Compare calibration output to MRIP by state-mode 
+      
+      #Save simulation results by mode as objects 
+      # Loop over rows (modes)
+      for (r in 1:nrow(summed_results)) {
+        mode_val <- summed_results$mode[r]
+        
+        # Loop over summary columns
+        for (var in names(summed_results)[names(summed_results) != "mode"]) {
+          value <- summed_results[[var]][r]
+          obj_name <- paste0(var, "_", "model")
+          assign(obj_name, value)
+        }
+      }
+      
+      
+      #Save MRIP estimates  by mode as objects 
+      MRIP_comparison_draw <- MRIP_comparison %>% 
+        dplyr::filter(draw==i & state==s)%>% 
+        dplyr::filter(mode==md)
+      
+      mode_val <- MRIP_comparison_draw$mode
+      
+      # Loop over summary columns
+      for (var in names(MRIP_comparison_draw)[names(MRIP_comparison_draw) != "mode"]) {
+        value <- MRIP_comparison_draw[[var]]
+        obj_name <- paste0(var, "_", "MRIP")
+        assign(obj_name, value)
+      }
+      
+      
+      species <- c("sf", "bsb", "scup")
+      dispositions <- c("keep", "rel", "catch")
+      
+      compare1 <- data.frame()
+      
+      for (sp in species) {
+        for (disp in dispositions) {
+          
+          # Construct variable names
+          base_name <- paste(sp, disp, sep = "_")
+          mrip_var <- paste0(base_name, "_MRIP")
+          model_var <- paste0(base_name, "_model")
+          
+          # Check if both variables exist
+          if (exists(mrip_var) && exists(model_var)) {
+            # Retrieve values
+            mrip_val <- get(mrip_var)
+            model_val <- get(model_var)
+            
+            # Calculate differences
+            diff_val <- model_val - mrip_val
+            pct_diff_val <- if (mrip_val != 0)  (diff_val / mrip_val) * 100 else NA
+            abs_diff_val <- abs(model_val - mrip_val)
+            abs_pct_diff_val <- if (mrip_val != 0)  abs((diff_val / mrip_val) * 100) else NA
+            
+            # Create output variable names
+            assign(paste0(base_name, "_diff"), diff_val)
+            assign(paste0(base_name, "_pct_diff"), pct_diff_val)
+            assign(paste0(base_name, "_abs_diff"), abs_diff_val)
+            assign(paste0(base_name, "_abs_pct_diff"), abs_pct_diff_val)
+            
+            compare1 <- rbind(compare1, data.frame(
+              species = sp,
+              disposition = disp,
+              mode = md,
+              MRIP = mrip_val,
+              model = model_val,
+              diff = diff_val,
+              pct_diff = pct_diff_val, 
+              abs_diff_val= abs_diff_val, 
+              abs_pct_diff_val= abs_pct_diff_val
+            ))
+          } 
+          
+          else {
+            warning(paste("Missing variable:", mrip_var, "or", model_var))
+            
+            
+          }
+        }
+      }
+      
+      
+      compare1<-compare1 %>%
+        dplyr::mutate(rel_to_keep = if_else(diff < 0, 1, 0),
+                      keep_to_rel = if_else(diff > 0, 1, 0))
+
+      compare1_k<-compare1 %>%
+        dplyr::filter(disposition=="keep") %>%
+        dplyr::select(mode, species, MRIP, model, diff, pct_diff, keep_to_rel, rel_to_keep) %>%
+        dplyr::rename(MRIP_keep=MRIP, model_keep=model)
+
+      compare1_r<-compare1 %>%
+        dplyr::filter(disposition=="rel") %>%
+        dplyr::select(mode, species, MRIP, model) %>%
+        dplyr::rename(MRIP_rel=MRIP, model_rel=model) %>%
+        dplyr::left_join(compare1_k, by=c("mode", "species"))
+
+      calib_comparison1<-compare1_r %>%
+        dplyr::mutate(#p_rel_to_keep=abs(diff/model_rel),
+                      #p_keep_to_rel=abs(diff/model_keep),
+                      draw=i, state=s)
+      
+#     }
+#   }
+# }
 
 

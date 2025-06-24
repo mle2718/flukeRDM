@@ -9,6 +9,24 @@ ui <- fluidPage(
   titlePanel("Recreational Fisheries Decision Support Tool"),
   #### Regulation Selection ####
   tabsetPanel(
+    #### Summary Page ####
+    tabPanel("Sumary Page",
+             shinyWidgets::awesomeCheckboxGroup( # Select which state(s) to run
+               inputId = "stateID", 
+               label = "State", 
+               choices = c("MA", "RI", "CT", "NY", "NJ", "DE",  "MD", "VA", "NC"),
+               inline = TRUE,
+               status = "danger"),
+             uiOutput("outputMAfig"),
+             uiOutput("outputMAtab"),
+             uiOutput("outputRI"),
+             uiOutput("outputCT"), 
+             uiOutput("outputNY"),
+             uiOutput("outputNJ"), 
+             uiOutput("outputDE"),
+             uiOutput("outputMD"),
+             uiOutput("outputVA"), 
+             uiOutput("outputNC")),
     tabPanel( "Regulation Selection",
               strong(div("REMINDER: (1) select state(s)  (2) Make selections below (3) click run me and then the `Results` tab to run model", style = "color:blue")), # Warning for users
               shinyWidgets::awesomeCheckboxGroup( # Select which state(s) to run
@@ -49,9 +67,7 @@ ui <- fluidPage(
              tableOutput(outputId = "ntrips_tableout"), 
              plotOutput(outputId = "fig")), 
     
-    #### Documentation ####
-    tabPanel("Documentation", 
-             htmlOutput("documentation"))
+   
     
   ))
 
@@ -3744,6 +3760,164 @@ server <- function(input, output, session) {
   
   
   
+  
+  
+  ################ Summary page outputs #################
+  ############ MA
+  
+  output$DToutMA <- DT::renderDT({
+    
+    Regs_out<- outputs()
+    # df3<- outputs() %>% dplyr::filter(!Category %in% c("CV", "ntrips", "nchoiceoccasions","cod" , "had")) %>%
+    #   dplyr::select(Category, Value, run_number) %>%
+    #   dplyr::left_join(SQ_regulations, by = c("Category"))
+    # 
+    # seas<- df3 %>% dplyr::filter(stringr::str_detect(Category, "Season")) %>%
+    #   tidyr::separate(Value, into = c("Value1", "Value2"), sep = " - ") %>%
+    #   tidyr::separate(SQ, into = c("SQ1", "SQ2"), sep = " - ") %>%
+    #   dplyr::mutate(Value = as.integer(lubridate::ymd(Value2)-lubridate::ymd(Value1)),
+    #                 SQ = as.integer(lubridate::ymd(SQ2)-lubridate::ymd(SQ1))) %>%
+    #   dplyr::mutate(Diff_from_SQ = dplyr::case_when(Value < SQ ~ "Shorter Season", TRUE ~ ""),
+    #                 Diff_from_SQ = dplyr::case_when(Value > SQ ~ "Longer Season", TRUE ~ Diff_from_SQ),
+    #                 Value = paste0(Value1, " - ", Value2)) %>%
+    #   dplyr::select(Category, Diff_from_SQ, run_number)
+    # 
+    # bag<- df3 %>% dplyr::filter(stringr::str_detect(Category, "bag")) %>%
+    #   dplyr::mutate(Diff_from_SQ = dplyr::case_when(as.numeric(Value) < as.numeric(SQ) ~ "Smaller Bag", TRUE ~ ""),
+    #                 Diff_from_SQ = dplyr::case_when(as.numeric(Value) > as.numeric(SQ) ~ "Larger Bag", TRUE ~ Diff_from_SQ)) %>%
+    #   dplyr::select(Category, Diff_from_SQ, run_number)
+    # 
+    # size<- df3 %>% dplyr::filter(stringr::str_detect(Category, "size")) %>%
+    #   dplyr::mutate(Diff_from_SQ = dplyr::case_when(as.numeric(Value) < as.numeric(SQ) ~ "Smaller Min Length", TRUE ~ ""),
+    #                 Diff_from_SQ = dplyr::case_when(as.numeric(Value) > as.numeric(SQ) ~ "Larger Min Length", TRUE ~ Diff_from_SQ)) %>%
+    #   dplyr::select(Category, Diff_from_SQ, run_number)
+    # 
+    # df4<- rbind(seas, bag, size) %>%
+    #   dplyr::ungroup()
+    # 
+    # Regs_out <- df3 %>%
+    #   dplyr::left_join(df4, by = c("Category", "run_number")) %>%
+    #   dplyr::select(!SQ) %>%
+    #   dplyr::select(!Opt) %>%
+    #   tidyr::separate(Category, into =c("Species", "mode", "Var"), sep = "_") %>%
+    #   dplyr::ungroup() %>%
+    #   tidyr::pivot_wider(names_from = Var, values_from = c(Value, Diff_from_SQ)) %>%
+    #   dplyr::mutate(Value_Season = dplyr::case_when(Value_bag == 0 ~"NA", TRUE ~ Value_Season),
+    #                 Value_size = dplyr::case_when(Value_bag == 0 ~"NA", TRUE ~ Value_size),
+    #                 Diff_from_SQ_bag = dplyr::case_when(Value_bag == 0 ~"NA", TRUE ~ Diff_from_SQ_bag),
+    #                 Diff_from_SQ_size = dplyr::case_when(Value_bag == 0 ~"NA", TRUE ~ Diff_from_SQ_size),
+    #                 Diff_from_SQ_Season = dplyr::case_when(Value_bag == 0 ~"NA", TRUE ~ Diff_from_SQ_Season),
+    #                 Value_bag = dplyr::case_when(Value_bag == 0 ~"NA", TRUE ~ Value_bag)) %>%
+    #   dplyr::ungroup() %>%
+    #   dplyr::mutate(Diff_from_SQ = paste0(Diff_from_SQ_bag,Diff_from_SQ_size,Diff_from_SQ_Season)) %>%
+    #   dplyr::select(!c(Diff_from_SQ_bag,Diff_from_SQ_size,Diff_from_SQ_Season)) %>%
+    #   tidyr::pivot_wider(names_from = Species, values_from = c(Diff_from_SQ, Value_bag, Value_size, Value_Season)) %>%
+    #   dplyr::ungroup() %>%
+    #   dplyr::mutate(cod_bag = paste0(Value_bag_Cod1, " , ", Value_bag_Cod2),
+    #                 cod_size = paste0(Value_size_Cod1, " , ", Value_size_Cod2),
+    #                 cod_season = paste0(Value_Season_Cod1, " , ", Value_Season_Cod2),
+    #                 had_bag = paste0(Value_bag_Had1, " , ", Value_bag_Had2, " , ", Value_bag_Had3),
+    #                 had_size = paste0(Value_size_Had1, " , ", Value_size_Had2, " , ", Value_size_Had3),
+    #                 had_season = paste0(Value_Season_Had1, " , ", Value_Season_Had2, " , ", Value_Season_Had3),
+    #                 cod_bag = stringr::str_remove(cod_bag, " , NA"),
+    #                 cod_size = stringr::str_remove(cod_size, " , NA"),
+    #                 cod_season = stringr::str_remove(cod_season, " , NA"),
+    #                 had_bag = stringr::str_remove(had_bag, " , NA"),
+    #                 had_size = stringr::str_remove(had_size, " , NA"),
+    #                 had_season = stringr::str_remove(had_season, " , NA"),
+    #                 cod_bag = stringr::str_remove(cod_bag, "NA ,"),
+    #                 cod_size = stringr::str_remove(cod_size, "NA ,"),
+    #                 cod_season = stringr::str_remove(cod_season, "NA ,"),
+    #                 had_bag = stringr::str_remove(had_bag, "NA ,"),
+    #                 had_size = stringr::str_remove(had_size, "NA ,"),
+    #                 had_season = stringr::str_remove(had_season, "NA ,"),
+    #                 Diff_from_SQ_cod = paste0(Diff_from_SQ_Cod1, " , ", Diff_from_SQ_Cod2),
+    #                 Diff_from_SQ_had = paste0(Diff_from_SQ_Had1, " , ", Diff_from_SQ_Had2, " , ", Diff_from_SQ_Had3),
+    #                 Diff_from_SQ_cod = stringr::str_remove(Diff_from_SQ_cod, " , NA"),
+    #                 Diff_from_SQ_cod = stringr::str_remove(Diff_from_SQ_cod, "NANA"),
+    #                 Diff_from_SQ_cod = stringr::str_remove(Diff_from_SQ_cod, "NA ,"),
+    #                 Diff_from_SQ_had = stringr::str_remove(Diff_from_SQ_had, "NA ,"),
+    #                 Diff_from_SQ_had = stringr::str_remove(Diff_from_SQ_had, " , NA"),
+    #                 Diff_from_SQ_had = stringr::str_remove(Diff_from_SQ_had, " , NANA"),
+    #                 Diff_from_SQ_had = stringr::str_remove(Diff_from_SQ_had, "NANA")) %>%
+    #   dplyr::select(mode, run_number, Diff_from_SQ_cod, Diff_from_SQ_had, cod_bag, cod_size, cod_season, had_bag, had_size, had_season) %>%
+    #   dplyr::mutate(cod_season = stringr::str_remove_all(cod_season, "202.-"),
+    #                 had_season = stringr::str_remove_all(had_season, "202.-")) %>%
+    #   dplyr::mutate(mode = dplyr::recode(mode, "FH" = "For Hire",
+    #                                      "PR" = "Private")) %>%
+    #   dplyr::select(run_number, mode, cod_bag, cod_size, cod_season, Diff_from_SQ_cod,
+    #                 had_bag, had_size, had_season, Diff_from_SQ_had) %>%
+    #   dplyr::rename(Mode = mode,
+    #                 `Run Identifier` = run_number,
+    #                 `Cod Bag Limit` = cod_bag,
+    #                 `Cod Minimum Size (in)` = cod_size,
+    #                 `Cod Season(s)` = cod_season,
+    #                 `Haddock Bag Limit` = had_bag,
+    #                 `Haddock Minimum Size (in)` = had_size,
+    #                 `Haddock Season(s)` = had_season,
+    #                 `Difference from Cod SQ` = Diff_from_SQ_cod,
+    #                 `Difference from haddock SQ` = Diff_from_SQ_had)
+    # 
+    # 
+     DT::datatable(Regs_out)
+  })
+  
+  output$figoutMA <- plotly::renderPlotly({
+    
+    harvest_dat<- outputs()  %>% 
+      #dat %>%
+      dplyr::filter(keep_release == "keep", 
+                    number_weight == "weight", 
+                    mode == "all modes", 
+                    state == "MA") %>%
+      dplyr::group_by(state, category, keep_release, number_weight, draw, run_number) %>%
+      dplyr::summarise(Value = sum(as.numeric(value))) %>% 
+      dplyr::group_by(state, draw, category) %>% 
+      dplyr::mutate(SQ_value = Value[stringr::str_detect( run_number, "SQ")], 
+                    diff_perc = ((Value - SQ_value)/SQ_value) *100) %>% 
+      dplyr::group_by(run_number, state, category) %>% 
+      dplyr::summarise(Value = median(Value), 
+                       perc_under = sum(dplyr::case_when(category == "bsb" ~ diff_perc > 1, 
+                                                        category == "sf" ~ diff_perc > 0.5, 
+                                                        category == "scup" ~ diff_perc > 0.25)), 
+                       diff_perc = median(diff_perc)) %>%
+      tidyr::pivot_wider(names_from = category, values_from = c(Value, diff_perc, perc_under) )
+    
+    p<- harvest_dat %>% 
+      #dplyr::mutate(under_acl_cod = as.numeric(under_acl_cod)) %>%
+      ggplot2::ggplot(ggplot2::aes(x = diff_perc_sf, y = diff_perc_bsb, color = as.character(perc_under_sf), shape = as.character(perc_under_bsb), label = run_number)) +
+      ggplot2::geom_point() +
+      ggplot2::geom_text(vjust = -1) + 
+      ggplot2::geom_vline( xintercept =1, linetype="dashed")+
+      ggplot2::geom_hline( yintercept =1, color="grey45")+
+      ggplot2::annotate(geom="text", x=1.2, label="SF RHL reduction", y=1) +
+      ggplot2::annotate(geom="text", y=1.3, label="BSB RHL reduction", x=1.5) +
+      ggplot2::guides(size = "none")+
+      ggplot2::ggtitle("Fluke and BSB percent differenct in Harvest from SQ")+
+      ggplot2::ylab("Median Recreational BSB % diff")+
+      ggplot2::xlab("Median Recreational SF % diff")
+    
+    fig<- plotly::ggplotly(p) %>% #,
+      #tooltip = c("x", "y", "colour")) %>%
+      plotly::style(textposition = "top center")
+    fig
+  })
+  output$outputMAtab <- renderUI({
+    if(any("MA" == input$stateID)){
+      DT::DTOutput(outputId = "DToutMA")
+    }
+  })
+  output$outputMAfig <- renderUI({
+    if(any("MA" == input$stateID)){
+      plotly::plotlyOutput(outputId = "figoutMA")
+    }
+  })
+   
+
+  
+  
+  
+  
   ##### Start of output processing #####
   #### PREDICTIONS_1 ##############################
   predictions_1 <- eventReactive(input$runmeplease,{
@@ -3753,173 +3927,259 @@ server <- function(input, output, session) {
     #if(any( )) will run all selected check boxes on UI-regulations selection tab
     if(any("MA" == input$state)){
       source(here::here(paste0("recDST/model_run_MA.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
     
     if(any("RI" == input$state)){
       source(here::here(paste0("recDST/model_run_RI.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
     
     if(any("CT" == input$state)){
       source(here::here(paste0("recDST/model_run_CT.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
     
     if(any("NY" == input$state)){
       source(here::here(paste0("recDST/model_run_NY.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
     
     if(any("NJ" == input$state)){
       source(here::here(paste0("recDST/model_run_NJ.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
     
     if(any("DE" == input$state)){
       source(here::here(paste0("recDST/model_run_DE.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
     
     if(any("MD" == input$state)){
       source(here::here(paste0("recDST/model_run_MD.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
     
     if(any("VA" == input$state)){
       source(here::here(paste0("recDST/model_run_VA.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
     
     if(any("NC" == input$state)){
       source(here::here(paste0("recDST/model_run_NC.R")), local = TRUE)
-      predictions_1 <- predictions_1 %>% rbind(predictions)
+      predictions_1 <- predictions_1 %>% rbind(predictions_out10)
     }
     
-    predictions_coastwide<- predictions_1 %>% 
-      dplyr::filter(draw == "Summary") %>% 
-      dplyr::group_by(Statistic, Mode, Species, draw) %>%
-      dplyr::summarise(`Status-quo value (median)` = sum(as.numeric(`Status-quo value (median)`)), 
-                       `Alternative option value` = sum(as.numeric(`Alternative option value`))) %>% 
-      dplyr::mutate(State = "All selected", 
-                    `% difference from status-quo outcome (median)` = dplyr::case_when(Statistic != "CV" ~ (as.numeric(`Alternative option value`) - as.numeric(`Status-quo value (median)`))/ as.numeric(`Status-quo value (median)`), 
-                                                                                     TRUE ~ as.numeric(`Alternative option value`) - as.numeric(`Status-quo value (median)`)),
-                    `% under harvest target (out of 100 simulations)` = "NA", 
-                    `% difference from status-quo outcome (median)` = prettyNum(`% difference from status-quo outcome (median)`, big.mark = ",", format = "f", digits = 2, scientific = FALSE),
-                    `Alternative option value` = prettyNum(`Alternative option value`, big.mark = ",", scientific = FALSE), 
-                    `Status-quo value (median)` = prettyNum(`Status-quo value (median)`, big.mark = ",", scientific = FALSE))
-  
-    predictions_1 <- predictions_1 %>% rbind(predictions_coastwide)
-    
+    predictions_1 <- predictions_1 %>% dplyr::mutate(number_weight = dplyr::recode(number_weight, "numbers" = "number"))
     return(predictions_1)
   
   })
   
-  #### keep ####
-  keep <- reactive({
-    keep_output<- predictions_1() %>% 
-      dplyr::filter(draw %in% c("Summary", "All selected"), 
-                    Statistic %in% c("harvest pounds", "harvest numbers")) %>% 
-      dplyr::arrange(factor(Statistic, levels = c("harvest pounds", "harvest numbers"))) %>% 
-      dplyr::mutate( `% difference from status-quo outcome (median)` = prettyNum(`% difference from status-quo outcome (median)`, big.mark = ",", scientific = FALSE),
-                     `Alternative option value` = prettyNum(`Alternative option value`, big.mark = ",", scientific = FALSE), 
-                     `Status-quo value (median)` = prettyNum(`Status-quo value (median)`, big.mark = ",", scientific = FALSE))
-    return(keep_output)
-  })
   
-  #### release ####
-  release<- reactive({
-    release_output<- predictions_1() %>% 
-      dplyr::filter(draw %in% c("Summary", "All selected"),
-                    Statistic %in% c("release pounds", "dead release pounds", 
-                                     "release numbers", "dead release numbers")) %>% 
-      dplyr::select(! "% under harvest target (out of 100 simulations)") %>% 
-      dplyr::arrange(factor(Statistic, levels = c("release pounds", "release numbers", "dead release pounds", "dead release numbers"))) %>% 
-      dplyr::mutate( `% difference from status-quo outcome (median)` = prettyNum(`% difference from status-quo outcome (median)`, big.mark = ",", scientific = FALSE),
-                     `Alternative option value` = prettyNum(`Alternative option value`, big.mark = ",", scientific = FALSE), 
-                     `Status-quo value (median)` = prettyNum(`Status-quo value (median)`, big.mark = ",", scientific = FALSE))
-    return(release_output)
+  
+  ### Recreational Harvest Limit Values
+  sf_rhl <- function(){
+    sf_rhl = 99
+    return(sf_rhl)
+  }
+  
+  bsb_rhl <- function(){
+    bsb_rhl = 99
+    return(bsb_rhl)
+  }
+  
+  scup_rhl <- function(){
+    scup_rhl = 99
+    return(scup_rhl)
+  }
+  
+  Run_Name <- function(){
+    if(stringr::str_detect(input$Run_Name, "_")){
+      Run_Name <-  gsub("_", "-", input$Run_Name)
+    }else {
+      Run_Name <- input$Run_Name
+    }
+    print(Run_Name)
+    return(Run_Name)
+  }
+  
+  #### keep ####
+  # keep <- reactive({
+  #   keep_output<- predictions_1 %>% 
+  #     dplyr::mutate(keep_release = paste(keep_release, param)) %>% 
+  #     dplyr::filter(keep_release %in% c("keep total")) %>%
+  #         dplyr::group_by(model, category, draw, state) %>%
+  #         dplyr::summarise(Value = sum(value)) %>%
+  #         dplyr::mutate(under_rhl = dplyr::case_when(category == "sf" & Value <= sf_rhl() ~ 1, TRUE ~ 0),
+  #                       under_rhl = dplyr::case_when(category == "bsb" & Value <= bsb_rhl() ~ 1, TRUE ~ under_rhl), 
+  #                       under_rhl = dplyr::case_when(category == "scup" & Value <= scup_rhl() ~ 1, TRUE ~ under_rhl)) %>%
+  #         dplyr::group_by(model, category, state) %>%
+  #         dplyr::summarise(under_rhl = sum(under_rhl),
+  #                          Value = median(Value)) %>%
+  #         tidyr::pivot_wider(names_from = c(model), values_from = c(Value, under_rhl)) %>%
+  #         dplyr::mutate(Category = dplyr::recode(category, "sf" = "Summer Flounder",
+  #                                                "bsb" = "BSB", 
+  #                                                "scup" = "Scup")) %>%
+  #         dplyr::select(state, category, Value_SQ, under_rhl_SQ, Value_Alt, under_rhl_Alt) %>%
+  #         dplyr::rename(Species = category, `SQ Total Harvest (mt)` = Value_SQ, `SQ % Under RHL (Out of 100 runs)` = under_rhl_SQ,
+  #                       `Alternative Total Harvest (mt)` = Value_Alt, `Atlernative % Under RHL (Out of 100 runs)` = under_rhl_Alt)
+  #       
+  #       return(keep_output)
+  #     })
+  # 
+  
+  #### keep release discards ####
+  which_keep_out<- reactiveVal(TRUE)
+  
+  keep_by_mode <- reactive({
+    keep_by_mode<- predictions_1() %>%
+      dplyr::mutate(keep_release = paste(keep_release, param)) %>% 
+      dplyr::filter(keep_release %in% c("keep total", "release total", "release discmort")) %>%
+      dplyr::group_by(state, model, category, keep_release, number_weight, draw, mode) %>%
+      dplyr::summarise(Value = sum(as.numeric(value))) %>%
+      dplyr::group_by(state, model, category, keep_release, number_weight, mode) %>%
+      dplyr::summarise(Value = median(Value)) %>%
+      tidyr::pivot_wider(names_from = c(model, number_weight), values_from = Value) %>%
+      dplyr::mutate(perc_diff_num = ((Alt_number-SQ_number)/SQ_number) * 100,
+                    perc_diff_wt = ((Alt_weight-SQ_weight)/SQ_weight) * 100) %>%
+      dplyr::group_by(state, category, keep_release, mode) %>%
+      dplyr::filter(!perc_diff_num == "NA",
+                    !perc_diff_wt == "NA") %>%
+      dplyr::summarise(SQ_Number = median(SQ_number), SQ_Weight = median(SQ_weight),
+                       alt_Number = median(Alt_number), alt_Weight = median(Alt_weight),
+                       perc_diff_num = median(perc_diff_num), perc_diff_wt = median(perc_diff_wt)) %>%
+      dplyr::select(!c(SQ_Number, SQ_Weight)) %>%
+      dplyr::mutate(category = dplyr::recode(category, "sf" = "Summer Flounder",
+                                             "bsb" = "BSB", 
+                                             "scup" = "Scup"),
+                    keep_release = dplyr::recode(keep_release, "keep total" = "Harvest",
+                                                      "release discmort" = "Dead Discards", 
+                                                 "release total" = "Discards"),
+                    mode = dplyr::recode(mode, "fh" = "For Hire",
+                                         "pr" = "Private", 
+                                         "sh" = "Shore")) %>%
+      dplyr::select(state, category, keep_release, mode, alt_Number, perc_diff_num, alt_Weight, perc_diff_wt) %>%
+      dplyr::rename(Species = category, Variable = keep_release,
+                    `Total Number of fish` = alt_Number, `% difference in number of fish` = perc_diff_num,
+                    `Total Weight (mt)` = alt_Weight, `% difference in weight of fish` = perc_diff_wt, `Mode` = mode)
+    return(keep_by_mode)
   })
+  #####################
+  
+  # #### release ####
+  # release<- reactive({
+  #   release_output<- predictions_1() %>% 
+  #     dplyr::filter(draw %in% c("Summary", "All selected"),
+  #                   Statistic %in% c("release pounds", "dead release pounds", 
+  #                                    "release numbers", "dead release numbers")) %>% 
+  #     dplyr::select(! "% under harvest target (out of 100 simulations)") %>% 
+  #     dplyr::arrange(factor(Statistic, levels = c("release pounds", "release numbers", "dead release pounds", "dead release numbers"))) %>% 
+  #     dplyr::mutate( `% difference from status-quo outcome (median)` = prettyNum(`% difference from status-quo outcome (median)`, big.mark = ",", scientific = FALSE),
+  #                    `Alternative option value` = prettyNum(`Alternative option value`, big.mark = ",", scientific = FALSE), 
+  #                    `Status-quo value (median)` = prettyNum(`Status-quo value (median)`, big.mark = ",", scientific = FALSE))
+  #   return(release_output)
+  # })
   
   #### angler welfare ####
-  welfare<- reactive({
-    welfare_output<- predictions_1() %>% 
-      dplyr::filter(draw %in% c("Summary", "All selected"),
-                    Statistic %in% c("CV")) %>% 
-      dplyr::mutate(Statistic = dplyr::recode(Statistic, "CV" = "Change in angler satisfaction ($)")) %>% 
-      dplyr::rename( "Difference relative to status-quo 2024 (median)" = "% difference from status-quo outcome (median)" ) %>% 
-      dplyr::select(!c("% under harvest target (out of 100 simulations)","Status-quo value (median)","Alternative option value" )) %>% 
-      #dplyr::mutate(`Difference relative to status-quo 2024 (median)` = dplyr::case_when(draw != "All selected" ~ as.numeric(`Difference relative to status-quo 2024 (median)`), TRUE ~ `Difference relative to status-quo 2024 (median)`)) %>% 
-      dplyr::mutate( `Difference relative to status-quo 2024 (median)` = prettyNum(`Difference relative to status-quo 2024 (median)`, big.mark = ",", format = "f", digits = 2, scientific = FALSE)) 
-      
-    return(welfare_output)
+  welfare_by_mode<- reactive({
+    
+    welfare_by_mode <- predictions_1() %>%
+      #predictions_out %>%
+      dplyr::filter(category == "CV") %>%
+      dplyr::group_by(state, draw, model, mode) %>%
+      dplyr::summarise(Value = sum(as.numeric(value))) %>%
+      tidyr::pivot_wider(names_from = model, values_from = Value) %>%
+      dplyr::mutate(Value_diff = SQ - Alt) %>%
+      dplyr::filter(!Value_diff == "NA") %>%
+      dplyr::group_by(state, mode) %>%
+      dplyr::summarise(median_cv = median(Value_diff)) %>%
+      dplyr::rename(`Relative change in Angler Satisfaction ($)` = median_cv) %>%
+      dplyr::mutate(mode = dplyr::recode(mode, "fh" = "For Hire",
+                                         "pr" = "Private", 
+                                         "sh" = "Shore")) %>% 
+      dplyr::ungroup()
+    
+    return(welfare_by_mode)
   })
   
   #### estimate trips ####
-  ntrips<- reactive({
-    ntrips_output<- predictions_1() %>% 
-      dplyr::filter(draw %in% c("Summary", "All selected"),
-                    Statistic %in% c( "ntrips")) %>% 
-      dplyr::mutate(Statistic = dplyr::recode(Statistic, "ntrips" = "Total estimate trips")) %>% 
-      dplyr::select(!c("% under harvest target (out of 100 simulations)","Status-quo value (median)","% difference from status-quo outcome (median)")) %>% 
-      #dplyr::mutate(`Alternative option value` = dplyr::case_when(draw != "All selected" ~ as.numeric(`Alternative option value`), TRUE ~`Alternative option value`)) %>% 
-      dplyr::mutate(`Alternative option value` = prettyNum(as.numeric(`Alternative option value`), big.mark = ",", format = "f", digits = 2,  scientific = FALSE)) 
-      
-    return(ntrips_output)
+  trips_by_mode<- reactive({
+    
+    trips_by_mode<- predictions_1() %>%
+      #predictions_out %>%
+      dplyr::filter(category =="predicted trips" & model == "Alt") %>%
+      dplyr::group_by(state, draw, mode) %>%
+      dplyr::summarise(Value = sum(as.numeric(value))) %>%
+      dplyr::group_by(state, mode) %>%
+      dplyr::summarise(Value = median(Value)) %>%
+      #dplyr::select(Value) %>%
+      dplyr::ungroup() %>%
+      dplyr::rename(`Total number of Angler Trips` = Value) %>%
+      dplyr::select(state, mode, `Total number of Angler Trips`) %>% 
+      dplyr::mutate(mode = dplyr::recode(mode, "fh" = "For Hire",
+                                         "pr" = "Private", 
+                                         "sh" = "Shore"))
+    return(trips_by_mode)
   })
   
   ## ALL DRAWS
   #### keep ####
-  keep_draws <- reactive({
-    keep_draws_output<- predictions_1() %>% 
-      dplyr::filter(draw != "Summary", 
-                    Statistic %in% c("harvest pounds", "harvest numbers")) %>% 
-      dplyr::arrange(factor(Statistic, levels = c("harvest pounds", "harvest numbers"))) %>% 
-      dplyr::mutate( `% difference from status-quo outcome (median)` = prettyNum(`% difference from status-quo outcome (median)`, big.mark = ",", format = "f", digits = 2, scientific = FALSE),
-                     `Alternative option value` = prettyNum(`Alternative option value`, big.mark = ",", scientific = FALSE), 
-                     `Status-quo value (median)` = prettyNum(`Status-quo value (median)`, big.mark = ",", scientific = FALSE))
-    return(keep_draws_output)
-  })
+  # keep_draws <- reactive({
+  #   keep_draws_output<- predictions_1() %>% 
+  #     dplyr::filter(draw != "Summary", 
+  #                   Statistic %in% c("harvest pounds", "harvest numbers")) %>% 
+  #     dplyr::arrange(factor(Statistic, levels = c("harvest pounds", "harvest numbers"))) %>% 
+  #     dplyr::mutate( `% difference from status-quo outcome (median)` = prettyNum(`% difference from status-quo outcome (median)`, big.mark = ",", format = "f", digits = 2, scientific = FALSE),
+  #                    `Alternative option value` = prettyNum(`Alternative option value`, big.mark = ",", scientific = FALSE), 
+  #                    `Status-quo value (median)` = prettyNum(`Status-quo value (median)`, big.mark = ",", scientific = FALSE))
+  #   return(keep_draws_output)
+  # })
   
-  #### release ####
-  release_draws<- reactive({
-    release_draws_output<- predictions_1() %>% 
-      dplyr::filter(draw != "Summary",
-                    Statistic %in% c("release pounds", "dead release pounds", 
-                                     "release numbers", "dead release numbers")) %>% 
-      dplyr::select(! "% under harvest target (out of 100 simulations)") %>% 
-      dplyr::arrange(factor(Statistic, levels = c("release pounds", "release numbers", "dead release pounds", "dead release numbers"))) %>% 
-      dplyr::mutate( `% difference from status-quo outcome (median)` = prettyNum(`% difference from status-quo outcome (median)`, big.mark = ",", format = "f", digits = 2, scientific = FALSE),
-                     `Alternative option value` = prettyNum(`Alternative option value`, big.mark = ",", scientific = FALSE), 
-                     `Status-quo value (median)` = prettyNum(`Status-quo value (median)`, big.mark = ",", scientific = FALSE))
-    return(release_draws_output)
-  })
+  # #### release ####
+  # release_draws<- reactive({
+  #   release_draws_output<- predictions_1() %>% 
+  #     dplyr::filter(draw != "Summary",
+  #                   Statistic %in% c("release pounds", "dead release pounds", 
+  #                                    "release numbers", "dead release numbers")) %>% 
+  #     dplyr::select(! "% under harvest target (out of 100 simulations)") %>% 
+  #     dplyr::arrange(factor(Statistic, levels = c("release pounds", "release numbers", "dead release pounds", "dead release numbers"))) %>% 
+  #     dplyr::mutate( `% difference from status-quo outcome (median)` = prettyNum(`% difference from status-quo outcome (median)`, big.mark = ",", format = "f", digits = 2, scientific = FALSE),
+  #                    `Alternative option value` = prettyNum(`Alternative option value`, big.mark = ",", scientific = FALSE), 
+  #                    `Status-quo value (median)` = prettyNum(`Status-quo value (median)`, big.mark = ",", scientific = FALSE))
+  #   return(release_draws_output)
+  # })
+  # 
+  # #### angler welfare ####
+  # welfare_draws<- reactive({
+  #   welfare_draws_output<- predictions_1() %>% 
+  #     dplyr::filter(draw != "Summary",
+  #                   Statistic %in% c("CV")) %>% 
+  #     dplyr::mutate(Statistic = dplyr::recode(Statistic, "CV" = "Change in angler satisfaction ($)")) %>% 
+  #     dplyr::rename( "Difference relative to status-quo 2024 (median)" = "% difference from status-quo outcome (median)" ) %>%
+  #     dplyr::mutate( `% difference from status-quo outcome (median)` = prettyNum(`% difference from status-quo outcome (median)`, big.mark = ",", format = "f", digits = 2, scientific = FALSE),
+  #                    `Alternative option value` = prettyNum(`Alternative option value`, big.mark = ",", scientific = FALSE), 
+  #                    `Status-quo value (median)` = prettyNum(`Status-quo value (median)`, big.mark = ",", scientific = FALSE)) %>% 
+  #     dplyr::select(! c("% under harvest target (out of 100 simulations)","Status-quo value (median)","Alternative option value" ))
+  #   return(welfare_draws_output)
+  # })
+  # 
+  # #### estimate trips ####
+  # ntrips_draws<- reactive({
+  #   ntrips_draws_output<- predictions %>% 
+  #     dplyr::filter(draw != "Summary",
+  #                   Statistic %in% c( "ntrips")) %>% 
+  #     dplyr::mutate(Statistic = dplyr::recode(Statistic, "ntrips" = "Total estimate trips")) %>% 
+  #     dplyr::mutate(`Alternative option value` = prettyNum(`Alternative option value`, big.mark = ",", format = "f", digits = 2, scientific = FALSE)) %>% 
+  #     dplyr::select(! c("% under harvest target (out of 100 simulations)","Status-quo value (median)","% difference from status-quo outcome (median)"))
+  #   return(ntrips_draws_output)
+  # })
+  #  
   
-  #### angler welfare ####
-  welfare_draws<- reactive({
-    welfare_draws_output<- predictions_1() %>% 
-      dplyr::filter(draw != "Summary",
-                    Statistic %in% c("CV")) %>% 
-      dplyr::mutate(Statistic = dplyr::recode(Statistic, "CV" = "Change in angler satisfaction ($)")) %>% 
-      dplyr::rename( "Difference relative to status-quo 2024 (median)" = "% difference from status-quo outcome (median)" ) %>%
-      dplyr::mutate( `% difference from status-quo outcome (median)` = prettyNum(`% difference from status-quo outcome (median)`, big.mark = ",", format = "f", digits = 2, scientific = FALSE),
-                     `Alternative option value` = prettyNum(`Alternative option value`, big.mark = ",", scientific = FALSE), 
-                     `Status-quo value (median)` = prettyNum(`Status-quo value (median)`, big.mark = ",", scientific = FALSE)) %>% 
-      dplyr::select(! c("% under harvest target (out of 100 simulations)","Status-quo value (median)","Alternative option value" ))
-    return(welfare_draws_output)
-  })
   
-  #### estimate trips ####
-  ntrips_draws<- reactive({
-    ntrips_draws_output<- predictions %>% 
-      dplyr::filter(draw != "Summary",
-                    Statistic %in% c( "ntrips")) %>% 
-      dplyr::mutate(Statistic = dplyr::recode(Statistic, "ntrips" = "Total estimate trips")) %>% 
-      dplyr::mutate(`Alternative option value` = prettyNum(`Alternative option value`, big.mark = ",", format = "f", digits = 2, scientific = FALSE)) %>% 
-      dplyr::select(! c("% under harvest target (out of 100 simulations)","Status-quo value (median)","% difference from status-quo outcome (median)"))
-    return(ntrips_draws_output)
-  })
-   
+  
+  
+  
+  
   
   #### Regulations ####
   regulations <- eventReactive(input$runmeplease,{
@@ -5445,52 +5705,54 @@ server <- function(input, output, session) {
     regs_output<- dat %>% 
       dplyr::filter(!BagLimit == "0",
                     !BagLimit == "0 , 0") %>%
-      dplyr::mutate(Season = stringr::str_remove(Season, pattern = "2023-"),
-                    Season = stringr::str_remove(Season, pattern = "2023-"))
+      dplyr::mutate(Season = stringr::str_remove(Season, pattern = "2024-"),
+                    Season = stringr::str_remove(Season, pattern = "2024-"))
     return(regs_output)
   })
   
   
   #### Output Tables #### 
   output$keep_tableout<- renderTable({
-    keep()
+    keep_by_mode()
   })
   
   output$welfare_tableout<- renderTable({
-    welfare()
+    welfare_by_mode()
   })
   
   output$ntrips_tableout<- renderTable({
-    ntrips()
+    trips_by_mode()
   })
   
   output$regtableout <- renderTable({
     regulations()
   })
   
-  output$releaseout <- renderTable({
-    release()
-  })
+  outputs <- function(){
+    fnames <- list.files(path=here::here("output/"),pattern = "*.csv",full.names = T)
+    
+    fnames2<- as.data.frame(fnames) %>%
+      tidyr::separate(fnames, into = c("a", "b"), sep = "_") %>%
+      dplyr::mutate(b = ifelse(stringr::str_detect(b, "202501"),  "NA", b),
+                    c=c(1:nrow(.)),
+                    run_name = dplyr::case_when(b != "NA" ~ b, TRUE ~ as.character(c))) %>%
+      dplyr::select(run_name)
+    
+    # fnames2<- as.data.frame(fnames) %>%
+    #   tidyr::separate(fnames, into = c("a", "b", "c"), sep = "_") %>%
+    #   dplyr::mutate(c = ifelse(stringr::str_detect(c, "202501"),  "NA", c),
+    #                 d=c(1:nrow(.)),
+    #                 run_name = dplyr::case_when(c != "NA" ~ c, TRUE ~ as.character(c))) %>%
+    #   dplyr::select(run_name)
+    
+    df <- fnames %>%
+      purrr::map_df(~data.table::fread(.,stringsAsFactors=F,check.names=T,strip.white=T))
+    
+    
+    df2<- df %>% dplyr::mutate(run_number = as.character(rep(fnames2$run_name, each = 80)))
+    return(df2)
+  }
   
-  output$fig <- renderPlot({
-    dat<- keep_draws()
-    
-    draws<- dat %>% 
-      dplyr::filter(draw != "Summary", 
-                    Statistic %in% c("harvest pounds"))
-    
-    summary <-  dat %>% 
-      dplyr::filter(draw == "Summary", 
-                    Statistic %in% c("harvest pounds"))
-    
-    
-    dat %>% 
-      ggplot2::ggplot()+
-      ggplot2::geom_violin(ggplot2::aes(x = `State`, y = as.numeric(`Alternative option value`, color = `State`)))+
-      ggplot2::facet_wrap(Mode~Species, scales = "free_y")+
-      ggplot2::geom_hline(yintercept = summary$`Alternative option value`)
-
-  })
   
   #### Save Raw Data
   observeEvent(input$runmeplease, {
@@ -5510,16 +5772,13 @@ server <- function(input, output, session) {
     filename = function(){"RecDSToutput.xlsx"},
     content = function(filename) {
       
-      df_list <- list(Regulations=regulations(), Harvest=keep(), Releases = release(),
-                      Change_Angler_Satisfaction = welfare(), Estimated_Trips = ntrips(), Harvest_Draws = keep_draws(), 
-                      Releases_Draws = release_draws(), Change_Angler_Satisfaction_Draw = welfare_draws(), Estimated_Trips_Draws = ntrips_draws())
+      df_list <- list(Regulations=regulations(), Harvest=keep_by_mode(), 
+                      Change_Angler_Satisfaction = welfare_by_mode(), Estimated_Trips = trips_by_mode()) #, # Harvest_Draws = keep_draws(), 
+                      #Releases_Draws = release_draws(), Change_Angler_Satisfaction_Draw = welfare_draws(), Estimated_Trips_Draws = ntrips_draws())
       openxlsx::write.xlsx(x = df_list , file = filename, row.names = FALSE)
     })
   
-  getPage<-function() {
-    return(includeHTML(here::here("docs/documentation.html")))
-  }
-  output$documentation<-renderUI({getPage()})
+
   
 }
 

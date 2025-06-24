@@ -12,13 +12,9 @@ test_data_cd <- here::here("Data/")
 # Variables to change 
 dr<-1
 st="MA"
+
+
 library(magrittr)
-
-
-
-
-
-
 ############# To Run in Loop 
 
 #for (st in c("MA", "RI")){
@@ -65,7 +61,7 @@ library(magrittr)
     for (md in mode_draw) {
       
       # pull trip outcomes from the calibration year
-      base_outcomes0[[md]]<-feather::read_feather(file.path(test_data_cd, paste0("base_outcomes_", st,"_", md, "_", dr, ".feather"))) %>% 
+      base_outcomes0[[md]]<-feather::read_feather(file.path(test_data_cd, paste0("base_outcomes_MA_", md, "_", dr, ".feather"))) %>% 
         data.table::as.data.table()
       
       base_outcomes0[[md]]<-base_outcomes0[[md]] %>% 
@@ -74,15 +70,15 @@ library(magrittr)
         dplyr::select(-date)
       
       # pull in data on the number of choice occasions per mode-day
-      n_choice_occasions0[[md]]<-feather::read_feather(file.path(test_data_cd, paste0("n_choice_occasions_", st,"_", md, "_", dr, ".feather")))  
+      n_choice_occasions0[[md]]<-feather::read_feather(file.path(test_data_cd, paste0("n_choice_occasions_MA_", md, "_", dr, ".feather")))  
       n_choice_occasions0[[md]]<-n_choice_occasions0[[md]] %>% 
         dplyr::mutate(date_parsed=lubridate::dmy(date)) %>% 
         dplyr::select(-date)
       
     }
     
-    base_outcomes <- dplyr::bind_rows(base_outcomes0)
-    n_choice_occasions <- dplyr::bind_rows(n_choice_occasions0) %>% 
+    base_outcomes <- bind_rows(base_outcomes0)
+    n_choice_occasions <- bind_rows(n_choice_occasions0) %>% 
       dplyr::arrange(date_parsed, mode)
     rm(base_outcomes0, n_choice_occasions0)
     
