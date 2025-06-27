@@ -80,6 +80,31 @@ server <- function(input, output, session) {
   #bsb_percent_change <- 0
   scup_percent_change <- .9
   
+  sf_rhl <- function(){
+    sf_rhl = 99
+    return(sf_rhl)
+  }
+  
+  bsb_rhl <- function(){
+    bsb_rhl = 99
+    return(bsb_rhl)
+  }
+  
+  scup_rhl <- function(){
+    scup_rhl = 99
+    return(scup_rhl)
+  }
+  
+  Run_Name <- function(){
+    if(stringr::str_detect(input$Run_Name, "_")){
+      Run_Name <-  gsub("_", "-", input$Run_Name)
+    }else {
+      Run_Name <- input$Run_Name
+    }
+    print(Run_Name)
+    return(Run_Name)
+  }
+  
   #### Toggle extra seasons on UI ####
   # Allows for extra seasons to show and hide based on click
   shinyjs::onclick("SFMAaddSeason",
@@ -3948,7 +3973,7 @@ server <- function(input, output, session) {
                                            as.character(input$BSBmaPR_seas2[1]), as.character(input$BSBmaPR_seas2[2]), as.character(input$BSBmaPR_2_bag), as.character(input$BSBmaPR_2_len),
                                            as.character(input$BSBmaSH_seas2[1]), as.character(input$BSBmaSH_seas2[2]), as.character(input$BSBmaSH_2_bag), as.character(input$BSBmaSH_2_len)))
       }
-      
+      print("made in out of bsb")
       
       MA_regs <- data.frame(run_name = c(Run_Name()), 
                             input =  c("SFmaFH_seas1_op", "SFmaFH_seas1_cl", "SFmaFH_1_bag", "SFmaFH_1_len", 
@@ -3977,9 +4002,14 @@ server <- function(input, output, session) {
                                        as.character(input$SCUPmaSH_seas1[1]), as.character(input$SCUPmaSH_seas1[2]), as.character(input$SCUPmaSH_1_bag), as.character(input$SCUPmaSH_1_len),
                                        as.character(input$SCUPmaFH_seas2[1]), as.character(input$SCUPmaFH_seas2[2]), as.character(input$SCUPmaFH_2_bag), as.character(input$SCUPmaFH_2_len), 
                                        as.character(input$SCUPmaPR_seas2[1]), as.character(input$SCUPmaPR_seas2[2]), as.character(input$SCUPmaPR_2_bag), as.character(input$SCUPmaPR_2_len),
-                                       as.character(input$SCUPmaSH_seas2[1]), as.character(input$SCUPmaSH_seas2[2]), as.character(input$SCUPmaSH_2_bag), as.character(input$SCUPmaSH_2_lEn),
+                                       as.character(input$SCUPmaSH_seas2[1]), as.character(input$SCUPmaSH_seas2[2]), as.character(input$SCUPmaSH_2_bag), as.character(input$SCUPmaSH_2_len),
                                        as.character(input$SCUPmaFH_seas3[1]), as.character(input$SCUPmaFH_seas3[2]), as.character(input$SCUPmaFH_3_bag), as.character(input$SCUPmaFH_3_len)))
-      regulations <- regulations %>% rbind(MA_reg, bsbMAregs)
+      
+      print("out SF and Scup")
+      
+      
+      regulations <- regulations %>% rbind(MA_regs, bsbMAregs)
+      print("made regulations MA")
     }
     
     if(any("RI" == input$state)){
@@ -4047,7 +4077,7 @@ server <- function(input, output, session) {
                                        as.character(input$SCUPriSH_seas2[1]), as.character(input$SCUPriSH_seas2[2]), as.character(input$SCUPriSH_2_bag), as.character(input$SCUPriSH_2_len),
                                        as.character(input$SCUPriFH_seas3[1]), as.character(input$SCUPriFH_seas3[2]), as.character(input$SCUPriFH_3_bag), as.character(input$SCUPriFH_3_len), 
                                        as.character(input$SCUPriFH_seas4[1]), as.character(input$SCUPriFH_seas4[2]), as.character(input$SCUPriFH_4_bag), as.character(input$SCUPriFH_4_len)))
-      regulations <- regulations %>% rbind(RI_reg, sfRIregs)
+      regulations <- regulations %>% rbind(RI_regs, sfRIregs)
     }
 
     if(any("CT" == input$state)){
@@ -4123,7 +4153,7 @@ server <- function(input, output, session) {
                                      as.character(input$SCUPctSH_seas2[1]), as.character(input$SCUPctSH_seas2[2]), as.character(input$SCUPctSH_2_bag), as.character(input$SCUPctSH_2_len),
                                      as.character(input$SCUPctFH_seas3[1]), as.character(input$SCUPctFH_seas3[2]), as.character(input$SCUPctFH_3_bag), as.character(input$SCUPctFH_3_len), 
                                      as.character(input$SCUPctFH_seas4[1]), as.character(input$SCUPctFH_seas4[2]), as.character(input$SCUPctFH_4_bag), as.character(input$SCUPctFH_4_len)))
-    regulations <- regulations %>% rbind(CT_reg, sfCTregs)
+    regulations <- regulations %>% rbind(CT_regs, sfCTregs)
     
     }
 
@@ -4216,7 +4246,7 @@ server <- function(input, output, session) {
                                        as.character(input$SCUPnySH_seas2[1]), as.character(input$SCUPnySH_seas2[2]), as.character(input$SCUPnySH_2_bag), as.character(input$SCUPnySH_2_len),
                                        as.character(input$SCUPnyFH_seas3[1]), as.character(input$SCUPnyFH_seas3[2]), as.character(input$SCUPnyFH_3_bag), as.character(input$SCUPnyFH_3_len), 
                                        as.character(input$SCUPnyFH_seas4[1]), as.character(input$SCUPnyFH_seas4[2]), as.character(input$SCUPnyFH_4_bag), as.character(input$SCUPnyFH_4_len)))
-      regulations <- regulations %>% rbind(NY_reg, sfNYregs, bsbNYregs)
+      regulations <- regulations %>% rbind(NY_regs, sfNYregs, bsbNYregs)
       
     }
 
@@ -4256,7 +4286,7 @@ server <- function(input, output, session) {
                                            "BSBnj_seas4_op", "BSBnj_seas4_cl", "BSBnj_4_bag", "BSBnj_4_len", 
                                            "BSBnjFH_seas5_op", "BSBnjFH_seas5_cl", "BSBnjFH_5_bag", "BSBnjFH_5_len", 
                                            "BSBnjPR_seas5_op", "BSBnjPR_seas5_cl", "BSBnjPR_5_bag", "BSBnjPR_5_len",
-                                           "BSBnjSH_seas5_op", "BSBnjSH_seas5_cl", "BSBnjSH_5_bag", "BSBnjSH_5_len",),
+                                           "BSBnjSH_seas5_op", "BSBnjSH_seas5_cl", "BSBnjSH_5_bag", "BSBnjSH_5_len"),
                                 value =  c(as.character(input$BSBnj_seas1[1]), as.character(input$BSBnj_seas1[2]), as.character(input$BSBnj_1_bag), as.character(input$BSBnj_1_len), 
                                            as.character(input$BSBnj_seas2[1]), as.character(input$BSBnj_seas2[2]), as.character(input$BSBnj_2_bag), as.character(input$BSBnj_2_len), 
                                            as.character(input$BSBnj_seas3[1]), as.character(input$BSBnj_seas3[2]), as.character(input$BSBnj_3_bag), as.character(input$BSBnj_3_len), 
@@ -4381,7 +4411,7 @@ server <- function(input, output, session) {
                                          "BSBde_seas2_op", "BSBde_seas2_cl", "BSBde_2_bag", "BSBde_2_len", 
                                          "BSBdeFH_seas3_op", "BSBdeFH_seas3_cl", "BSBdeFH_3_bag", "BSBdeFH_3_len", 
                                          "BSBdePR_seas3_op", "BSBdePR_seas3_cl", "BSBdePR_3_bag", "BSBdePR_3_len",
-                                         "BSBdeSH_seas3_op", "BSBdeSH_seas3_cl", "BSBdeSH_3_bag", "BSBdeSH_3_len",),
+                                         "BSBdeSH_seas3_op", "BSBdeSH_seas3_cl", "BSBdeSH_3_bag", "BSBdeSH_3_len"),
                               value =  c(as.character(input$BSBde_seas1[1]), as.character(input$BSBde_seas1[2]), as.character(input$BSBde_1_bag), as.character(input$BSBde_1_len), 
                                          as.character(input$BSBde_seas2[1]), as.character(input$BSBde_seas2[2]), as.character(input$BSBde_2_bag), as.character(input$BSBde_2_len), 
                                          as.character(input$BSBdeFH_seas3[1]), as.character(input$BSBdeFH_seas3[2]), as.character(input$BSBdeFH_3_bag), as.character(input$BSBdeFH_3_len), 
@@ -4482,7 +4512,7 @@ server <- function(input, output, session) {
                                          "BSBmd_seas2_op", "BSBmd_seas2_cl", "BSBmd_2_bag", "BSBmd_2_len", 
                                          "BSBmdFH_seas3_op", "BSBmdFH_seas3_cl", "BSBmdFH_3_bag", "BSBmdFH_3_len", 
                                          "BSBmdPR_seas3_op", "BSBmdPR_seas3_cl", "BSBmdPR_3_bag", "BSBmdPR_3_len",
-                                         "BSBmdSH_seas3_op", "BSBmdSH_seas3_cl", "BSBmdSH_3_bag", "BSBmdSH_3_len",),
+                                         "BSBmdSH_seas3_op", "BSBmdSH_seas3_cl", "BSBmdSH_3_bag", "BSBmdSH_3_len"),
                               value =  c(as.character(input$BSBmd_seas1[1]), as.character(input$BSBmd_seas1[2]), as.character(input$BSBmd_1_bag), as.character(input$BSBmd_1_len), 
                                          as.character(input$BSBmd_seas2[1]), as.character(input$BSBmd_seas2[2]), as.character(input$BSBmd_2_bag), as.character(input$BSBmd_2_len), 
                                          as.character(input$BSBmdFH_seas3[1]), as.character(input$BSBmdFH_seas3[2]), as.character(input$BSBmdFH_3_bag), as.character(input$BSBmdFH_3_len), 
@@ -4582,7 +4612,7 @@ server <- function(input, output, session) {
                                          "BSBva_seas2_op", "BSBva_seas2_cl", "BSBva_2_bag", "BSBva_2_len", 
                                          "BSBvaFH_seas3_op", "BSBvaFH_seas3_cl", "BSBvaFH_3_bag", "BSBvaFH_3_len", 
                                          "BSBvaPR_seas3_op", "BSBvaPR_seas3_cl", "BSBvaPR_3_bag", "BSBvaPR_3_len",
-                                         "BSBvaSH_seas3_op", "BSBvaSH_seas3_cl", "BSBvaSH_3_bag", "BSBvaSH_3_len",),
+                                         "BSBvaSH_seas3_op", "BSBvaSH_seas3_cl", "BSBvaSH_3_bag", "BSBvaSH_3_len"),
                               value =  c(as.character(input$BSBva_seas1[1]), as.character(input$BSBva_seas1[2]), as.character(input$BSBva_1_bag), as.character(input$BSBva_1_len), 
                                          as.character(input$BSBva_seas2[1]), as.character(input$BSBva_seas2[2]), as.character(input$BSBva_2_bag), as.character(input$BSBva_2_len), 
                                          as.character(input$BSBvaFH_seas3[1]), as.character(input$BSBvaFH_seas3[2]), as.character(input$BSBvaFH_3_bag), as.character(input$BSBvaFH_3_len), 
@@ -4647,7 +4677,7 @@ server <- function(input, output, session) {
                                           "SFncFH_seas2_op", "SFncFH_seas2_cl", "SFncFH_2_bag", "SFncFH_2_len", 
                                           "SFncPR_seas2_op", "SFncPR_seas2_cl", "SFncPR_2_bag", "SFncPR_2_len",
                                           "SFncSH_seas2_op", "SFncSH_seas2_cl", "SFncSH_2_bag", "SFncSH_2_len"),
-                               nclue =  c(as.character(input$SFnc_seas1[1]), as.character(input$SFnc_seas1[2]), as.character(input$SFnc_1_bag), as.character(input$SFnc_1_len), 
+                               value =  c(as.character(input$SFnc_seas1[1]), as.character(input$SFnc_seas1[2]), as.character(input$SFnc_1_bag), as.character(input$SFnc_1_len), 
                                           as.character(input$SFncFH_seas2[1]), as.character(input$SFncFH_seas2[2]), as.character(input$SFncFH_2_bag), as.character(input$SFncFH_2_len), 
                                           as.character(input$SFncPR_seas2[1]), as.character(input$SFncPR_seas2[2]), as.character(input$SFncPR_2_bag), as.character(input$SFncPR_2_len),
                                           as.character(input$SFncSH_seas2[1]), as.character(input$SFncSH_seas2[2]), as.character(input$SFncSH_2_bag), as.character(input$SFncSH_2_len)))
@@ -4659,7 +4689,7 @@ server <- function(input, output, session) {
                                            "SFncFH_seas2_op", "SFncFH_seas2_cl", "SFncFH_2_bag", "SFncFH_2_len", 
                                            "SFncPR_seas2_op", "SFncPR_seas2_cl", "SFncPR_2_bag", "SFncPR_2_len",
                                            "SFncSH_seas2_op", "SFncSH_seas2_cl", "SFncSH_2_bag", "SFncSH_2_len"),
-                                nclue = c( as.character(input$SFncFH_seas1[1]), as.character(input$SFncFH_seas1[2]), as.character(input$SFncFH_1_bag), as.character(input$SFncFH_1_len), 
+                                value = c( as.character(input$SFncFH_seas1[1]), as.character(input$SFncFH_seas1[2]), as.character(input$SFncFH_1_bag), as.character(input$SFncFH_1_len), 
                                            as.character(input$SFncPR_seas1[1]), as.character(input$SFncPR_seas1[2]), as.character(input$SFncPR_1_bag), as.character(input$SFncPR_1_len),
                                            as.character(input$SFncSH_seas1[1]), as.character(input$SFncSH_seas1[2]), as.character(input$SFncSH_1_bag), as.character(input$SFncSH_1_len),
                                            as.character(input$SFncFH_seas2[1]), as.character(input$SFncFH_seas2[2]), as.character(input$SFncFH_2_bag), as.character(input$SFncFH_2_len), 
@@ -4674,8 +4704,8 @@ server <- function(input, output, session) {
                                          "BSBnc_seas2_op", "BSBnc_seas2_cl", "BSBnc_2_bag", "BSBnc_2_len", 
                                          "BSBncFH_seas3_op", "BSBncFH_seas3_cl", "BSBncFH_3_bag", "BSBncFH_3_len", 
                                          "BSBncPR_seas3_op", "BSBncPR_seas3_cl", "BSBncPR_3_bag", "BSBncPR_3_len",
-                                         "BSBncSH_seas3_op", "BSBncSH_seas3_cl", "BSBncSH_3_bag", "BSBncSH_3_len",),
-                              nclue =  c(as.character(input$BSBnc_seas1[1]), as.character(input$BSBnc_seas1[2]), as.character(input$BSBnc_1_bag), as.character(input$BSBnc_1_len), 
+                                         "BSBncSH_seas3_op", "BSBncSH_seas3_cl", "BSBncSH_3_bag", "BSBncSH_3_len"),
+                              value =  c(as.character(input$BSBnc_seas1[1]), as.character(input$BSBnc_seas1[2]), as.character(input$BSBnc_1_bag), as.character(input$BSBnc_1_len), 
                                          as.character(input$BSBnc_seas2[1]), as.character(input$BSBnc_seas2[2]), as.character(input$BSBnc_2_bag), as.character(input$BSBnc_2_len), 
                                          as.character(input$BSBncFH_seas3[1]), as.character(input$BSBncFH_seas3[2]), as.character(input$BSBncFH_3_bag), as.character(input$BSBncFH_3_len), 
                                          as.character(input$BSBncPR_seas3[1]), as.character(input$BSBncPR_seas3[2]), as.character(input$BSBncPR_3_bag), as.character(input$BSBncPR_3_len),
@@ -4691,7 +4721,7 @@ server <- function(input, output, session) {
                                              "BSBncFH_seas3_op", "BSBncFH_seas3_cl", "BSBncFH_3_bag", "BSBncFH_3_len", 
                                              "BSBncPR_seas3_op", "BSBncPR_seas3_cl", "BSBncPR_3_bag", "BSBncPR_3_len",
                                              "BSBncSH_seas3_op", "BSBncSH_seas3_cl", "BSBncSH_3_bag", "BSBncSH_3_len"),
-                                 nclue = c( as.character(input$BSBncFH_seas1[1]), as.character(input$BSBncFH_seas1[2]), as.character(input$BSBncFH_1_bag), as.character(input$BSBncFH_1_len),
+                                 value = c( as.character(input$BSBncFH_seas1[1]), as.character(input$BSBncFH_seas1[2]), as.character(input$BSBncFH_1_bag), as.character(input$BSBncFH_1_len),
                                             as.character(input$BSBncPR_seas1[1]), as.character(input$BSBncPR_seas1[2]), as.character(input$BSBncPR_1_bag), as.character(input$BSBncPR_1_len), 
                                             as.character(input$BSBncSH_seas1[1]), as.character(input$BSBncSH_seas1[2]), as.character(input$BSBncSH_1_bag), as.character(input$BSBncSH_1_len), 
                                             as.character(input$BSBncFH_seas2[1]), as.character(input$BSBncFH_seas2[2]), as.character(input$BSBncFH_2_bag), as.character(input$BSBncFH_2_len), 
@@ -4709,7 +4739,7 @@ server <- function(input, output, session) {
                                             "SCUPncFH_seas2_op", "SCUPncFH_seas2_cl", "SCUPncFH_2_bag", "SCUPncFH_2_len", 
                                             "SCUPncPR_seas2_op", "SCUPncPR_seas2_cl", "SCUPncPR_2_bag", "SCUPncPR_2_len",
                                             "SCUPncSH_seas2_op", "SCUPncSH_seas2_cl", "SCUPncSH_2_bag", "SCUPncSH_2_len"),
-                                 nclue =  c(as.character(input$SCUPnc_seas1[1]), as.character(input$SCUPnc_seas1[2]), as.character(input$SCUPnc_1_bag), as.character(input$SCUPnc_1_len), 
+                                 value =  c(as.character(input$SCUPnc_seas1[1]), as.character(input$SCUPnc_seas1[2]), as.character(input$SCUPnc_1_bag), as.character(input$SCUPnc_1_len), 
                                             as.character(input$SCUPncFH_seas2[1]), as.character(input$SCUPncFH_seas2[2]), as.character(input$SCUPncFH_2_bag), as.character(input$SCUPncFH_2_len), 
                                             as.character(input$SCUPncPR_seas2[1]), as.character(input$SCUPncPR_seas2[2]), as.character(input$SCUPncPR_2_bag), as.character(input$SCUPncPR_2_len),
                                             as.character(input$SCUPncSH_seas2[1]), as.character(input$SCUPncSH_seas2[2]), as.character(input$SCUPncSH_2_bag), as.character(input$SCUPncSH_2_len)))
@@ -4721,7 +4751,7 @@ server <- function(input, output, session) {
                                               "SCUPncFH_seas2_op", "SCUPncFH_seas2_cl", "SCUPncFH_2_bag", "SCUPncFH_2_len", 
                                               "SCUPncPR_seas2_op", "SCUPncPR_seas2_cl", "SCUPncPR_2_bag", "SCUPncPR_2_len",
                                               "SCUPncSH_seas2_op", "SCUPncSH_seas2_cl", "SCUPncSH_2_bag", "SCUPncSH_2_len"),
-                                  nclue =  c(as.character(input$SCUPncFH_seas1[1]), as.character(input$SCUPncFH_seas1[2]), as.character(input$SCUPncFH_1_bag), as.character(input$SCUPncFH_1_len), 
+                                  value =  c(as.character(input$SCUPncFH_seas1[1]), as.character(input$SCUPncFH_seas1[2]), as.character(input$SCUPncFH_1_bag), as.character(input$SCUPncFH_1_len), 
                                              as.character(input$SCUPncPR_seas1[1]), as.character(input$SCUPncPR_seas1[2]), as.character(input$SCUPncPR_1_bag), as.character(input$SCUPncPR_1_len),
                                              as.character(input$SCUPncSH_seas1[1]), as.character(input$SCUPncSH_seas1[2]), as.character(input$SCUPncSH_1_bag), as.character(input$SCUPncSH_1_len),
                                              as.character(input$SCUPncFH_seas2[1]), as.character(input$SCUPncFH_seas2[2]), as.character(input$SCUPncFH_2_bag), as.character(input$SCUPncFH_2_len), 
@@ -4807,30 +4837,7 @@ server <- function(input, output, session) {
   
   
   ### Recreational Harvest Limit Values
-  sf_rhl <- function(){
-    sf_rhl = 99
-    return(sf_rhl)
-  }
-  
-  bsb_rhl <- function(){
-    bsb_rhl = 99
-    return(bsb_rhl)
-  }
-  
-  scup_rhl <- function(){
-    scup_rhl = 99
-    return(scup_rhl)
-  }
-  
-  Run_Name <- function(){
-    if(stringr::str_detect(input$Run_Name, "_")){
-      Run_Name <-  gsub("_", "-", input$Run_Name)
-    }else {
-      Run_Name <- input$Run_Name
-    }
-    print(Run_Name)
-    return(Run_Name)
-  }
+
   
   #### keep ####
   # keep <- reactive({
