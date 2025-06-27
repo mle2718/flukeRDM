@@ -1,14 +1,15 @@
 
 
-#This is the simulation model for the calibration year WITHOUT any adjustments for illegal harvest or voluntary release
+#This is the calibration-year trip simulation WITHOUT any adjustments for illegal harvest or voluntary release
 
 states <- c("MA", "RI")
 mode_draw <- c("sh", "pr", "fh")
 draws <- 1:2
 
-# i<-1
-# s<-"MA"
-# md<-"fh"
+ i<-1
+ s<-"MA"
+ md<-"fh"
+
 # Create an empty list to collect results
 calib_comparison <- list()
 
@@ -54,7 +55,7 @@ for (s in states) {
         dplyr::select(state,  fitted_prob, length)
       
       
-      # begin trip simulation
+      ### Begin trip simulation ### 
       
       # subset trips with zero catch, as no size draws are required
       sf_zero_catch <- dplyr::filter(catch_data, sf_cat == 0)
@@ -66,8 +67,10 @@ for (s in states) {
       bsb_catch_check<-base::sum(catch_data$bsb_cat)
       scup_catch_check<-base::sum(catch_data$scup_cat)
       
+      
       # Summer flounder trip simulation
-
+      if (sf_catch_check!=0){
+        
       #keep trips with positive sf catch
       sf_catch_data <- dplyr::filter(catch_data, sf_cat > 0)
       
@@ -123,23 +126,24 @@ for (s in states) {
       sf_trip_data<- sf_trip_data %>% dplyr::mutate(domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid))
       sf_trip_data<-data.table::as.data.table(sf_trip_data)
       data.table::setkey(sf_trip_data, "domain2")
+      }
       
+       if (sf_catch_check==0){
+         sf_trip_data<-catch_data %>% 
+           dplyr::select("date", "catch_draw","tripid","mode") %>% 
+           dplyr::mutate(tot_keep_sf_new = 0, 
+                         tot_rel_sf_new= 0, 
+                         domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid)) 
+          
+         sf_trip_data<-data.table::as.data.table(sf_trip_data)
+         data.table::setkey(sf_trip_data, "domain2")  
+       }
+         
+
       
-      # if (cod_catch_check==0 & had_catch_check!=0){
-      #   trip_data<-cod_catch_data
-      #   trip_data<- trip_data %>% 
-      #     dplyr::mutate(domain2 = paste0(period2, "_", catch_draw, "_", tripid)) %>% 
-      #     dplyr::select(-mode) %>% 
-      #     as.data.table()
-      #   
-      #   data.table::setkey(trip_data, "domain2")
-      #   
-      #   trip_data$tot_keep_cod_new<-0
-      #   trip_data$tot_rel_cod_new<-0
-      # }
-      
-    # BSB flounder trip simulation
-      
+      # BSB trip simulation
+      if (bsb_catch_check!=0){
+        
       # keep trips with positive bsb catch
       bsb_catch_data <- dplyr::filter(catch_data, bsb_cat > 0)
       
@@ -199,10 +203,23 @@ for (s in states) {
       
       bsb_trip_data<-data.table::as.data.table(bsb_trip_data)
       data.table::setkey(bsb_trip_data, "domain2")
+      }
+      
+      if (bsb_catch_check==0){
+        bsb_trip_data<-catch_data %>% 
+          dplyr::select("date", "catch_draw","tripid","mode") %>% 
+          dplyr::mutate(tot_keep_bsb_new = 0, 
+                        tot_rel_bsb_new= 0, 
+                        domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid)) 
+        
+        bsb_trip_data<-data.table::as.data.table(bsb_trip_data)
+        data.table::setkey(bsb_trip_data, "domain2")  
+      }
       
       
-  # Scup  trip simulation
-      
+      # Scup trip simulation
+      if (scup_catch_check!=0){
+        
       #keep trips with positive scup catch
       scup_catch_data <- dplyr::filter(catch_data, scup_cat > 0)
       
@@ -219,7 +236,7 @@ for (s in states) {
                                              prob = scup_size_data$fitted_prob,
                                              replace = TRUE)) 
       
-
+      
       # Impose regulations, calculate keep and release per trip
       catch_size_data <- catch_size_data %>%
         dplyr::mutate(posskeep = ifelse(fitted_length>=scup_min ,1,0)) %>%
@@ -261,6 +278,18 @@ for (s in states) {
         dplyr::select(-c("date", "catch_draw","tripid","mode"))
       scup_trip_data<-data.table::as.data.table(scup_trip_data)
       data.table::setkey(scup_trip_data, "domain2") 
+    }
+      
+      if (scup_catch_check==0){
+        scup_trip_data<-catch_data %>% 
+          dplyr::select("date", "catch_draw","tripid","mode") %>% 
+          dplyr::mutate(tot_keep_scup_new = 0, 
+                        tot_rel_v_new= 0, 
+                        domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid)) 
+        
+        scup_trip_data<-data.table::as.data.table(scup_trip_data)
+        data.table::setkey(scup_trip_data, "domain2")  
+      }
       
       
       # merge the hadd trip data with the rest of the trip data
@@ -271,8 +300,7 @@ for (s in states) {
         dplyr::mutate(tot_scup_catch = tot_keep_scup_new + tot_rel_scup_new, 
                       tot_bsb_catch = tot_keep_bsb_new + tot_rel_bsb_new, 
                       tot_sf_catch = tot_keep_sf_new + tot_rel_sf_new)
-      #}
-      
+
       parameters <- trip_data %>% 
         dplyr::select(date, mode, tripid) 
       
@@ -306,8 +334,7 @@ for (s in states) {
                       tot_rel_scup_base = tot_rel_scup_new,
                       tot_rel_sf_base = tot_rel_sf_new)
       
-      
-      #  utility
+      #  compute utility
       trip_data <-trip_data %>%
         dplyr::mutate(
           vA = beta_sqrt_sf_keep*sqrt(tot_keep_sf_new) +
@@ -476,14 +503,14 @@ for (s in states) {
         dplyr::filter(draw==i & state==s)%>% 
         dplyr::filter(mode==md)
       
-        mode_val <- MRIP_comparison_draw$mode
-        
-        # Loop over summary columns
-        for (var in names(MRIP_comparison_draw)[names(MRIP_comparison_draw) != "mode"]) {
-          value <- MRIP_comparison_draw[[var]]
-          obj_name <- paste0(var, "_", mode_val, "_MRIP")
-          assign(obj_name, value)
-        }
+      mode_val <- MRIP_comparison_draw$mode
+      
+      # Loop over summary columns
+      for (var in names(MRIP_comparison_draw)[names(MRIP_comparison_draw) != "mode"]) {
+        value <- MRIP_comparison_draw[[var]]
+        obj_name <- paste0(var, "_", mode_val, "_MRIP")
+        assign(obj_name, value)
+      }
       
       
       species <- c("sf", "bsb", "scup")
@@ -493,50 +520,50 @@ for (s in states) {
       
       for (sp in species) {
         for (disp in dispositions) {
-
-            # Construct variable names
-            base_name <- paste(sp, disp, md, sep = "_")
-            mrip_var <- paste0(base_name, "_MRIP")
-            model_var <- paste0(base_name, "_model")
+          
+          # Construct variable names
+          base_name <- paste(sp, disp, md, sep = "_")
+          mrip_var <- paste0(base_name, "_MRIP")
+          model_var <- paste0(base_name, "_model")
+          
+          # Check if both variables exist
+          if (exists(mrip_var) && exists(model_var)) {
+            # Retrieve values
+            mrip_val <- get(mrip_var)
+            model_val <- get(model_var)
             
-            # Check if both variables exist
-            if (exists(mrip_var) && exists(model_var)) {
-              # Retrieve values
-              mrip_val <- get(mrip_var)
-              model_val <- get(model_var)
-              
-              # Calculate differences
-              diff_val <- model_val - mrip_val
-              pct_diff_val <- if (mrip_val != 0)  (diff_val / mrip_val) * 100 else NA
-              abs_diff_val <- abs(model_val - mrip_val)
-              abs_pct_diff_val <- if (mrip_val != 0)  abs((diff_val / mrip_val) * 100) else NA
-              
-              # Create output variable names
-              assign(paste0(base_name, "_diff"), diff_val)
-              assign(paste0(base_name, "_pctdiff"), pct_diff_val)
-              assign(paste0(base_name, "_abs_diff"), abs_diff_val)
-              assign(paste0(base_name, "_abs_pctdiff"), abs_pct_diff_val)
-              
-              compare <- rbind(compare, data.frame(
-                species = sp,
-                disposition = disp,
-                mode = md,
-                MRIP = mrip_val,
-                model = model_val,
-                diff = diff_val,
-                pct_diff = pct_diff_val, 
-                abs_diff_val= abs_diff_val, 
-                abs_pct_diff_val= abs_pct_diff_val
-              ))
-            } 
+            # Calculate differences
+            diff_val <- model_val - mrip_val
+            pct_diff_val <- if (mrip_val != 0)  (diff_val / mrip_val) * 100 else NA
+            abs_diff_val <- abs(model_val - mrip_val)
+            abs_pct_diff_val <- if (mrip_val != 0)  abs((diff_val / mrip_val) * 100) else NA
             
-            else {
-              warning(paste("Missing variable:", mrip_var, "or", model_var))
-              
-              
-            }
+            # Create output variable names
+            assign(paste0(base_name, "_diff"), diff_val)
+            assign(paste0(base_name, "_pctdiff"), pct_diff_val)
+            assign(paste0(base_name, "_abs_diff"), abs_diff_val)
+            assign(paste0(base_name, "_abs_pctdiff"), abs_pct_diff_val)
+            
+            compare <- rbind(compare, data.frame(
+              species = sp,
+              disposition = disp,
+              mode = md,
+              MRIP = mrip_val,
+              model = model_val,
+              diff = diff_val,
+              pct_diff = pct_diff_val, 
+              abs_diff_val= abs_diff_val, 
+              abs_pct_diff_val= abs_pct_diff_val
+            ))
+          } 
+          
+          else {
+            warning(paste("Missing variable:", mrip_var, "or", model_var))
+            
+            
           }
         }
+      }
       
       
       compare<-compare %>% 
@@ -558,7 +585,7 @@ for (s in states) {
         dplyr::mutate(p_rel_to_keep=abs(diff/model_rel), 
                       p_keep_to_rel=abs(diff/model_keep), 
                       draw=i, state=s)
-        
+      
       
       k <- k + 1
     }
@@ -569,7 +596,7 @@ calib_comparison_combined <- do.call(rbind, calib_comparison)
 
 calib_comparison_combined<-calib_comparison_combined %>% 
   dplyr::select(state, mode, species, draw, everything()) 
-  
+
 write_feather(calib_comparison_combined, file.path(iterative_input_data_cd, "calibration_comparison.feather"))
 
 
