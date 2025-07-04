@@ -17,11 +17,12 @@ library(dplyr)
 library(ggplot2)
 library(writexl)
 
-#s<-"DE"
+s<-"NJ"
 
 state_datasets <- list()
-statez<-c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+#statez<-c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
 
+statez<-c("NJ", "DE", "MD", "VA", "NC")
 
 for(s in statez) {
   
@@ -29,6 +30,8 @@ for(s in statez) {
   df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/baseline_mrip_catch_processed.xlsx") %>% 
     filter(state==s)
   
+
+ 
   # Strata can fall into one of four categories:
   
   # 1) both mean harvest- and discards-per-trip>0 
@@ -39,7 +42,7 @@ for(s in statez) {
   # I used copula model to simulate 1), whereas 2) and 3) are distributed NB
   
   n_sim <- 5000   # number of samples per draw
-  n_draws <- 150  # number of simulated datasets
+  n_draws <- 100  # number of simulated datasets
   
   
   ############ SUMMER FLOUNDER ############
@@ -60,10 +63,11 @@ for(s in statez) {
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0
   if (nrow(df_full1) > 0) {
     
+   
     all_results1 <- list()
     
     for (dom in unique(df_full1$my_dom_id_string)) {
-      
+
       df <- df_full1 %>% filter(my_dom_id_string == dom)
       
       # Define survey design
@@ -74,13 +78,14 @@ for(s in statez) {
       # Estimate means, variances using survey design
       mean_keep <- svymean(~sf_keep, svy_design)
       mean_rel  <- svymean(~sf_rel,  svy_design)
-      
+
       var_keep <- attr(mean_keep, "var")
       var_rel  <- attr(mean_rel, "var")
-      
+
       mu_keep <- coef(mean_keep)
       mu_rel  <- coef(mean_rel)
-      
+
+
       # Handle zero or missing variance (certainty units)
       # Use imputed linearized standard error 
       if (is.na(var_keep) || var_keep == 0) {
@@ -91,18 +96,6 @@ for(s in statez) {
       if (is.na(var_rel) || var_rel == 0) {
         imputed_se <- mean(df$sesf_rel)  
         var_rel <- imputed_se^2
-      }
-      
-      # Check for overdispersion. If present, use NB; otherwise, use Poisson
-      poisson_rel<-0
-      poisson_keep<-0
-      
-      if (var_rel < mu_rel) {
-        poisson_rel<-1
-      }
-      
-      if (var_keep < mu_keep) {
-        poisson_keep<-1
       }
       
       max_keep <- round(max(df$sf_keep))
@@ -145,10 +138,13 @@ for(s in statez) {
         theta_hat_rel_single <- mu_rel^2 / pmax((var_rel - mu_rel), 1e-6)
       }
 
-      # Create pseudo-observations (rank-based empirical CDFs)
-      df$w_int_rounded <- round(df$wp_int)
-      df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
+      # Fit the copula to a sample (max 5000 obs.) of the original data b/c it can take a while if N is large
       
+      df$w_int_rounded <- round(df$wp_int)
+      df_expanded <- uncount(df, weights = w_int_rounded) 
+      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), n_sim)) 
+      
+      # Create pseudo-observations (rank-based empirical CDFs)
       df_expanded <- df_expanded %>%
         mutate(
           rank_keep = rank(sf_keep, ties.method = "average"),
@@ -158,8 +154,6 @@ for(s in statez) {
         )
   
       # Fit copula using pseudo-observations
-      # Fit the copula to a sample (max 5000 obs.) of the original data b/c it can take a while if N is large
-      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), 5000)) 
       
       u_mat <- cbind(df_expanded$u_keep, df_expanded$u_rel)
       
@@ -180,7 +174,10 @@ for(s in statez) {
         cop <- frankCopula(dim = 2)
         cop_name <- "Frank"
       }
+      
       copula_fit <- fitCopula(cop, u_mat, method = "mpl", start=1)
+      
+      
       
       # Simulate from the fitted copula
       sim_datasets <- list()
@@ -204,26 +201,17 @@ for(s in statez) {
         }
         
         
-        if (poisson_keep!=1) { # Convert uniform to NB using quantiles
+        # Convert uniform to NB using quantiles
           sim_keep <- qnbinom(sim_u[,1], size = sampled_theta_keep, mu = sampled_mu_keep)
-          }
+
         
-        if (poisson_keep==1) { #Poisson if there is not overdispersion
-          sim_keep <- rpois(sim_u[,1], lambda = sampled_mu_keep)
-        }
-        
-        if (poisson_rel!=1) { # Convert uniform to NB using quantiles
+        # Convert uniform to NB using quantiles
           sim_rel  <- qnbinom(sim_u[,2], size = sampled_theta_rel, mu = sampled_mu_rel)
-        }
-        
-        if (poisson_rel==1) { #Poisson if there is not overdispersion
-          sim_rel <- rpois(sim_u[,2], lambda = sampled_mu_rel)
-        }
-        
+
         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
           
-          sim_keep <- pmin(sim_keep, max_keep)
-          sim_rel <- pmin(sim_rel, max_rel*2)
+          sim_keep <- pmin(sim_keep, max_keep*2)
+          sim_rel <- pmin(sim_rel, max_rel*2.5)
           
           my_dom_id_string<-dom
           
@@ -233,6 +221,7 @@ for(s in statez) {
         }
       }
       
+      
       # Combine all simulated datasets, tagging each with its simulation ID
       combined_sim <- bind_rows(
         lapply(seq_along(sim_datasets),  function(i) {
@@ -241,13 +230,17 @@ for(s in statez) {
         })
       )
       all_results1[[dom]] <- combined_sim
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results1", "n_sim", "n_draws", "s")
+      rm(list = setdiff(ls(), keep))
+      
+      
     }
     
     final_result1 <- bind_rows(all_results1)
     final_result1 <- final_result1 %>%
       group_by(my_dom_id_string, sim_id) %>%
       mutate(id = row_number()) %>%
-      ungroup()
+      ungroup() 
   }
   
   # List the objects you want to keep
@@ -257,6 +250,158 @@ for(s in statez) {
   rm(list = setdiff(ls(), keep))
   
   
+  # df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/baseline_mrip_catch_processed.xlsx") %>% 
+  #   filter(state==s & sf_keep_and_rel==1 )
+  # 
+  # 
+  # # Define survey design
+  # svy_design <- svydesign(ids=~psu_id,strata=~strat_id,
+  #                         weights=~wp_int,nest=TRUE,data=df)
+  # options(survey.lonely.psu = "certainty")
+  # 
+  # # Estimate means, variances using survey design
+  # mean_keep_full <- svymean(~sf_keep, svy_design)
+  # mean_rel_full  <- svymean(~sf_rel,  svy_design)
+  # mean_cat_full <- svymean(~sf_cat, svy_design)
+  # 
+  # var_keep_full <- attr(mean_keep_full, "var")
+  # var_rel_full  <- attr(mean_rel_full, "var")
+  # var_cat_full  <- attr(mean_cat_full, "var")
+  # 
+  # df$w_int_rounded <- round(df$wp_int)
+  # df_expanded <- uncount(df, weights = w_int_rounded)
+  # 
+  # sd_keep_full <- sd(df_expanded$sf_keep)
+  # sd_rel_full  <- sd(df_expanded$sf_rel)
+  # sd_cat_full  <- sd(df_expanded$sf_cat)
+  # 
+  # mu_keep_full <- coef(mean_keep_full)
+  # mu_rel_full  <- coef(mean_rel_full)
+  # mu_cat_full  <- coef(mean_cat_full)
+  # 
+  # corr <- as.data.frame(wtd.cor(df$sf_keep, df$sf_rel, weight = df$wp_int))
+  # corr  <- corr$correlation
+  # 
+  # ############### compare
+  # # Now summarize the means by simulation ID
+  # sim_means <- final_result1 %>%
+  #   dplyr::mutate(sf_catch_sim=sf_keep_sim+sf_rel_sim) %>% 
+  #   dplyr::group_by(sim_id) %>%
+  #   dplyr::summarize(
+  #     mean_sf_keep = mean(sf_keep_sim),
+  #     mean_sf_rel  = mean(sf_rel_sim),
+  #     mean_sf_catch  = mean(sf_catch_sim),
+  #     sd_sf_keep = sd(sf_keep_sim),
+  #     sd_sf_rel  = sd(sf_rel_sim),
+  #     sd_sf_catch  = sd(sf_catch_sim),
+  #     corr= cor(sf_keep_sim, sf_rel_sim, method = "pearson"),
+  #     .groups = "drop"
+  #   )
+  # sim_means$corr[is.na(sim_means$corr)] <- 0
+  # 
+  # # Summarize simulated means
+  # sim_summary <- sim_means %>%
+  #   dplyr::summarize(
+  #     mean_keep = mean(mean_sf_keep),
+  #     mean_rel  = mean(mean_sf_rel),
+  #     mean_cat  = mean(mean_sf_catch),
+  #     sdm_keep   = sd(mean_sf_keep),
+  #     sdm_rel    = sd(mean_sf_rel),
+  #     sdm_cat    = sd(mean_sf_catch),
+  #     sd_keep   = mean(sd_sf_keep),
+  #     sd_rel    = mean(sd_sf_rel),
+  #     sd_cat    = mean(sd_sf_catch), 
+  #     sd_sd_keep   = sd(sd_sf_keep),
+  #     sd_sd_rel    = sd(sd_sf_rel),
+  #     sd_sd_cat    = sd(sd_sf_catch),
+  #     mean_corr=mean(corr), 
+  #     sd_corr=sd(corr)
+  #     
+  #   )
+  # 
+  # 
+  # 
+  # # Build tidy comparison table
+  # comparison_plot_df <- tibble::tibble(
+  #   metric = rep(c("sf_keep", "sf_rel", "sf_catch"), times = 2),
+  #   value = c(
+  #     # Means
+  #     coef(mean_keep_full), coef(mean_rel_full), coef(mean_cat_full),
+  #     sim_summary$mean_keep, sim_summary$mean_rel, sim_summary$mean_cat
+  #   ),
+  #   se = c(
+  #     sqrt(var_keep_full), sqrt(var_rel_full), sqrt(var_cat_full),
+  #     sim_summary$sdm_keep, sim_summary$sdm_rel, sim_summary$sdm_cat
+  #   ),
+  #   source = rep(c("Survey", "Simulated"), each = 3),
+  #   statistic = "Mean"
+  # )
+  # 
+  # # Add SD comparison
+  # sd_plot_df <- tibble::tibble(
+  #   metric = rep(c("sf_keep", "sf_rel", "sf_catch"), times = 2),
+  #   value = c(
+  #     sd_keep_full, sd_rel_full, sd_cat_full,
+  #     sim_summary$sd_keep, sim_summary$sd_rel, sim_summary$sd_cat
+  #   ),
+  #   se = c(
+  #     NA, NA, NA,
+  #     sim_summary$sd_sd_keep, sim_summary$sd_sd_rel, sim_summary$sd_sd_cat
+  #   ),
+  #   source = rep(c("Survey", "Simulated"), each = 3),
+  #   statistic = "SD"
+  # )
+  # 
+  # # Create correlation plot data
+  # corr_data <- tibble(
+  #   variable = "Correlation",
+  #   value = c(corr, sim_summary$mean_corr),  # your observed correlation
+  #   se = c(0, sim_summary$sd_corr),
+  #   source = c("Survey", "Simulated")
+  # )
+  # 
+  # # Replace NA standard errors with 0
+  # corr_data$se[is.na(corr_data$se)] <- 0
+  # 
+  # # Combine for plotting
+  # plot_data <- bind_rows(comparison_plot_df, sd_plot_df)
+  # plot_data$se[is.na(plot_data$se)] <- 0
+  # 
+  # 
+  # pA<- ggplot(plot_data, aes(x = metric, y = value, fill = source)) +
+  #   geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+  #   geom_errorbar(
+  #     aes(ymin = value - 1.96 * se, ymax = value + 1.96 * se),
+  #     width = 0.2,
+  #     position = position_dodge(width = 0.8)
+  #   ) +
+  #   facet_wrap(~statistic, scales = "free_y") +
+  #   labs(
+  #     title = "Survey vs Simulated: Means and Standard Deviations",
+  #     x = "Metric",
+  #     y = "Value (Fish per Trip)",
+  #     fill = "Source"
+  #   ) +
+  #   scale_fill_manual(values = c("Survey" = "red", "Simulated" = "steelblue")) +
+  #   theme_minimal()
+  # 
+  # p3 <- ggplot(corr_data, aes(x = variable, y = value, fill = source)) +
+  #   geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.5) +
+  #   geom_errorbar(aes(ymin = value - 1.96 * se, ymax = value + 1.96 * se),
+  #                 width = 0.2, position = position_dodge(width = 0.8)) +
+  #   labs(title = "Pearson Correlation ± 95% CI", y = "Correlation", x = NULL) +
+  #   theme_minimal() +
+  #   scale_fill_manual(values = c("Survey" = "steelblue", "Simulated" = "orange"))
+  # 
+  # # Combine with patchwork
+  # (pA | p3) + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+
+  
+  
+  
+  
+  
+  ################
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)==0
   
@@ -289,11 +434,6 @@ for(s in statez) {
       if (is.na(var_rel) || var_rel == 0) {
         imputed_se <- mean(df$sesf_rel)  
         var_rel <- imputed_se^2
-      }
-      
-      poisson<-0
-      if (var_rel < mu_rel) {
-        poisson<-1
       }
       
       # Bootstrap replicate design
@@ -335,16 +475,11 @@ for(s in statez) {
           
         }
         
-        if (poisson!=1) { #NB if there is overdispersion
-          sim_rel <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
-        }
-        
-        if (poisson==1) { #Poisson if there is not overdispersion
-          sim_rel <- rpois(n_sim, lambda = sampled_mu) 
-        }
-       
+        sim_rel <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
+
+
         if (!any(is.na(sim_rel))) {
-          sim_rel <- pmin(sim_rel, max_rel*2)
+          sim_rel <- pmin(sim_rel, max_rel*2.5)
           
           my_dom_id_string<-dom
           
@@ -363,6 +498,8 @@ for(s in statez) {
       )
       
       all_results2[[dom]] <- combined_sim
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results2", "final_result1", "n_sim", "n_draws", "s")
+      rm(list = setdiff(ls(), keep))
     }
     
     final_result2 <- bind_rows(all_results2)
@@ -379,6 +516,7 @@ for(s in statez) {
   rm(list = setdiff(ls(), keep))
   
   
+ 
   ### MEAN(DISCARDS-PER-TRIP)==0, MEAN(HARVEST-PER-TRIP)>0
   if (nrow(df_full3) > 0) {
     
@@ -411,11 +549,6 @@ for(s in statez) {
         var_keep <- imputed_se^2
       }
       
-      
-      poisson<-0
-      if (var_keep < mu_keep) {
-        poisson<-1
-      }
       
       # Bootstrap replicate design
       rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
@@ -456,16 +589,10 @@ for(s in statez) {
           
         }
         
-        if (poisson!=1) { #NB if there is overdispersion
-          sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
-        }
-        
-        if (poisson==1) { #Poisson if there is not overdispersion
-          sim_keep <- rpois(n_sim, lambda = sampled_mu) 
-        }
-
+        sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
+    
         if (!any(is.na(sim_keep))) {
-          sim_keep <- pmin(sim_keep, max_keep)
+          sim_keep <- pmin(sim_keep, max_keep*2)
           
           my_dom_id_string<-dom
           
@@ -484,6 +611,8 @@ for(s in statez) {
       )
       
       all_results3[[dom]] <- combined_sim
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results3", "final_result1", "final_result2","n_sim", "n_draws", "s")
+      rm(list = setdiff(ls(), keep))
     }
     
     final_result3 <- bind_rows(all_results3)
@@ -499,7 +628,11 @@ for(s in statez) {
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
+  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/baseline_mrip_catch_processed.xlsx") %>% 
+    filter(state==s & sf_only_keep==1 )
   
+  
+ 
   ### MEAN(DISCARDS-PER-TRIP)==0, MEAN(HARVEST-PER-TRIP)==0
   if (nrow(df_full4) > 0) {
     
@@ -528,6 +661,8 @@ for(s in statez) {
       )
       
       all_results4[[dom]] <- combined_sim
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results4", "final_result1", "final_result2","final_result3", "n_sim", "n_draws", "s")
+      rm(list = setdiff(ls(), keep))
     }
     
     final_result4 <- bind_rows(all_results4)
@@ -557,14 +692,16 @@ for(s in statez) {
   # Combine all existing results into one data frame
   combined_results_SF <- do.call(rbind, results_list)
   
+ 
   # List the objects you want to keep
   keep <- c("n_sim", "n_draws", "combined_results_SF", "s")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
-  ############ BLACK SEA BASS ############
+
   
+  ############ BLACK SEA BASS ############  
   df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/baseline_mrip_catch_processed.xlsx") %>% 
     filter(state==s)
   
@@ -584,12 +721,13 @@ for(s in statez) {
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0
   if (nrow(df_full1) > 0) {
     
+    
     all_results1 <- list()
     
     for (dom in unique(df_full1$my_dom_id_string)) {
       
       df <- df_full1 %>% filter(my_dom_id_string == dom)
-
+      
       # Define survey design
       svy_design <- svydesign(ids=~psu_id,strata=~strat_id,
                               weights=~wp_int,nest=TRUE,data=df)
@@ -605,6 +743,7 @@ for(s in statez) {
       mu_keep <- coef(mean_keep)
       mu_rel  <- coef(mean_rel)
       
+      
       # Handle zero or missing variance (certainty units)
       # Use imputed linearized standard error 
       if (is.na(var_keep) || var_keep == 0) {
@@ -615,18 +754,6 @@ for(s in statez) {
       if (is.na(var_rel) || var_rel == 0) {
         imputed_se <- mean(df$sebsb_rel)  
         var_rel <- imputed_se^2
-      }
-      
-      # Check for overdispersion. If present, use NB; otherwise, use Poisson
-      poisson_rel<-0
-      poisson_keep<-0
-      
-      if (var_rel < mu_rel) {
-        poisson_rel<-1
-      }
-      
-      if (var_keep < mu_keep) {
-        poisson_keep<-1
       }
       
       max_keep <- round(max(df$bsb_keep))
@@ -669,10 +796,13 @@ for(s in statez) {
         theta_hat_rel_single <- mu_rel^2 / pmax((var_rel - mu_rel), 1e-6)
       }
       
-      # Create pseudo-observations (rank-based empirical CDFs)
-      df$w_int_rounded <- round(df$wp_int)
-      df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
+      # Fit the copula to a sample (max 5000 obs.) of the original data b/c it can take a while if N is large
       
+      df$w_int_rounded <- round(df$wp_int)
+      df_expanded <- uncount(df, weights = w_int_rounded) 
+      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), n_sim)) 
+      
+      # Create pseudo-observations (rank-based empirical CDFs)
       df_expanded <- df_expanded %>%
         mutate(
           rank_keep = rank(bsb_keep, ties.method = "average"),
@@ -682,8 +812,6 @@ for(s in statez) {
         )
       
       # Fit copula using pseudo-observations
-      # Fit the copula to a sample (max 5000 obs.) of the original data b/c it can take a while if N is large
-      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), 5000)) 
       
       u_mat <- cbind(df_expanded$u_keep, df_expanded$u_rel)
       
@@ -704,7 +832,10 @@ for(s in statez) {
         cop <- frankCopula(dim = 2)
         cop_name <- "Frank"
       }
+      
       copula_fit <- fitCopula(cop, u_mat, method = "mpl", start=1)
+      
+      
       
       # Simulate from the fitted copula
       sim_datasets <- list()
@@ -727,26 +858,18 @@ for(s in statez) {
           sampled_theta_rel  <- sample(rep_theta_rel,  1, replace = TRUE) # Sample theta when there are multiple PSUs
         }
         
-        if (poisson_keep!=1) { # Convert uniform to NB using quantiles
-          sim_keep <- qnbinom(sim_u[,1], size = sampled_theta_keep, mu = sampled_mu_keep)
-        }
         
-        if (poisson_keep==1) { #Poisson if there is not overdispersion
-          sim_keep <- rpois(sim_u[,1], lambda = sampled_mu_keep)
-        }
+        # Convert uniform to NB using quantiles
+        sim_keep <- qnbinom(sim_u[,1], size = sampled_theta_keep, mu = sampled_mu_keep)
         
-        if (poisson_rel!=1) { # Convert uniform to NB using quantiles
-          sim_rel  <- qnbinom(sim_u[,2], size = sampled_theta_rel, mu = sampled_mu_rel)
-        }
         
-        if (poisson_rel==1) { #Poisson if there is not overdispersion
-          sim_rel <- rpois(sim_u[,2], lambda = sampled_mu_rel)
-        }
+        # Convert uniform to NB using quantiles
+        sim_rel  <- qnbinom(sim_u[,2], size = sampled_theta_rel, mu = sampled_mu_rel)
         
         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
           
-          sim_keep <- pmin(sim_keep, max_keep)
-          sim_rel <- pmin(sim_rel, max_rel*2)
+          sim_keep <- pmin(sim_keep, max_keep*2)
+          sim_rel <- pmin(sim_rel, max_rel*2.5)
           
           my_dom_id_string<-dom
           
@@ -756,6 +879,7 @@ for(s in statez) {
         }
       }
       
+      
       # Combine all simulated datasets, tagging each with its simulation ID
       combined_sim <- bind_rows(
         lapply(seq_along(sim_datasets),  function(i) {
@@ -763,26 +887,32 @@ for(s in statez) {
             mutate(sim_id = i)
         })
       )
-
       all_results1[[dom]] <- combined_sim
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results1", "n_sim", "n_draws", "s", "combined_results_SF")
+      rm(list = setdiff(ls(), keep))
+      
+      
     }
     
     final_result1 <- bind_rows(all_results1)
     final_result1 <- final_result1 %>%
       group_by(my_dom_id_string, sim_id) %>%
       mutate(id = row_number()) %>%
-      ungroup()
+      ungroup() 
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "combined_results_SF", "s")
+  keep <- c("final_result1", "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s", "combined_results_SF")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
   
+ 
+  ################
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)==0
+  
   if (nrow(df_full2) > 0) {
     
     all_results2 <- list()
@@ -790,7 +920,7 @@ for(s in statez) {
     for (dom in unique(df_full2$my_dom_id_string)) {
       
       df <- df_full2 %>% filter(my_dom_id_string == dom)
-
+      
       # Define survey design
       svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
       options(survey.lonely.psu = "certainty")
@@ -802,7 +932,7 @@ for(s in statez) {
       df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), 5000)) 
       obs_sd_rel <- sd(df_expanded$bsb_rel)
       
-      # Estimate mean and variance for bsb_rel
+      # Estimate means, variances using survey design
       mean_rel <- svymean(~bsb_rel, svy_design)
       mu_rel <- coef(mean_rel)
       var_rel <- attr(mean_rel, "var")
@@ -812,11 +942,6 @@ for(s in statez) {
       if (is.na(var_rel) || var_rel == 0) {
         imputed_se <- mean(df$sebsb_rel)  
         var_rel <- imputed_se^2
-      }
-      
-      poisson<-0
-      if (var_rel < mu_rel) {
-        poisson<-1
       }
       
       # Bootstrap replicate design
@@ -843,12 +968,11 @@ for(s in statez) {
         theta_hat_single <- mu_rel^2 / pmax((var_rel - mu_rel), 1e-6)
       }
       
-      
       sim_datasets <- vector("list", n_draws)
       i <- 1
       while (i <= n_draws) {
         
-        sampled_mu <- rnorm(1, mu_rel, sqrt(var_rel))       # Sample mean with uncertainty
+        sampled_mu <- rnorm(1, mu_rel, sqrt(var_rel))  # Sample mean with uncertainty  
         
         if (nrow(df)==1) {
           sampled_theta <- theta_hat_single         # Single-PSU theta
@@ -859,33 +983,31 @@ for(s in statez) {
           
         }
         
-        if (poisson!=1) { #NB if there is overdispersion
-          sim_rel <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
-        }
+        sim_rel <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
-        if (poisson==1) { #Poisson if there is not overdispersion
-          sim_rel <- rpois(n_sim, lambda = sampled_mu) 
-        }
-
-          if (!any(is.na(sim_rel))) {
-          sim_rel <- pmin(sim_rel, max_rel*2)
+        
+        if (!any(is.na(sim_rel))) {
+          sim_rel <- pmin(sim_rel, max_rel*2.5)
           
           my_dom_id_string<-dom
           
           sim_datasets[[i]] <- data.frame(sim_id = i, bsb_rel_sim = sim_rel, my_dom_id_string = my_dom_id_string)
           i <- i + 1  # Only increment if no NaNs
         }
+        
       }
       
       # Combine all simulations
       combined_sim <- bind_rows(
         lapply(seq_along(sim_datasets),  function(i) {
           sim_datasets[[i]] %>%
-            mutate(sim_id = i)
+            dplyr::mutate(sim_id = i)
         })
       )
-      which(is.na(combined_sim))
+      
       all_results2[[dom]] <- combined_sim
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results2", "final_result1", "n_sim", "n_draws", "s", "combined_results_SF")
+      rm(list = setdiff(ls(), keep))
     }
     
     final_result2 <- bind_rows(all_results2)
@@ -896,10 +1018,11 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "final_result2", "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "combined_results_SF", "s")
+  keep <- c("final_result1", "final_result2", "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s", "combined_results_SF")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
+  
   
   
   ### MEAN(DISCARDS-PER-TRIP)==0, MEAN(HARVEST-PER-TRIP)>0
@@ -934,10 +1057,6 @@ for(s in statez) {
         var_keep <- imputed_se^2
       }
       
-      poisson<-0
-      if (var_keep < mu_keep) {
-        poisson<-1
-      }
       
       # Bootstrap replicate design
       rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
@@ -964,32 +1083,24 @@ for(s in statez) {
       }
       
       sim_datasets <- vector("list", n_draws)
-      
       i <- 1
       while (i <= n_draws) {
-        sampled_mu <- rnorm(1, mu_keep, sqrt(var_keep)) # Sample mean with uncertainty
         
+        sampled_mu <- rnorm(1, mu_keep, sqrt(var_keep))                    # Sample mean with uncertainty
         
         if (nrow(df)==1) {
-          sampled_theta <- theta_hat_single             # Single-PSU theta
+          sampled_theta <- theta_hat_single         # Single-PSU theta
         }
         
         if (nrow(df)>1) {
-          sampled_theta <- sample(rep_theta_keep, 1, replace = TRUE) # Sample theta for multi-PSU strata
+          sampled_theta <- sample(rep_theta_keep, 1, replace = TRUE)         # Sample theta
           
         }
         
-        if (poisson!=1) { #NB if there is overdispersion
-          sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
-        }
-        
-        if (poisson==1) { #Poisson if there is not overdispersion
-          sim_keep <- rpois(n_sim, lambda = sampled_mu) 
-        }
-        
+        sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
         if (!any(is.na(sim_keep))) {
-          sim_keep <- pmin(sim_keep, max_keep)
+          sim_keep <- pmin(sim_keep, max_keep*2)
           
           my_dom_id_string<-dom
           
@@ -1008,6 +1119,8 @@ for(s in statez) {
       )
       
       all_results3[[dom]] <- combined_sim
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results3", "final_result1", "final_result2","n_sim", "n_draws", "s", "combined_results_SF")
+      rm(list = setdiff(ls(), keep))
     }
     
     final_result3 <- bind_rows(all_results3)
@@ -1018,10 +1131,14 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "final_result2","final_result3",  "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "combined_results_SF", "s")
+  keep <- c("final_result1", "final_result2","final_result3",  "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s", "combined_results_SF")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
+  
+  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/baseline_mrip_catch_processed.xlsx") %>% 
+    filter(state==s & bsb_only_keep==1 )
+  
   
   
   ### MEAN(DISCARDS-PER-TRIP)==0, MEAN(HARVEST-PER-TRIP)==0
@@ -1034,6 +1151,7 @@ for(s in statez) {
       sim_datasets <- list()
       i <- 1
       while (i <= n_draws) {
+        
         sim_keep <- rep(0, n_sim) 
         sim_rel <- rep(0, n_sim)
         my_dom_id_string <- rep(dom, n_sim)
@@ -1051,6 +1169,8 @@ for(s in statez) {
       )
       
       all_results4[[dom]] <- combined_sim
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results4", "final_result1", "final_result2","final_result3", "n_sim", "n_draws", "s", "combined_results_SF")
+      rm(list = setdiff(ls(), keep))
     }
     
     final_result4 <- bind_rows(all_results4)
@@ -1061,7 +1181,7 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "final_result2","final_result3", "final_result4","df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "combined_results_SF", "s")
+  keep <- c("final_result1", "final_result2","final_result3", "final_result4","df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s", "combined_results_SF")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
@@ -1080,15 +1200,17 @@ for(s in statez) {
   # Combine all existing results into one data frame
   combined_results_BSB <- do.call(rbind, results_list)
   
+  
   # List the objects you want to keep
-  keep <- c("n_sim", "n_draws", "combined_results_SF", "combined_results_BSB", "s")
+  keep <- c("n_sim", "n_draws", "combined_results_BSB", "combined_results_SF", "s")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
   
-  ############ SCUP ############
   
+
+  ############ SCUP ############  
   df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/baseline_mrip_catch_processed.xlsx") %>% 
     filter(state==s)
   
@@ -1108,16 +1230,12 @@ for(s in statez) {
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0
   if (nrow(df_full1) > 0) {
     
+    
     all_results1 <- list()
     
     for (dom in unique(df_full1$my_dom_id_string)) {
       
       df <- df_full1 %>% filter(my_dom_id_string == dom)
-      
-      if (sum(df$scup_keep, na.rm = TRUE) > 0 & sum(df$scup_keep, na.rm = TRUE) < 1) {
-        df <- df %>%
-          mutate(scup_keep = if_else(scup_keep > 0, 1L, as.integer(scup_keep)))
-      }
       
       # Define survey design
       svy_design <- svydesign(ids=~psu_id,strata=~strat_id,
@@ -1134,6 +1252,7 @@ for(s in statez) {
       mu_keep <- coef(mean_keep)
       mu_rel  <- coef(mean_rel)
       
+      
       # Handle zero or missing variance (certainty units)
       # Use imputed linearized standard error 
       if (is.na(var_keep) || var_keep == 0) {
@@ -1144,19 +1263,6 @@ for(s in statez) {
       if (is.na(var_rel) || var_rel == 0) {
         imputed_se <- mean(df$sescup_rel)  
         var_rel <- imputed_se^2
-      }
-      
-
-      # Check for overdispersion. If present, use NB; otherwise, use Poisson
-      poisson_rel<-0
-      poisson_keep<-0
-      
-      if (var_rel < mu_rel) {
-        poisson_rel<-1
-      }
-      
-      if (var_keep < mu_keep) {
-        poisson_keep<-1
       }
       
       max_keep <- round(max(df$scup_keep))
@@ -1199,10 +1305,13 @@ for(s in statez) {
         theta_hat_rel_single <- mu_rel^2 / pmax((var_rel - mu_rel), 1e-6)
       }
       
-      # Create pseudo-observations (rank-based empirical CDFs)
-      df$w_int_rounded <- round(df$wp_int)
-      df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
+      # Fit the copula to a sample (max 5000 obs.) of the original data b/c it can take a while if N is large
       
+      df$w_int_rounded <- round(df$wp_int)
+      df_expanded <- uncount(df, weights = w_int_rounded) 
+      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), n_sim)) 
+      
+      # Create pseudo-observations (rank-based empirical CDFs)
       df_expanded <- df_expanded %>%
         mutate(
           rank_keep = rank(scup_keep, ties.method = "average"),
@@ -1212,8 +1321,6 @@ for(s in statez) {
         )
       
       # Fit copula using pseudo-observations
-      # Fit the copula to a sample (max 5000 obs.) of the original data b/c it can take a while if N is large
-      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), 5000)) 
       
       u_mat <- cbind(df_expanded$u_keep, df_expanded$u_rel)
       
@@ -1234,8 +1341,12 @@ for(s in statez) {
         cop <- frankCopula(dim = 2)
         cop_name <- "Frank"
       }
-      copula_fit <- fitCopula(cop, u_mat, method = "mpl", start = 1)
-       # Simulate from the fitted copula
+      
+      copula_fit <- fitCopula(cop, u_mat, method = "mpl", start=1)
+      
+      
+      
+      # Simulate from the fitted copula
       sim_datasets <- list()
       i <- 1
       while (i <= n_draws) {
@@ -1256,26 +1367,18 @@ for(s in statez) {
           sampled_theta_rel  <- sample(rep_theta_rel,  1, replace = TRUE) # Sample theta when there are multiple PSUs
         }
         
-        if (poisson_keep!=1) { # Convert uniform to NB using quantiles
-          sim_keep <- qnbinom(sim_u[,1], size = sampled_theta_keep, mu = sampled_mu_keep)
-        }
         
-        if (poisson_keep==1) { #Poisson if there is not overdispersion
-          sim_keep <- rpois(sim_u[,1], lambda = sampled_mu_keep)
-        }
+        # Convert uniform to NB using quantiles
+        sim_keep <- qnbinom(sim_u[,1], size = sampled_theta_keep, mu = sampled_mu_keep)
         
-        if (poisson_rel!=1) { # Convert uniform to NB using quantiles
-          sim_rel  <- qnbinom(sim_u[,2], size = sampled_theta_rel, mu = sampled_mu_rel)
-        }
         
-        if (poisson_rel==1) { #Poisson if there is not overdispersion
-          sim_rel <- rpois(sim_u[,2], lambda = sampled_mu_rel)
-        }
+        # Convert uniform to NB using quantiles
+        sim_rel  <- qnbinom(sim_u[,2], size = sampled_theta_rel, mu = sampled_mu_rel)
         
         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
           
-          sim_keep <- pmin(sim_keep, max_keep)
-          sim_rel <- pmin(sim_rel, max_rel*2)
+          sim_keep <- pmin(sim_keep, max_keep*2)
+          sim_rel <- pmin(sim_rel, max_rel*2.5)
           
           my_dom_id_string<-dom
           
@@ -1285,6 +1388,7 @@ for(s in statez) {
         }
       }
       
+      
       # Combine all simulated datasets, tagging each with its simulation ID
       combined_sim <- bind_rows(
         lapply(seq_along(sim_datasets),  function(i) {
@@ -1292,26 +1396,32 @@ for(s in statez) {
             mutate(sim_id = i)
         })
       )
-      
       all_results1[[dom]] <- combined_sim
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results1", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
+      rm(list = setdiff(ls(), keep))
+      
+      
     }
     
     final_result1 <- bind_rows(all_results1)
     final_result1 <- final_result1 %>%
       group_by(my_dom_id_string, sim_id) %>%
       mutate(id = row_number()) %>%
-      ungroup()
+      ungroup() 
   }
   
-  
   # List the objects you want to keep
-  keep <- c("final_result1", "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "combined_results_SF",  "combined_results_BSB", "s")
+  keep <- c("final_result1", "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s", "combined_results_SF","combined_results_BSB")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
   
+  
+  ################
+  
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)==0
+  
   if (nrow(df_full2) > 0) {
     
     all_results2 <- list()
@@ -1343,12 +1453,6 @@ for(s in statez) {
         var_rel <- imputed_se^2
       }
       
-      poisson<-0
-      if (var_rel < mu_rel) {
-        poisson<-1
-      }
-      
-      
       # Bootstrap replicate design
       rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
       
@@ -1377,7 +1481,7 @@ for(s in statez) {
       i <- 1
       while (i <= n_draws) {
         
-        sampled_mu <- rnorm(1, mu_rel, sqrt(var_rel))                     # Sample mean with uncertainty
+        sampled_mu <- rnorm(1, mu_rel, sqrt(var_rel))  # Sample mean with uncertainty  
         
         if (nrow(df)==1) {
           sampled_theta <- theta_hat_single         # Single-PSU theta
@@ -1388,33 +1492,31 @@ for(s in statez) {
           
         }
         
-        if (poisson!=1) { #NB if there is overdispersion
-          sim_rel <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
-        }
+        sim_rel <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
-        if (poisson==1) { #Poisson if there is not overdispersion
-          sim_rel <- rpois(n_sim, lambda = sampled_mu) 
-        }
         
         if (!any(is.na(sim_rel))) {
-          sim_rel <- pmin(sim_rel, max_rel*2)
+          sim_rel <- pmin(sim_rel, max_rel*2.5)
           
           my_dom_id_string<-dom
           
           sim_datasets[[i]] <- data.frame(sim_id = i, scup_rel_sim = sim_rel, my_dom_id_string = my_dom_id_string)
           i <- i + 1  # Only increment if no NaNs
         }
+        
       }
       
       # Combine all simulations
       combined_sim <- bind_rows(
         lapply(seq_along(sim_datasets),  function(i) {
           sim_datasets[[i]] %>%
-            mutate(sim_id = i)
+            dplyr::mutate(sim_id = i)
         })
       )
       
       all_results2[[dom]] <- combined_sim
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results2", "final_result1", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
+      rm(list = setdiff(ls(), keep))
     }
     
     final_result2 <- bind_rows(all_results2)
@@ -1425,10 +1527,11 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "final_result2", "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "combined_results_SF",  "combined_results_BSB", "s")
+  keep <- c("final_result1", "final_result2", "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
+  
   
   
   ### MEAN(DISCARDS-PER-TRIP)==0, MEAN(HARVEST-PER-TRIP)>0
@@ -1451,7 +1554,7 @@ for(s in statez) {
       df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), 5000)) 
       obs_sd_keep <- sd(df_expanded$scup_keep)
       
-      # Estimate mean and variance for scup_keep
+      # Estimate means, variances using survey design
       mean_keep <- svymean(~scup_keep, svy_design)
       mu_keep <- coef(mean_keep)
       var_keep <- attr(mean_keep, "var")
@@ -1463,10 +1566,6 @@ for(s in statez) {
         var_keep <- imputed_se^2
       }
       
-      poisson<-0
-      if (var_keep < mu_keep) {
-        poisson<-1
-      }
       
       # Bootstrap replicate design
       rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
@@ -1492,10 +1591,10 @@ for(s in statez) {
         theta_hat_single <- mu_keep^2 / pmax((var_keep - mu_keep), 1e-6)
       }
       
-      
       sim_datasets <- vector("list", n_draws)
       i <- 1
       while (i <= n_draws) {
+        
         sampled_mu <- rnorm(1, mu_keep, sqrt(var_keep))                    # Sample mean with uncertainty
         
         if (nrow(df)==1) {
@@ -1507,16 +1606,10 @@ for(s in statez) {
           
         }
         
-        if (poisson!=1) { #NB if there is overdispersion
-          sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
-        }
-        
-        if (poisson==1) { #Poisson if there is not overdispersion
-          sim_keep <- rpois(n_sim, lambda = sampled_mu) 
-        }
+        sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
         if (!any(is.na(sim_keep))) {
-          sim_keep <- pmin(sim_keep, max_keep)
+          sim_keep <- pmin(sim_keep, max_keep*2)
           
           my_dom_id_string<-dom
           
@@ -1535,6 +1628,8 @@ for(s in statez) {
       )
       
       all_results3[[dom]] <- combined_sim
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results3", "final_result1", "final_result2","n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
+      rm(list = setdiff(ls(), keep))
     }
     
     final_result3 <- bind_rows(all_results3)
@@ -1545,10 +1640,14 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "final_result2","final_result3",  "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "combined_results_SF",  "combined_results_BSB", "s")
+  keep <- c("final_result1", "final_result2","final_result3",  "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
+  
+  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/baseline_mrip_catch_processed.xlsx") %>% 
+    filter(state==s & scup_only_keep==1 )
+  
   
   
   ### MEAN(DISCARDS-PER-TRIP)==0, MEAN(HARVEST-PER-TRIP)==0
@@ -1561,6 +1660,7 @@ for(s in statez) {
       sim_datasets <- list()
       i <- 1
       while (i <= n_draws) {
+        
         sim_keep <- rep(0, n_sim) 
         sim_rel <- rep(0, n_sim)
         my_dom_id_string <- rep(dom, n_sim)
@@ -1578,6 +1678,8 @@ for(s in statez) {
       )
       
       all_results4[[dom]] <- combined_sim
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results4", "final_result1", "final_result2","final_result3", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
+      rm(list = setdiff(ls(), keep))
     }
     
     final_result4 <- bind_rows(all_results4)
@@ -1588,7 +1690,7 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "final_result2","final_result3", "final_result4","df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "combined_results_SF",  "combined_results_BSB", "s")
+  keep <- c("final_result1", "final_result2","final_result3", "final_result4","df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
@@ -1607,11 +1709,13 @@ for(s in statez) {
   # Combine all existing results into one data frame
   combined_results_SCUP <- do.call(rbind, results_list)
   
+  
   # List the objects you want to keep
-  keep <- c("n_sim", "n_draws", "combined_results_SF", "combined_results_BSB", "combined_results_SCUP", "s")
+  keep <- c("n_sim", "n_draws", "combined_results_BSB", "combined_results_SCUP", "combined_results_SF", "s")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
+  
   
   # Merge catch outcomes for the three species
   
@@ -1636,26 +1740,3 @@ for(s in statez) {
 }
 
 
-# check_data<- catch_draws %>% 
-#   mutate(sf_catch_sim=sf_keep_sim+sf_rel_sim, 
-#          bsb_catch_sim=bsb_keep_sim+bsb_rel_sim, 
-#          scup_catch_sim=scup_keep_sim+scup_rel_sim) %>% 
-#   group_by(my_dom_id_string) %>% 
-#   dplyr::summarize(
-#     mean_sf_keep = mean(sf_keep_sim),
-#     mean_sf_rel  = mean(sf_rel_sim),
-#     mean_sf_catch  = mean(sf_catch_sim),
-#     mean_bsb_keep = mean(bsb_keep_sim),
-#     mean_bsb_rel  = mean(bsb_rel_sim),
-#     mean_bsb_catch  = mean(bsb_catch_sim),
-#     mean_scup_keep = mean(scup_keep_sim),
-#     mean_scup_rel  = mean(scup_rel_sim),
-#     mean_scup_catch  = mean(scup_catch_sim),
-#     .groups = "drop")
-# 
-# library(writexl)
-# split_datasets <- split(my_data, my_data$group_var)
-# write_xlsx(check_data,"C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/check_data.xlsx") 
-# 
-# 
-# write_xlsx(catch_draws,"C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/catch_draws.xlsx") 

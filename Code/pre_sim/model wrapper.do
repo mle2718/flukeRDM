@@ -6,23 +6,23 @@
 ****Data availability****
 *************************
 
-*We make projections for the next fishing year in November/December. 
-	*Wave 5 data available November 15th
+*We make next year's projections in November/December 
+	*Wave 5 MRIP data available November 15th
 
-*MRIP effort data: we will use the most recent 6 waves of MRIP data. 
+*MRIP effort data: we use the most recent full fishing year
 
-*MRIP length data: will combine MRIP data with VAS data. Need to CHECK what year of VAS will be available by November 15. 
+*MRIP length data: we combine MRIP data with VAS discard length data. 
+	* sources of VAS data used for discard length: NJ VAS, ALS, CT VAS, RI VAS, MRIP
 
-*MRIP catch data:	use the most recent two years of datasets
-		*For FY 2026 projections we use MRIP data from 2025 waves 1 to 5,  2024 waves 1 to 6 , 2023 wave 6
+*MRIP catch data for projection year:	use the most recent two years of datasets
+		*For FY 2026 projections: we use MRIP data from 2025 waves 1 to 4,  2024 waves 1 to 6 , 2023 wave 5 and 6
 		
 *Stock assessment projections data:
-		*Jan 1 2024 NAA to compute historical rec. selectivity *CHECK
-		*Jan 1 2024 NAA to compute projected catch-at-length *CHECK
+		*Jan 1 2024 NAA to compute historical rec. selectivity 
+		*Jan 1 2024 NAA to compute projected catch-at-length
 		
-*NEFSC trawl survey data from the most recent three years used to create age-length keys
+*NEFSC trawl survey data from the most recent X years used to create age-length keys
 		*CHECK
-
 
 *MRIP data is stored in  
 	*"smb://net/mrfss/products/mrip_estim/Public_data_cal2018"

@@ -51,7 +51,7 @@ gen total_trips_2=boat_trips+shore_trips
 * Lou's QA/QC
 
 drop if age==-3 // drop missing ages
-keep if age>=16 // drop anglers below the minimum age required for license. I do so to align the age distribution with choice experiment sampling frame, which is based on licensees (16+)
+keep if age>=16 // drop anglers below the minimum age required for license to align the age distribution with choice experiment sampling frame, which is based on licensees (16+)
 
 replace total_trips_2=round(total_trips_2)
 replace total_trips_12=round(total_trips_12)

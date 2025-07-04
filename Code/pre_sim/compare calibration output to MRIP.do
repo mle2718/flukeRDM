@@ -60,7 +60,7 @@ save "$iterative_input_data_cd\simulated_catch_totals.dta", replace
 
 
 
-
+*By state and mode
 u "$iterative_input_data_cd\simulated_catch_totals.dta", replace 
 
 collapse (mean) tot_sf_keep_sim tot_sf_cat_sim tot_sf_rel_sim ///
@@ -149,7 +149,7 @@ local vars mrip_total mrip_ll mrip_ul sim_total sim_ul sim_ll
 foreach v of local vars{
 	replace `v'=`v'/1000
 }
-/*
+
 tempfile new
 save `new', replace 
 
@@ -191,6 +191,24 @@ qui twoway (rcap mrip_ul mrip_ll my_dom_id_mrip if domain=="`d'", color(blue)  )
 		}
   }
 
+u `new', clear 
+
+gen pct_diff=((sim_total-mrip_total)/mrip_total)*100
+gen diff=sim_total-mrip_total
+gen abs_diff=abs(diff)
+
+order state mode species disp pct diff abs_diff sim_total mrip_total
+gsort -abs_diff
+browse if pct_diff<-5 | pct_diff>5
+
+
+local vars mrip_total mrip_ll mrip_ul sim_total sim_ul sim_ll
+foreach v of local vars{
+	replace `v'=`v'*1000
+}
+
+
+
 grc1leg  bsb_catch_MA sf_catch_MA  scup_catch_MA bsb_harvest_MA sf_harvest_MA   scup_harvest_MA , cols(3) //slightly higher			
 grc1leg  bsb_catch_RI sf_catch_RI scup_catch_RI  bsb_harvest_RI sf_harvest_RI scup_harvest_RI    , cols(3)	//looks good	 			
 grc1leg  bsb_catch_CT sf_catch_CT scup_catch_CT  bsb_harvest_CT sf_harvest_CT  scup_harvest_CT  , cols(3)	//slightly higher
@@ -200,7 +218,127 @@ grc1leg  bsb_catch_DE sf_catch_DE scup_catch_DE  bsb_harvest_DE sf_harvest_DE  s
 grc1leg  bsb_catch_MD sf_catch_MD scup_catch_MD  bsb_harvest_MD sf_harvest_MD  scup_harvest_MD  , cols(3)	//looks good	  
 grc1leg  bsb_catch_VA sf_catch_VA scup_catch_VA  bsb_harvest_VA sf_harvest_VA  scup_harvest_VA  , cols(3)	//slightly higher
 grc1leg  bsb_catch_NC sf_catch_NC scup_catch_NC  bsb_harvest_NC sf_harvest_NC  scup_harvest_NC  , cols(3) //looks good	   	
-*/
+
+grc1leg  dtrip_MA  dtrip_RI dtrip_CT dtrip_NY dtrip_NJ dtrip_DE dtrip_MD dtrip_VA dtrip_NC , cols(3) //looks good	   	
+
+
+
+*By state 
+u "$iterative_input_data_cd\simulated_catch_totals.dta", replace 
+
+collapse (sum) tot_sf_keep_sim tot_sf_cat_sim tot_sf_rel_sim ///
+						  tot_bsb_keep_sim tot_bsb_rel_sim tot_bsb_cat_sim ///
+						  tot_scup_keep_sim tot_scup_rel_sim tot_scup_cat_sim tot_dtrip_sim, by(state draw)
+						  
+collapse (mean) tot_sf_keep_sim tot_sf_cat_sim tot_sf_rel_sim ///
+						  tot_bsb_keep_sim tot_bsb_rel_sim tot_bsb_cat_sim ///
+						  tot_scup_keep_sim tot_scup_rel_sim tot_scup_cat_sim tot_dtrip_sim ///
+						  (sd)	sd_sf_keep_sim=tot_sf_keep_sim sd_sf_cat_sim =tot_sf_cat_sim sd_sf_rel_sim =tot_sf_rel_sim ///
+						  sd_bsb_keep_sim=tot_bsb_keep_sim sd_bsb_rel_sim =tot_bsb_rel_sim sd_bsb_cat_sim =tot_bsb_cat_sim ///
+						  sd_scup_keep_sim = tot_scup_keep_sim sd_scup_rel_sim = tot_scup_rel_sim sd_scup_cat_sim = tot_scup_cat_sim sd_dtrip_sim=tot_dtrip_sim, by(state )			
+						  
+						  
+reshape long tot_ sd_, i(state) j(new) string
+rename tot_ sim_total 
+rename sd_ sim_sd
+split new, parse(_)
+rename new1 species
+rename new2 disp
+drop new3
+drop new
+replace disp="dtrip" if species=="dtrip"
+replace species="NA" if disp=="dtrip"
+
+
+preserve
+keep if disp=="dtrip"
+gen sim_ul = sim_total+1.96*sim_sd
+gen sim_ll = sim_total-1.96*sim_sd
+tempfile simdtrip
+save `simdtrip', replace
+restore 
+
+drop if disp=="dtrip"
+tempfile sim
+save `sim', replace
+
+u  "$iterative_input_data_cd\catch_total_calib_mrip_state_total.dta", clear  
+reshape long total se ll ul , i(state) j(new) string
+rename tot mrip_total 
+rename ll mrip_ll
+rename ul mrip_ul
+drop se
+split new, parse(_)
+rename new1 species
+rename new2 disp
+drop new3
+drop new 
+merge 1:1 state species disp using `sim',  keep(3) nogen
+gen sim_ul = sim_total+1.96*sim_sd
+gen sim_ll = sim_total-1.96*sim_sd
+
+sort species disp 
+split my_dom_id_string, parse(_)
+replace  my_dom_id_string=state
+tempfile catch
+save `catch', replace 
+
+
+u  "$iterative_input_data_cd\directed_trip_calib_mrip_state_total.dta", clear  
+rename se_mrip se_dtrip_mrip
+rename ll ll_dtrip_mrip
+rename ul ul_dtrip_mrip
+rename dtrip_mrip tot_dtrip_mrip
+reshape long tot_ se_ ll_ ul_, i(state) j(new) string
+rename tot_ mrip_total 
+rename ll mrip_ll
+rename ul_ mrip_ul
+drop se_
+
+drop year 
+rename new disp
+replace disp="dtrip"
+gen species="NA"
+replace  my_dom_id_string=state
+merge 1:1 state  species disp using `simdtrip', keep(3)
+
+append using `catch'
+
+drop _merge my_dom_id_string1 my_dom_id_string2 
+
+replace disp="discards" if disp=="rel"
+replace disp="harvest" if disp=="keep"
+replace disp="catch" if disp=="cat"
+
+gen domain=species+"_"+disp
+replace domain="dtrip" if domain=="NA_dtrip"
+
+local vars mrip_total mrip_ll mrip_ul sim_total sim_ul sim_ll
+foreach v of local vars{
+	replace `v'=`v'/1000
+}
+
+gen pct_diff=((sim_total-mrip_total)/mrip_total)*100
+
+
+local species "sf bsb scup"
+local disps "catch harvest"
+foreach s of local species{
+	foreach d of local disps{
+
+su mrip_total if disp=="`d'" & species=="`s'"
+local mrip=`r(sum)'
+
+su sim_total if disp=="`d'" & species=="`s'"
+local sim=`r(sum)'
+
+local pct_diff=((`sim'-`mrip')/`mrip')*100
+di "`s' `d' : `pct_diff'"
+
+	}
+}
+
+
 
 tempfile new
 save `new', replace 
@@ -212,10 +350,10 @@ foreach s in `state_list'{
 	keep if state=="`s'"
 	
 	encode my_dom_id_string , gen(my_dom_id)  
-	gen my_dom_id_mrip = my_dom_id+0.1 
-	gen my_dom_id_sim = my_dom_id-0.1  
+	gen my_dom_id_mrip = my_dom_id+0.05 
+	gen my_dom_id_sim = my_dom_id-0.05  
 		
-	levelsof domain if domain=="dtrip", local(domain_list)
+	levelsof domain, local(domain_list)
 		foreach d in `domain_list' {
 
 
@@ -242,53 +380,15 @@ qui twoway (rcap mrip_ul mrip_ll my_dom_id_mrip if domain=="`d'", color(blue)  )
 			*graph export "`sp'_`disp'_rcap.png", name(graph_`sp'_`disp') width(1000) replace
 		}
   }
-  
-  grc1leg  dtrip_MA dtrip_RI dtrip_CT  dtrip_NY dtrip_NJ  dtrip_DE dtrip_MD dtrip_VA dtrip_NC , cols(3) //looks good
 
-				
-C:\Users\andrew.carr-harris\Desktop\Git\flukeRDM\figures
+grc1leg  bsb_catch_MA sf_catch_MA  scup_catch_MA bsb_harvest_MA sf_harvest_MA   scup_harvest_MA , cols(3) //slightly higher			
+grc1leg  bsb_catch_RI sf_catch_RI scup_catch_RI  bsb_harvest_RI sf_harvest_RI scup_harvest_RI    , cols(3)	//looks good	 			
+grc1leg  bsb_catch_CT sf_catch_CT scup_catch_CT  bsb_harvest_CT sf_harvest_CT  scup_harvest_CT  , cols(3)	//slightly higher
+grc1leg  bsb_catch_NY sf_catch_NY scup_catch_NY  bsb_harvest_NY sf_harvest_NY  scup_harvest_NY  , cols(3)	//looks good	 
+grc1leg  bsb_catch_NJ sf_catch_NJ scup_catch_NJ  bsb_harvest_NJ sf_harvest_NJ  scup_harvest_NJ  , cols(3) // higher	
+grc1leg  bsb_catch_DE sf_catch_DE scup_catch_DE  bsb_harvest_DE sf_harvest_DE  scup_harvest_DE  , cols(3) //looks good	 	
+grc1leg  bsb_catch_MD sf_catch_MD scup_catch_MD  bsb_harvest_MD sf_harvest_MD  scup_harvest_MD  , cols(3)	//looks good	  
+grc1leg  bsb_catch_VA sf_catch_VA scup_catch_VA  bsb_harvest_VA sf_harvest_VA  scup_harvest_VA  , cols(3)	//slightly higher
+grc1leg  bsb_catch_NC sf_catch_NC scup_catch_NC  bsb_harvest_NC sf_harvest_NC  scup_harvest_NC  , cols(3) //looks good	   	
 
-
-encode my_dom_id_string, gen(my_dom_id)
-
-levelsof species if species!="NA", local(species_list) 
-levelsof disp if disp!="dtrip", local(disp_list)
-
-foreach sp in `species_list' {
-  foreach disp in `disp_list' {
-    
-    twoway ///
-      (rcap mrip_ul mrip_ll my_dom_id if species == "`sp'" & disp == "`disp'", ///
-         color(blue) ) ///
-      (scatter mrip_total my_dom_id if species == "`sp'" & disp == "`disp'", ///
-        msymbol(o) mcolor(blue)) ///
-      (rcap sim_ul sim_ll my_dom_id if species == "`sp'" & disp == "`disp'", ///
-         color(red)) ///
-      (scatter sim_total my_dom_id if species == "`sp'" & disp == "`disp'", ///
-        msymbol(x) mcolor(red)), ///
-      legend(order(2 "MRIP estimate" 4 "Simulated estimate")) ///
-      ytitle("Catch total") xtitle("Total") ///
-      title("`disp' totals for `sp' by domain") ///
-      name(graph_`sp'_`disp', replace) ///
-      graphregion(color(white)) ///
-      scheme(s1color)
-      
-  }
-}
-
-
-gen my_dom_id_mrip = my_dom_id+0.05 
-gen my_dom_id_sim = my_dom_id-0.05 
-
-twoway (rcap mrip_ul mrip_ll my_dom_id_mrip if species == "sf" & disp == "catch", color(blue)  ) ///
-			(scatter mrip_total my_dom_id_mrip if species == "sf" & disp == "catch",  msymbol(o) mcolor(blue)) ///
-			(rcap sim_ul sim_ll my_dom_id_sim if species == "sf" & disp == "catch",  color(red)) ///
-			(scatter sim_total my_dom_id_sim if species == "sf" & disp == "catch", msymbol(o) mcolor(red)), ///
-			legend(order(2 "MRIP estimate" 4 "Simulated estimate")) ///
-			ytitle("# fish") xtitle("") ///
-			xlabel(`xlabels',  angle(45)) 
-			
-			///
-			title("`disp' totals for `sp'")
-
-*/
+grc1leg  dtrip_MA  dtrip_RI dtrip_CT dtrip_NY dtrip_NJ dtrip_DE dtrip_MD dtrip_VA dtrip_NC , cols(3) //looks good	   	
