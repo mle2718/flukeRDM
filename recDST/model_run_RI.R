@@ -6,17 +6,17 @@ print("start model_RI")
 state1 = "RI"
 predictions_all = list()
 
-sf_size_dat <- readr::read_csv(file.path(here::here("data-raw/size_data/fluke_projected_catch_at_lengths.csv")),  show_col_types = FALSE) %>% 
+sf_size_data <- readr::read_csv(file.path(here::here("data-raw/size_data/fluke_projected_catch_at_lengths.csv")),  show_col_types = FALSE) %>% 
   dplyr::filter(state == "RI") %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
   dplyr::select(state, fitted_prob, length, draw)
 
-bsb_size_dat <- readr::read_csv(file.path(here::here("data-raw/size_data/bsb_projected_catch_at_lengths.csv")),  show_col_types = FALSE) %>% 
+bsb_size_data <- readr::read_csv(file.path(here::here("data-raw/size_data/bsb_projected_catch_at_lengths.csv")),  show_col_types = FALSE) %>% 
   dplyr::filter(state == "RI") %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
   dplyr::select(state, fitted_prob, length, draw)
 
-scup_size_dat <- readr::read_csv(file.path(here::here("data-raw/size_data/scup_projected_catch_at_lengths.csv")),  show_col_types = FALSE) %>% 
+scup_size_data<- readr::read_csv(file.path(here::here("data-raw/size_data/scup_projected_catch_at_lengths.csv")),  show_col_types = FALSE) %>% 
   dplyr::filter(state == "RI") %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
   dplyr::select(state, fitted_prob, length, draw)
