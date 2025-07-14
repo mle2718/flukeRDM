@@ -2951,7 +2951,7 @@ server <- function(input, output, session) {
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SCUPmd_1_bag", label ="Bag Limit",
-                                                            min = 0, max = 100, value = 40)),
+                                                            min = 0, max = 100, value = 30)),
                                         column(6,
                                                sliderInput(inputId = "SCUPmd_1_len", label ="Min Length",
                                                            min = 8, max = 12, value = 9, step = .5)))), 
@@ -2963,7 +2963,7 @@ server <- function(input, output, session) {
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPmdFH_1_bag", label ="Bag Limit",
-                                                           min = 0, max = 100, value = 40)),
+                                                           min = 0, max = 100, value = 30)),
                                        column(6,
                                               sliderInput(inputId = "SCUPmdFH_1_len", label ="Min Length",
                                                           min = 8, max = 12, value = 9, step = .5))) ,
@@ -2975,7 +2975,7 @@ server <- function(input, output, session) {
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPmdPR_1_bag", label ="Bag Limit",
-                                                           min = 0, max = 100, value = 40)),
+                                                           min = 0, max = 100, value = 30)),
                                        column(6,
                                               sliderInput(inputId = "SCUPmdPR_1_len", label ="Min Length",
                                                           min = 8, max = 12, value = 9, step = .5))) ,
@@ -2987,7 +2987,7 @@ server <- function(input, output, session) {
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPmdSH_1_bag", label ="Bag Limit",
-                                                           min = 0, max = 100, value = 40)),
+                                                           min = 0, max = 100, value = 30)),
                                        column(6,
                                               sliderInput(inputId = "SCUPmdSH_1_len", label ="Min Length",
                                                           min = 8, max = 12, value = 9, step = .5)))))
