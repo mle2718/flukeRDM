@@ -41,8 +41,9 @@ if(input$SF_NY_input_type == "All Modes Combined"){
   directed_trips<- directed_trips %>%
     dplyr::mutate(#Summer Flounder
       fluke_bag_y2=dplyr::case_when(day_i >= lubridate::yday(SFny_seas1_op) & day_i <= lubridate::yday(SFny_seas1_cl) ~ as.numeric(SFny_1_bag), TRUE ~ 0), 
-      fluke_min_y2=dplyr::case_when(day_i >= lubridate::yday(SFny_seas1_op) & day_i <= lubridate::yday(SFny_seas1_cl) ~ as.numeric(SFny_1_len), TRUE ~ 100),
       fluke_bag_y2=dplyr::case_when(day_i >= lubridate::yday(SFny_seas2_op) & day_i <= lubridate::yday(SFny_seas2_cl) ~ as.numeric(SFny_2_bag), TRUE ~ fluke_bag_y2), 
+      
+      fluke_min_y2=dplyr::case_when(day_i >= lubridate::yday(SFny_seas1_op) & day_i <= lubridate::yday(SFny_seas1_cl) ~ as.numeric(SFny_1_len), TRUE ~ 100),
       fluke_min_y2=dplyr::case_when(day_i >= lubridate::yday(SFny_seas2_op) & day_i <= lubridate::yday(SFny_seas2_cl) ~ as.numeric(SFny_2_len), TRUE ~ fluke_min_y2),
       
       fluke_bag_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SFnyFH_seas3_op) & day_i <= lubridate::yday(SFnyFH_seas3_cl) ~ as.numeric(SFnyFH_3_bag), TRUE ~ fluke_bag_y2),
