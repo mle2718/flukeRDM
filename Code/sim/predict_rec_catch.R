@@ -98,7 +98,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   # code for trip-level harvest re-allocation -- NEED TO ADD voluntary release code
   catch_size_data0<- catch_size_data %>%
     dplyr::select(fishid, fitted_length, tripid, keep, release, date, catch_draw, mode) %>% 
-    dplyr::mutate(subl_harv_indicator=case_when(release==1 & fitted_length>=floor_subl_sf_harv~1,TRUE~0))
+    dplyr::mutate(subl_harv_indicator=dplyr::case_when(release==1 & fitted_length>=floor_subl_sf_harv~1,TRUE~0))
   
   keep_release_list_sf<- list()
   mode_list_sf <- list()
@@ -130,7 +130,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
         dplyr::filter(subl_harv_indicator==0) 
       
       catch_size_data_re_allocate <- catch_size_data_re_allocate %>% 
-        dplyr::mutate(uniform=runif(n(), min=0, max=1)) %>% 
+        dplyr::mutate(uniform=runif(dplyr::n(), min=0, max=1)) %>% 
         dplyr::arrange(uniform) %>%
         dplyr::ungroup()
       
@@ -139,10 +139,10 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
       
       catch_size_data_re_allocate <- catch_size_data_re_allocate %>% 
         dplyr::mutate(fishid2=1:n_row_re_allocate) %>% 
-        dplyr::mutate(keep_new=case_when(fishid2<=n_sub_sf_kept~1, TRUE~ 0))
+        dplyr::mutate(keep_new=dplyr::case_when(fishid2<=n_sub_sf_kept~1, TRUE~ 0))
       
       catch_size_data_re_allocate <- catch_size_data_re_allocate %>% 
-        dplyr::mutate(rel_new=case_when(keep_new==0~1, TRUE~ 0)) %>% 
+        dplyr::mutate(rel_new=dplyr::case_when(keep_new==0~1, TRUE~ 0)) %>% 
         dplyr::select(-keep, -release, -uniform, -fishid2, -uniform) %>% 
         dplyr::rename(keep=keep_new, release=rel_new)
       
@@ -207,11 +207,11 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     
   }
   
-  sf_trip_data <- bind_rows(mode_list_sf)
+  sf_trip_data <- dplyr::bind_rows(mode_list_sf)
   sf_trip_data<-data.table::as.data.table(sf_trip_data)
   data.table::setkey(sf_trip_data, "domain2")
   
-  keep_release_sf <- bind_rows(keep_release_list_sf)
+  keep_release_sf <- dplyr::bind_rows(keep_release_list_sf)
   keep_release_sf<-data.table::as.data.table(keep_release_sf)
   
   # remove unneccessary and large dataset
@@ -278,7 +278,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   # code for trip level harvest re-allocation
   catch_size_data0<- catch_size_data %>%
     dplyr::select(fishid, fitted_length, tripid, keep, release, date, catch_draw, mode) %>% 
-    dplyr::mutate(subl_harv_indicator=case_when(release==1 & fitted_length>=floor_subl_bsb_harv~1,TRUE~0))
+    dplyr::mutate(subl_harv_indicator=dplyr::case_when(release==1 & fitted_length>=floor_subl_bsb_harv~1,TRUE~0))
   
   keep_release_list_bsb<- list()
   mode_list_bsb <- list()
@@ -310,7 +310,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
         dplyr::filter(subl_harv_indicator==0) 
       
       catch_size_data_re_allocate <- catch_size_data_re_allocate %>% 
-        dplyr::mutate(uniform=runif(n(), min=0, max=1)) %>% 
+        dplyr::mutate(uniform=runif(dplyr::n(), min=0, max=1)) %>% 
         dplyr::arrange(uniform) %>%
         dplyr::ungroup()
       
@@ -319,10 +319,10 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
       
       catch_size_data_re_allocate <- catch_size_data_re_allocate %>% 
         dplyr::mutate(fishid2=1:n_row_re_allocate) %>% 
-        dplyr::mutate(keep_new=case_when(fishid2<=n_sub_bsb_kept~1, TRUE~ 0))
+        dplyr::mutate(keep_new=dplyr::case_when(fishid2<=n_sub_bsb_kept~1, TRUE~ 0))
       
       catch_size_data_re_allocate <- catch_size_data_re_allocate %>% 
-        dplyr::mutate(rel_new=case_when(keep_new==0~1, TRUE~ 0)) %>% 
+        dplyr::mutate(rel_new=dplyr::case_when(keep_new==0~1, TRUE~ 0)) %>% 
         dplyr::select(-keep, -release, -uniform, -fishid2, -uniform) %>% 
         dplyr::rename(keep=keep_new, release=rel_new)
       
@@ -388,11 +388,11 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     
   }
   
-  bsb_trip_data <- bind_rows(mode_list_bsb)
+  bsb_trip_data <- dplyr::bind_rows(mode_list_bsb)
   bsb_trip_data<-data.table::as.data.table(bsb_trip_data)
   data.table::setkey(bsb_trip_data, "domain2")
   
-  keep_release_bsb <- bind_rows(keep_release_list_bsb)
+  keep_release_bsb <- dplyr::bind_rows(keep_release_list_bsb)
   keep_release_bsb<-data.table::as.data.table(keep_release_bsb)
   
   
@@ -446,7 +446,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   # code for trip level harvest re-allocation
   catch_size_data0<- catch_size_data %>%
     dplyr::select(fishid, fitted_length, tripid, keep, release, date, catch_draw, mode) %>% 
-    dplyr::mutate(subl_harv_indicator=case_when(release==1 & fitted_length>=floor_subl_scup_harv~1,TRUE~0))
+    dplyr::mutate(subl_harv_indicator=dplyr::case_when(release==1 & fitted_length>=floor_subl_scup_harv~1,TRUE~0))
   
   keep_release_list_scup<- list()
   mode_list_scup <- list()
@@ -477,7 +477,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
         dplyr::filter(subl_harv_indicator==0) 
       
       catch_size_data_re_allocate <- catch_size_data_re_allocate %>% 
-        dplyr::mutate(uniform=runif(n(), min=0, max=1)) %>% 
+        dplyr::mutate(uniform=runif(dplyr::n(), min=0, max=1)) %>% 
         dplyr::arrange(uniform) %>%
         dplyr::ungroup()
       
@@ -486,10 +486,10 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
       
       catch_size_data_re_allocate <- catch_size_data_re_allocate %>% 
         dplyr::mutate(fishid2=1:n_row_re_allocate) %>% 
-        dplyr::mutate(keep_new=case_when(fishid2<=n_sub_scup_kept~1, TRUE~ 0))
+        dplyr::mutate(keep_new=dplyr::case_when(fishid2<=n_sub_scup_kept~1, TRUE~ 0))
       
       catch_size_data_re_allocate <- catch_size_data_re_allocate %>% 
-        dplyr::mutate(rel_new=case_when(keep_new==0~1, TRUE~ 0)) %>% 
+        dplyr::mutate(rel_new=dplyr::case_when(keep_new==0~1, TRUE~ 0)) %>% 
         dplyr::select(-keep, -release, -uniform, -fishid2, -uniform) %>% 
         dplyr::rename(keep=keep_new, release=rel_new)
       
@@ -554,11 +554,11 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     
   }
   
-  scup_trip_data <- bind_rows(mode_list_scup)
+  scup_trip_data <- dplyr::bind_rows(mode_list_scup)
   scup_trip_data<-data.table::as.data.table(scup_trip_data)
   data.table::setkey(scup_trip_data, "domain2")
   
-  keep_release_scup <- bind_rows(keep_release_list_scup)
+  keep_release_scup <- dplyr::bind_rows(keep_release_list_scup)
   keep_release_scup<-data.table::as.data.table(keep_release_scup)
   
   
@@ -800,7 +800,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   # select the same number of choice occasions in the prediction year as in the calibration year
   mean_trip_data<-mean_trip_data %>% 
-    left_join(n_choice_occasions, by = c("mode", "date_parsed"))
+    dplyr::left_join(n_choice_occasions, by = c("mode", "date_parsed"))
   
   mean_trip_data <-mean_trip_data %>% 
     dplyr::mutate(n_sim_choices=1) %>% 
@@ -809,12 +809,12 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     dplyr::ungroup()
   
   mean_trip_data <- mean_trip_data %>% 
-    mutate(uniform=runif(n(), min=0, max=1)) %>% 
+    dplyr::mutate(uniform=runif(dplyr::n(), min=0, max=1)) %>% 
     dplyr::arrange(date_parsed, mode, uniform)
   
   mean_trip_data1 <- mean_trip_data %>% 
     dplyr::group_by(date_parsed, mode) %>%
-    dplyr::mutate(id_within_group = row_number()) %>% 
+    dplyr::mutate(id_within_group = dplyr::row_number()) %>% 
     dplyr::filter(n_choice_occasions<=sum_n_sim_choices & id_within_group<=n_choice_occasions) %>% 
     dplyr::ungroup()
   
@@ -825,13 +825,13 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   row_inds <- seq_len(nrow(mean_trip_data2))
   
   mean_trip_data2<-mean_trip_data2 %>% 
-    slice(rep(row_inds,expand))  
+    dplyr::slice(rep(row_inds,expand))  
   
   mean_trip_data2 <- mean_trip_data2 %>%
-    mutate(uniform=runif(n(), min=0, max=1)) %>% 
+    dplyr::mutate(uniform=runif(dplyr::n(), min=0, max=1)) %>% 
     dplyr::arrange(date_parsed, mode, uniform) %>% 
     dplyr::group_by(date_parsed, mode) %>%
-    dplyr::mutate(id_within_group = row_number()) %>% 
+    dplyr::mutate(id_within_group = dplyr::row_number()) %>% 
     dplyr::filter(id_within_group<=n_choice_occasions)
   
   results<-mean_trip_data1 %>% 
@@ -865,9 +865,9 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   # model_output1 contains CV and ntrips estimates
   model_output1<- model_output1 %>%
     tidyr::pivot_longer(!c(mode), names_to = "var", values_to = "value") %>%
-    dplyr::mutate(category=case_when(var=="CV"~"CV",TRUE ~ "predicted trips"), 
+    dplyr::mutate(category=dplyr::case_when(var=="CV"~"CV",TRUE ~ "predicted trips"), 
                   keep_release="N/A", param="N/A", 
-                  number_weight=case_when(var=="CV"~"dollars",TRUE ~ "trips") ) %>% 
+                  number_weight=dplyr::case_when(var=="CV"~"dollars",TRUE ~ "trips") ) %>% 
     dplyr::select(-var)
   
   
@@ -938,6 +938,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     dplyr::select(category, mode, everything() ) %>% 
     dplyr::mutate(state = st, draw=dr)
       
+  print("Finished predict_rec_catch")
       
   return(predictions) 
 }
