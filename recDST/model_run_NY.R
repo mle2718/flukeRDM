@@ -1,6 +1,19 @@
 ##############################
 ### NY Rec model run  ########
 ##############################
+Run_Name <- args[1]
+
+saved_regs<- read.csv(here::here(paste0("saved_regs/regs_", Run_Name, ".csv")))
+
+for (a in seq_len(nrow(save_regs))) {
+  # Extract name and value
+  obj_name <- save_regs$input[a]
+  obj_value <- save_regs$value[a]
+  
+  # Assign to object in the environment
+  assign(obj_name, obj_value)
+}
+
 
 print("start model_NY")
 state1 = "NY"
@@ -37,22 +50,14 @@ directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trip
   dplyr::mutate(date_adj = lubridate::dmy(date), 
                 date_adj = lubridate::yday(date_adj)) 
 
-if(input$SF_NY_input_type == "All Modes Combined"){
+if (exists("SFny_seas1_op")) {
   directed_trips<- directed_trips %>%
     dplyr::mutate(#Summer Flounder
       fluke_bag_y2=dplyr::case_when(day_i >= lubridate::yday(SFny_seas1_op) & day_i <= lubridate::yday(SFny_seas1_cl) ~ as.numeric(SFny_1_bag), TRUE ~ 0), 
       fluke_bag_y2=dplyr::case_when(day_i >= lubridate::yday(SFny_seas2_op) & day_i <= lubridate::yday(SFny_seas2_cl) ~ as.numeric(SFny_2_bag), TRUE ~ fluke_bag_y2), 
       
-      fluke_min_y2=dplyr::case_when(day_i >= lubridate::yday(SFny_seas1_op) & day_i <= lubridate::yday(SFny_seas1_cl) ~ as.numeric(SFny_1_len), TRUE ~ 100),
-      fluke_min_y2=dplyr::case_when(day_i >= lubridate::yday(SFny_seas2_op) & day_i <= lubridate::yday(SFny_seas2_cl) ~ as.numeric(SFny_2_len), TRUE ~ fluke_min_y2),
-      
-      fluke_bag_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SFnyFH_seas3_op) & day_i <= lubridate::yday(SFnyFH_seas3_cl) ~ as.numeric(SFnyFH_3_bag), TRUE ~ fluke_bag_y2),
-      fluke_bag_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(SFnyPR_seas3_op) & day_i <= lubridate::yday(SFnyPR_seas3_cl) ~ as.numeric(SFnyPR_3_bag), TRUE ~ fluke_bag_y2),
-      fluke_bag_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(SFnySH_seas3_op) & day_i <= lubridate::yday(SFnySH_seas3_cl) ~ as.numeric(SFnySH_3_bag), TRUE ~ fluke_bag_y2), 
-      
-      fluke_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SFnyFH_seas3_op) & day_i <= lubridate::yday(SFnyFH_seas3_cl) ~ as.numeric(SFnyFH_3_len), TRUE ~ fluke_min_y2),
-      fluke_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(SFnyPR_seas3_op) & day_i <= lubridate::yday(SFnyPR_seas3_cl) ~ as.numeric(SFnyPR_3_len), TRUE ~ fluke_min_y2),
-      fluke_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(SFnySH_seas3_op) & day_i <= lubridate::yday(SFnySH_seas3_cl) ~ as.numeric(SFnySH_3_len), TRUE ~ fluke_min_y2))
+      fluke_min_y2=dplyr::case_when(day_i >= lubridate::yday(SFny_seas1_op) & day_i <= lubridate::yday(SFny_seas1_cl) ~ as.numeric(SFny_1_len) * 2.54, TRUE ~ 254),
+      fluke_min_y2=dplyr::case_when(day_i >= lubridate::yday(SFny_seas2_op) & day_i <= lubridate::yday(SFny_seas2_cl) ~ as.numeric(SFny_2_len) * 2.54, TRUE ~ fluke_min_y2))
 } else {
   directed_trips<- directed_trips %>%
     dplyr::mutate(
@@ -64,39 +69,24 @@ if(input$SF_NY_input_type == "All Modes Combined"){
       fluke_bag_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(SFnyPR_seas2_op) & day_i <= lubridate::yday(SFnyPR_seas2_cl) ~ as.numeric(SFnyPR_2_bag), TRUE ~ fluke_bag_y2),
       fluke_bag_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(SFnySH_seas2_op) & day_i <= lubridate::yday(SFnySH_seas2_cl) ~ as.numeric(SFnySH_2_bag), TRUE ~ fluke_bag_y2), 
       
-      fluke_bag_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SFnyFH_seas3_op) & day_i <= lubridate::yday(SFnyFH_seas3_cl) ~ as.numeric(SFnyFH_3_bag), TRUE ~ fluke_bag_y2),
-      fluke_bag_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(SFnyPR_seas3_op) & day_i <= lubridate::yday(SFnyPR_seas3_cl) ~ as.numeric(SFnyPR_3_bag), TRUE ~ fluke_bag_y2),
-      fluke_bag_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(SFnySH_seas3_op) & day_i <= lubridate::yday(SFnySH_seas3_cl) ~ as.numeric(SFnySH_3_bag), TRUE ~ fluke_bag_y2),
+      fluke_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SFnyFH_seas1_op) & day_i <= lubridate::yday(SFnyFH_seas1_cl) ~ as.numeric(SFnyFH_1_len) * 2.54, TRUE ~ 254), 
+      fluke_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(SFnyPR_seas1_op) & day_i <= lubridate::yday(SFnyPR_seas1_cl) ~ as.numeric(SFnyPR_1_len) * 2.54, TRUE ~ fluke_min_y2), 
+      fluke_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(SFnySH_seas1_op) & day_i <= lubridate::yday(SFnySH_seas1_cl) ~ as.numeric(SFnySH_1_len) * 2.54, TRUE ~ fluke_min_y2),
       
-      fluke_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SFnyFH_seas1_op) & day_i <= lubridate::yday(SFnyFH_seas1_cl) ~ as.numeric(SFnyFH_1_len), TRUE ~ 100), 
-      fluke_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(SFnyPR_seas1_op) & day_i <= lubridate::yday(SFnyPR_seas1_cl) ~ as.numeric(SFnyPR_1_len), TRUE ~ fluke_min_y2), 
-      fluke_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(SFnySH_seas1_op) & day_i <= lubridate::yday(SFnySH_seas1_cl) ~ as.numeric(SFnySH_1_len), TRUE ~ fluke_min_y2),
-      
-      fluke_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SFnyFH_seas2_op) & day_i <= lubridate::yday(SFnyFH_seas2_cl) ~ as.numeric(SFnyFH_2_len), TRUE ~ fluke_min_y2),
-      fluke_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(SFnyPR_seas2_op) & day_i <= lubridate::yday(SFnyPR_seas2_cl) ~ as.numeric(SFnyPR_2_len), TRUE ~ fluke_min_y2),
-      fluke_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(SFnySH_seas2_op) & day_i <= lubridate::yday(SFnySH_seas2_cl) ~ as.numeric(SFnySH_2_len), TRUE ~ fluke_min_y2), 
-      
-      fluke_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SFnyFH_seas3_op) & day_i <= lubridate::yday(SFnyFH_seas3_cl) ~ as.numeric(SFnyFH_3_len), TRUE ~ fluke_min_y2), 
-      fluke_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(SFnyPR_seas3_op) & day_i <= lubridate::yday(SFnyPR_seas3_cl) ~ as.numeric(SFnyPR_3_len), TRUE ~ fluke_min_y2), 
-      fluke_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(SFnySH_seas3_op) & day_i <= lubridate::yday(SFnySH_seas3_cl) ~ as.numeric(SFnySH_3_len), TRUE ~ fluke_min_y2),)
+      fluke_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SFnyFH_seas2_op) & day_i <= lubridate::yday(SFnyFH_seas2_cl) ~ as.numeric(SFnyFH_2_len) * 2.54, TRUE ~ fluke_min_y2),
+      fluke_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(SFnyPR_seas2_op) & day_i <= lubridate::yday(SFnyPR_seas2_cl) ~ as.numeric(SFnyPR_2_len) * 2.54, TRUE ~ fluke_min_y2),
+      fluke_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(SFnySH_seas2_op) & day_i <= lubridate::yday(SFnySH_seas2_cl) ~ as.numeric(SFnySH_2_len) * 2.54, TRUE ~ fluke_min_y2))
   
 }
 
 
-if(BSB_NY_input_type == "All Modes Combined"){
+if (exists("BSBny_seas1_op")) {
   directed_trips<- directed_trips %>%
     dplyr::mutate(# Black Sea Bass Bag Limit
       bsb_bag_y2=dplyr::case_when(day_i >= lubridate::yday(BSBny_seas1_op) & day_i <= lubridate::yday(BSBny_seas1_cl) ~ as.numeric(BSBny_1_bag), TRUE ~ 0), 
       bsb_bag_y2=dplyr::case_when(day_i >= lubridate::yday(BSBny_seas2_op) & day_i <= lubridate::yday(BSBny_seas2_cl) ~ as.numeric(BSBny_2_bag), TRUE ~ bsb_bag_y2),
-      bsb_bag_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(BSBnyFH_seas3_op) & day_i <= lubridate::yday(BSBnyFH_seas3_cl) ~ as.numeric(BSBnyFH_3_bag), TRUE ~ bsb_bag_y2), 
-      bsb_bag_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(BSBnyPR_seas3_op) & day_i <= lubridate::yday(BSBnyPR_seas3_cl) ~ as.numeric(BSBnyPR_3_bag), TRUE ~ bsb_bag_y2), 
-      bsb_bag_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(BSBnySH_seas3_op) & day_i <= lubridate::yday(BSBnySH_seas3_cl) ~ as.numeric(BSBnySH_3_bag), TRUE ~ bsb_bag_y2), 
-      # Black Sea Bass Minimun Size
-      bsb_min_y2=dplyr::case_when(day_i >= lubridate::yday(BSBny_seas1_op) & day_i <= lubridate::yday(BSBny_seas1_cl) ~ as.numeric(BSBny_1_len), TRUE ~ 100), 
-      bsb_min_y2=dplyr::case_when(day_i >= lubridate::yday(BSBny_seas2_op) & day_i <= lubridate::yday(BSBny_seas2_cl) ~ as.numeric(BSBny_2_len), TRUE ~ bsb_min_y2),
-      bsb_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(BSBnyFH_seas3_op) & day_i <= lubridate::yday(BSBnyFH_seas3_cl) ~ as.numeric(BSBnyFH_3_len), TRUE ~ bsb_min_y2), 
-      bsb_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(BSBnyPR_seas3_op) & day_i <= lubridate::yday(BSBnyPR_seas3_cl) ~ as.numeric(BSBnyPR_3_len), TRUE ~ bsb_min_y2), 
-      bsb_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(BSBnySH_seas3_op) & day_i <= lubridate::yday(BSBnySH_seas3_cl) ~ as.numeric(BSBnySH_3_len), TRUE ~ bsb_min_y2))
+      bsb_min_y2=dplyr::case_when(day_i >= lubridate::yday(BSBny_seas1_op) & day_i <= lubridate::yday(BSBny_seas1_cl) ~ as.numeric(BSBny_1_len) * 2.54, TRUE ~ 254), 
+      bsb_min_y2=dplyr::case_when(day_i >= lubridate::yday(BSBny_seas2_op) & day_i <= lubridate::yday(BSBny_seas2_cl) ~ as.numeric(BSBny_2_len) * 2.54, TRUE ~ bsb_min_y2))
 } else {
   directed_trips<- directed_trips %>%
     dplyr::mutate(# Black Sea Bass Bag Limit by Mode
@@ -106,43 +96,54 @@ if(BSB_NY_input_type == "All Modes Combined"){
       bsb_bag_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(BSBnyFH_seas2_op) & day_i <= lubridate::yday(BSBnyFH_seas2_cl) ~ as.numeric(BSBnyFH_2_bag), TRUE ~ bsb_bag_y2), 
       bsb_bag_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(BSBnyPR_seas2_op) & day_i <= lubridate::yday(BSBnyPR_seas2_cl) ~ as.numeric(BSBnyPR_2_bag), TRUE ~ bsb_bag_y2), 
       bsb_bag_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(BSBnySH_seas2_op) & day_i <= lubridate::yday(BSBnySH_seas2_cl) ~ as.numeric(BSBnySH_2_bag), TRUE ~ bsb_bag_y2),
-      bsb_bag_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(BSBnyFH_seas3_op) & day_i <= lubridate::yday(BSBnyFH_seas3_cl) ~ as.numeric(BSBnyFH_3_bag), TRUE ~ bsb_bag_y2), 
-      bsb_bag_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(BSBnyPR_seas3_op) & day_i <= lubridate::yday(BSBnyPR_seas3_cl) ~ as.numeric(BSBnyPR_3_bag), TRUE ~ bsb_bag_y2), 
-      bsb_bag_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(BSBnySH_seas3_op) & day_i <= lubridate::yday(BSBnySH_seas3_cl) ~ as.numeric(BSBnySH_3_bag), TRUE ~ bsb_bag_y2), 
       # Black Sea Bass Minimum Length by Mode
-      bsb_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(BSBnyFH_seas1_op) & day_i <= lubridate::yday(BSBnyFH_seas1_cl) ~ as.numeric(BSBnyFH_1_len), TRUE ~ 100), 
-      bsb_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(BSBnyPR_seas1_op) & day_i <= lubridate::yday(BSBnyPR_seas1_cl) ~ as.numeric(BSBnyPR_1_len), TRUE ~ bsb_min_y2), 
-      bsb_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(BSBnySH_seas1_op) & day_i <= lubridate::yday(BSBnySH_seas1_cl) ~ as.numeric(BSBnySH_1_len), TRUE ~ bsb_min_y2),
-      bsb_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(BSBnyFH_seas2_op) & day_i <= lubridate::yday(BSBnyFH_seas2_cl) ~ as.numeric(BSBnyFH_2_len), TRUE ~ bsb_min_y2), 
-      bsb_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(BSBnyPR_seas2_op) & day_i <= lubridate::yday(BSBnyPR_seas2_cl) ~ as.numeric(BSBnyPR_2_len), TRUE ~ bsb_min_y2), 
-      bsb_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(BSBnySH_seas2_op) & day_i <= lubridate::yday(BSBnySH_seas2_cl) ~ as.numeric(BSBnySH_2_len), TRUE ~ bsb_min_y2),
-      bsb_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(BSBnyFH_seas3_op) & day_i <= lubridate::yday(BSBnyFH_seas3_cl) ~ as.numeric(BSBnyFH_3_len), TRUE ~ bsb_min_y2), 
-      bsb_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(BSBnyPR_seas3_op) & day_i <= lubridate::yday(BSBnyPR_seas3_cl) ~ as.numeric(BSBnyPR_3_len), TRUE ~ bsb_min_y2), 
-      bsb_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(BSBnySH_seas3_op) & day_i <= lubridate::yday(BSBnySH_seas3_cl) ~ as.numeric(BSBnySH_3_len), TRUE ~ bsb_min_y2))
+      bsb_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(BSBnyFH_seas1_op) & day_i <= lubridate::yday(BSBnyFH_seas1_cl) ~ as.numeric(BSBnyFH_1_len) * 2.54, TRUE ~ 254), 
+      bsb_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(BSBnyPR_seas1_op) & day_i <= lubridate::yday(BSBnyPR_seas1_cl) ~ as.numeric(BSBnyPR_1_len) * 2.54, TRUE ~ bsb_min_y2), 
+      bsb_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(BSBnySH_seas1_op) & day_i <= lubridate::yday(BSBnySH_seas1_cl) ~ as.numeric(BSBnySH_1_len) * 2.54, TRUE ~ bsb_min_y2),
+      bsb_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(BSBnyFH_seas2_op) & day_i <= lubridate::yday(BSBnyFH_seas2_cl) ~ as.numeric(BSBnyFH_2_len) * 2.54, TRUE ~ bsb_min_y2), 
+      bsb_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(BSBnyPR_seas2_op) & day_i <= lubridate::yday(BSBnyPR_seas2_cl) ~ as.numeric(BSBnyPR_2_len) * 2.54, TRUE ~ bsb_min_y2), 
+      bsb_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(BSBnySH_seas2_op) & day_i <= lubridate::yday(BSBnySH_seas2_cl) ~ as.numeric(BSBnySH_2_len) * 2.54, TRUE ~ bsb_min_y2))
 }
 
 
 
 directed_trips<- directed_trips %>%  
   dplyr::mutate(
+    fluke_bag_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SFnyFH_seas3_op) & day_i <= lubridate::yday(SFnyFH_seas3_cl) ~ as.numeric(SFnyFH_3_bag), TRUE ~ fluke_bag_y2),
+    fluke_bag_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(SFnyPR_seas3_op) & day_i <= lubridate::yday(SFnyPR_seas3_cl) ~ as.numeric(SFnyPR_3_bag), TRUE ~ fluke_bag_y2),
+    fluke_bag_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(SFnySH_seas3_op) & day_i <= lubridate::yday(SFnySH_seas3_cl) ~ as.numeric(SFnySH_3_bag), TRUE ~ fluke_bag_y2), 
+    
+    fluke_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SFnyFH_seas3_op) & day_i <= lubridate::yday(SFnyFH_seas3_cl) ~ as.numeric(SFnyFH_3_len) * 2.54, TRUE ~ fluke_min_y2),
+    fluke_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(SFnyPR_seas3_op) & day_i <= lubridate::yday(SFnyPR_seas3_cl) ~ as.numeric(SFnyPR_3_len) * 2.54, TRUE ~ fluke_min_y2),
+    fluke_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(SFnySH_seas3_op) & day_i <= lubridate::yday(SFnySH_seas3_cl) ~ as.numeric(SFnySH_3_len) * 2.54, TRUE ~ fluke_min_y2), 
+    
+    
+    bsb_bag_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(BSBnyFH_seas3_op) & day_i <= lubridate::yday(BSBnyFH_seas3_cl) ~ as.numeric(BSBnyFH_3_bag), TRUE ~ bsb_bag_y2), 
+    bsb_bag_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(BSBnyPR_seas3_op) & day_i <= lubridate::yday(BSBnyPR_seas3_cl) ~ as.numeric(BSBnyPR_3_bag), TRUE ~ bsb_bag_y2), 
+    bsb_bag_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(BSBnySH_seas3_op) & day_i <= lubridate::yday(BSBnySH_seas3_cl) ~ as.numeric(BSBnySH_3_bag), TRUE ~ bsb_bag_y2), 
+    
+    bsb_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(BSBnyFH_seas3_op) & day_i <= lubridate::yday(BSBnyFH_seas3_cl) ~ as.numeric(BSBnyFH_3_len) * 2.54, TRUE ~ bsb_min_y2), 
+    bsb_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(BSBnyPR_seas3_op) & day_i <= lubridate::yday(BSBnyPR_seas3_cl) ~ as.numeric(BSBnyPR_3_len) * 2.54, TRUE ~ bsb_min_y2), 
+    bsb_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(BSBnySH_seas3_op) & day_i <= lubridate::yday(BSBnySH_seas3_cl) ~ as.numeric(BSBnySH_3_len) * 2.54, TRUE ~ bsb_min_y2),
+    
     scup_bag_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SCUPnyFH_seas1_op) & day_i <= lubridate::yday(SCUPnyFH_seas1_cl) ~ as.numeric(SCUPnyFH_1_bag), TRUE ~ 0), 
-    scup_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SCUPnyFH_seas1_op) & day_i <= lubridate::yday(SCUPnyFH_seas1_cl) ~ as.numeric(SCUPnyFH_1_len), TRUE ~ 100),
+    scup_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SCUPnyFH_seas1_op) & day_i <= lubridate::yday(SCUPnyFH_seas1_cl) ~ as.numeric(SCUPnyFH_1_len) * 2.54, TRUE ~ 254),
     scup_bag_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SCUPnyFH_seas2_op) & day_i <= lubridate::yday(SCUPnyFH_seas2_cl) ~ as.numeric(SCUPnyFH_2_bag), TRUE ~ scup_bag_y2),
-    scup_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SCUPnyFH_seas2_op) & day_i <= lubridate::yday(SCUPnyFH_seas2_cl) ~ as.numeric(SCUPnyFH_2_len), TRUE ~ scup_min_y2),
+    scup_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SCUPnyFH_seas2_op) & day_i <= lubridate::yday(SCUPnyFH_seas2_cl) ~ as.numeric(SCUPnyFH_2_len) * 2.54, TRUE ~ scup_min_y2),
     scup_bag_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SCUPnyFH_seas3_op) & day_i <= lubridate::yday(SCUPnyFH_seas3_cl) ~ as.numeric(SCUPnyFH_3_bag), TRUE ~ scup_bag_y2),
-    scup_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SCUPnyFH_seas3_op) & day_i <= lubridate::yday(SCUPnyFH_seas3_cl) ~ as.numeric(SCUPnyFH_3_len), TRUE ~ scup_min_y2),
+    scup_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SCUPnyFH_seas3_op) & day_i <= lubridate::yday(SCUPnyFH_seas3_cl) ~ as.numeric(SCUPnyFH_3_len) * 2.54, TRUE ~ scup_min_y2),
     scup_bag_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SCUPnyFH_seas4_op) & day_i <= lubridate::yday(SCUPnyFH_seas4_cl) ~ as.numeric(SCUPnyFH_4_bag), TRUE ~ scup_bag_y2),
-    scup_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SCUPnyFH_seas4_op) & day_i <= lubridate::yday(SCUPnyFH_seas4_cl) ~ as.numeric(SCUPnyFH_4_len), TRUE ~ scup_min_y2),
+    scup_min_y2=dplyr::case_when(mode == "fh" & day_i >= lubridate::yday(SCUPnyFH_seas4_op) & day_i <= lubridate::yday(SCUPnyFH_seas4_cl) ~ as.numeric(SCUPnyFH_4_len) * 2.54, TRUE ~ scup_min_y2),
   
     scup_bag_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(SCUPnyPR_seas1_op) & day_i <= lubridate::yday(SCUPnyPR_seas1_cl) ~ as.numeric(SCUPnyPR_1_bag), TRUE ~ scup_bag_y2),
-    scup_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(SCUPnyPR_seas1_op) & day_i <= lubridate::yday(SCUPnyPR_seas1_cl) ~ as.numeric(SCUPnyPR_1_len), TRUE ~ scup_min_y2),
+    scup_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(SCUPnyPR_seas1_op) & day_i <= lubridate::yday(SCUPnyPR_seas1_cl) ~ as.numeric(SCUPnyPR_1_len) * 2.54, TRUE ~ scup_min_y2),
     scup_bag_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(SCUPnyPR_seas2_op) & day_i <= lubridate::yday(SCUPnyPR_seas2_cl) ~ as.numeric(SCUPnyPR_2_bag), TRUE ~ scup_bag_y2),
-    scup_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(SCUPnyPR_seas2_op) & day_i <= lubridate::yday(SCUPnyPR_seas2_cl) ~ as.numeric(SCUPnyPR_2_len), TRUE ~ scup_min_y2),
+    scup_min_y2=dplyr::case_when(mode == "pr" & day_i >= lubridate::yday(SCUPnyPR_seas2_op) & day_i <= lubridate::yday(SCUPnyPR_seas2_cl) ~ as.numeric(SCUPnyPR_2_len) * 2.54, TRUE ~ scup_min_y2),
     
     scup_bag_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(SCUPnySH_seas1_op) & day_i <= lubridate::yday(SCUPnySH_seas1_cl) ~ as.numeric(SCUPnySH_1_bag), TRUE ~ scup_bag_y2),
-    scup_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(SCUPnySH_seas1_op) & day_i <= lubridate::yday(SCUPnySH_seas1_cl) ~ as.numeric(SCUPnySH_1_len), TRUE ~ scup_min_y2),
+    scup_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(SCUPnySH_seas1_op) & day_i <= lubridate::yday(SCUPnySH_seas1_cl) ~ as.numeric(SCUPnySH_1_len) * 2.54, TRUE ~ scup_min_y2),
     scup_bag_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(SCUPnySH_seas2_op) & day_i <= lubridate::yday(SCUPnySH_seas2_cl) ~ as.numeric(SCUPnySH_2_bag), TRUE ~ scup_bag_y2),
-    scup_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(SCUPnySH_seas2_op) & day_i <= lubridate::yday(SCUPnySH_seas2_cl) ~ as.numeric(SCUPnySH_2_len), TRUE ~ scup_min_y2))
+    scup_min_y2=dplyr::case_when(mode == "sh" & day_i >= lubridate::yday(SCUPnySH_seas2_op) & day_i <= lubridate::yday(SCUPnySH_seas2_cl) ~ as.numeric(SCUPnySH_2_len) * 2.54, TRUE ~ scup_min_y2))
 
 
 
@@ -230,7 +231,7 @@ for(x in 1:1){
   test <- test %>% 
     dplyr::mutate(draw = c(x),
                   #model = c("Alt"))
-                  model = c(run_name))
+                  model = c(Run_Name))
   
   #regs <- # Input table will be used to fill out regs in DT
   
