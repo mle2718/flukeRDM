@@ -105,6 +105,7 @@ server <- function(input, output, session) {
     return(Run_Name)
   }
   
+  
   #### Toggle extra seasons on UI ####
   # Allows for extra seasons to show and hide based on click
   shinyjs::onclick("SFMAaddSeason",
@@ -4365,9 +4366,6 @@ server <- function(input, output, session) {
       regulations <- regulations %>% rbind(sfNJregs, bsbNJregs, scupNJregs)
       
     }
-
-    
-    
     
     if(any("DE" == input$state)){
       if(input$SF_DE_input_type == "All Modes Combined"){
