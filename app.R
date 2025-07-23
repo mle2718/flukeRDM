@@ -9,8 +9,9 @@ ui <- fluidPage(
   titlePanel("Recreational Fisheries Decision Support Tool"),
   tabsetPanel(
     tabPanel("Summary Page",
-             plotly::plotlyOutput(outputId = "figout"),
-             DT::DTOutput(outputId = "tableout"),
+             plotly::plotlyOutput(outputId = "summary_rhl_fig"),
+             DT::DTOutput(outputId = "summary_percdiff_table"),
+             DT::DTOutput(outputId = "summary_regs_table"),
              
              ### Figure and table output by state
              tabsetPanel(
@@ -3846,13 +3847,13 @@ server <- function(input, output, session) {
   regs<- function(){
     flist <- list.files(path = here::here("saved_regs/"), pattern = "\\.csv$", full.names = TRUE)
     
-    all_data <- flist %>%
-      purrr::map_dfr(readr::read_csv) %>% 
-      dplyr::mutate(filename = stringr::str_extract(input, "(?<=SF).*?(?=FH)"))
+    regs_data <- flist %>%
+      purrr::map_dfr(readr::read_csv)
   }
   
-  output$figout<- plotly::renderPlotly({
-    harv<- all_data %>% 
+  ### Summary
+  output$summary_rhl_fig<- plotly::renderPlotly({
+    harv<- outputs() %>% 
       dplyr::filter(keep_release == "keep", 
                     number_weight == "weight", 
                     mode == "all modes") %>% 
@@ -3877,8 +3878,8 @@ server <- function(input, output, session) {
     fig
   })
   
-  output$tableout <- DT::renderDT({
-    tab<- all_data %>% 
+  output$summary_percdiff_table <- DT::renderDT({
+    tab<- outputs() %>% 
       dplyr::filter(keep_release == "keep", 
                     number_weight == "weight", 
                     mode == "all modes") %>% 
@@ -3905,7 +3906,18 @@ server <- function(input, output, session) {
       
   })
  
-  
+  output$summary_regs_table <- DT::renderDT({
+    Regs_out <- regs_data %>% 
+      tidyr::separate(input, into = c("species", "season", "measure"), sep = "_") %>% 
+      dplyr::mutate(season = stringr::str_remove(season, "^seas")) %>% 
+      tidyr::extract(species, into = c("species", "state2", "mode"), regex =  "([^a-z]+)([a-z]+)(.*)") %>% 
+      dplyr::select(-state2) %>% 
+      dplyr::group_by(run_name, state, species, mode, season) %>% 
+      tidyr::pivot_wider(names_from = measure, values_from = value) %>% 
+      dplyr::filter(!bag == 0) %>% 
+      dplyr::mutate(season2 = paste0(op, " - ", cl))  
+      
+  })
   
   
   ####  Storing Inputs for decoupled model ####
