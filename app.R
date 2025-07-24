@@ -10,24 +10,26 @@ ui <- fluidPage(
   tabsetPanel(
     tabPanel("Summary Page",
              plotly::plotlyOutput(outputId = "summary_rhl_fig"),
+             shiny::h2("Summary Table"), 
              DT::DTOutput(outputId = "summary_percdiff_table"),
+             shiny::h2("Regulations"),
              DT::DTOutput(outputId = "summary_regs_table"),
              
              ### Figure and table output by state
              tabsetPanel(
                tabPanel("MA", 
-                        p("Content for Nested Tab A")
-                        # Harvest
+                        shiny::h2("Massachusettes"),
+                        plotly::plotlyOutput(outputId = "ma_rhl_fig") # Harvest
                         # Disczrds
                         # Angler Satis
                         # N trips
                         # Regulations
                ),
                tabPanel("RI", 
-                        p("Content for Nested Tab B")
+                        shiny::h2("Rhode Island")
                ), 
                tabPanel("CT", 
-                        p("Content for Nested Tab A")
+                        shiny::h2("Connecticut")
                         # Harvest
                         # Disczrds
                         # Angler Satis
@@ -35,7 +37,7 @@ ui <- fluidPage(
                         # Regulations
                ),
                tabPanel("NY", 
-                        p("Content for Nested Tab A")
+                        shiny::h2("New York")
                         # Harvest
                         # Disczrds
                         # Angler Satis
@@ -43,7 +45,7 @@ ui <- fluidPage(
                         # Regulations
                ),
                tabPanel("NJ", 
-                        p("Content for Nested Tab A")
+                        shiny::h2("New Jersey")
                         # Harvest
                         # Disczrds
                         # Angler Satis
@@ -51,7 +53,7 @@ ui <- fluidPage(
                         # Regulations
                ),
                tabPanel("DE", 
-                        p("Content for Nested Tab A")
+                        shiny::h2("Delaware")
                         # Harvest
                         # Disczrds
                         # Angler Satis
@@ -59,7 +61,7 @@ ui <- fluidPage(
                         # Regulations
                ),
                tabPanel("MD", 
-                          p("Content for Nested Tab A")
+                        shiny::h2("Marlyand")
                           # Harvest
                           # Disczrds
                           # Angler Satis
@@ -67,7 +69,7 @@ ui <- fluidPage(
                           # Regulations
                ),
                tabPanel("VA", 
-                          p("Content for Nested Tab A")
+                        shiny::h2("Virginia")
                           # Harvest
                           # Disczrds
                           # Angler Satis
@@ -75,7 +77,7 @@ ui <- fluidPage(
                           # Regulations
                ),
                tabPanel("NC", 
-                          p("Content for Nested Tab A")
+                        shiny::h2("North Carolina")
                           # Harvest
                           # Disczrds
                           # Angler Satis
@@ -3918,6 +3920,34 @@ server <- function(input, output, session) {
       dplyr::mutate(season2 = paste0(op, " - ", cl))  
       
   })
+  
+  ### MA
+  output$ma_rhl_fig<- plotly::renderPlotly({
+    harv<- outputs() %>% 
+      dplyr::filter(keep_release == "keep", 
+                    number_weight == "weight", 
+                    mode == "all modes", 
+                    state == "MA") %>% 
+      dplyr::group_by(filename, category, keep_release, number_weight, draw) %>% 
+      dplyr::summarise(Value = sum(as.numeric(value))) %>% 
+      tidyr::pivot_wider(names_from = category, values_from = Value)
+    
+    harv2 <- harv %>% 
+      ggplot2::ggplot(ggplot2::aes(x = sf, y = bsb, label = filename)) +
+      ggplot2::geom_point(color = "steelblue", size = 3) +
+      ggplot2::geom_text(vjust = -0.5, size = 3) +
+      ggplot2::labs(
+        title = "SF vs BSB Harvest Limits by state",
+        x = "Summer Flounder RHL",
+        y = "Black Sea Bass RHL"
+      ) +
+      ggplot2::theme_minimal()
+    
+    fig<- plotly::ggplotly(harv2) %>% 
+      plotly::style(textposition = "top center")
+    fig
+  })
+  
   
   
   ####  Storing Inputs for decoupled model ####
