@@ -19,14 +19,19 @@ ui <- fluidPage(
              tabsetPanel(
                tabPanel("MA", 
                         shiny::h2("Massachusettes"),
-                        plotly::plotlyOutput(outputId = "ma_rhl_fig") # Harvest
+                        plotly::plotlyOutput(outputId = "ma_rhl_fig"),# Harvest
+                        plotly::plotlyOutput(outputId = "ma_discards_fig"),# Disczrds
+                        plotly::plotlyOutput(outputId = "ma_CV_fig"),# Angler Satis
+                        plotly::plotlyOutput(outputId = "ma_trips_fig"),# N trips
+                        DT::DTOutput(outputId = "ma_regs_table")# Regulations
+               ),
+               tabPanel("RI", 
+                        shiny::h2("Rhode Island")
+                        # Harvest
                         # Disczrds
                         # Angler Satis
                         # N trips
                         # Regulations
-               ),
-               tabPanel("RI", 
-                        shiny::h2("Rhode Island")
                ), 
                tabPanel("CT", 
                         shiny::h2("Connecticut")
@@ -3881,7 +3886,7 @@ server <- function(input, output, session) {
   })
   
   output$summary_percdiff_table <- DT::renderDT({
-    tab<- outputs() %>% 
+    tab<- all_data %>%  #outputs() %>% 
       dplyr::filter(keep_release == "keep", 
                     number_weight == "weight", 
                     mode == "all modes") %>% 
@@ -3890,16 +3895,16 @@ server <- function(input, output, session) {
       tidyr::pivot_wider(names_from = category, values_from = Value) %>% 
       dplyr::group_by(state) %>%
       dplyr::mutate(
-        bsb_ref  = bsb[filename == "MA_Alt"], ### Chnage to SQ when it exists
-        scup_ref = scup[filename == "MA_Alt"],
-        sf_ref   = sf[filename == "MA_Alt"],
+        bsb_ref  = bsb[filename == "SQ"], 
+        scup_ref = scup[filename == "SQ"],
+        sf_ref   = sf[filename == "SQ"],
         bsb_pct_diff  = (bsb  - bsb_ref)  / bsb_ref  * 100,
         scup_pct_diff = (scup - scup_ref) / scup_ref * 100,
         sf_pct_diff   = (sf   - sf_ref)   / sf_ref   * 100) %>%
       dplyr::ungroup() %>% 
       dplyr::mutate(bsb_ok  = abs(bsb_pct_diff)  <= bsb_percent_change,
                     scup_ok = abs(scup_pct_diff) <= scup_percent_change,
-                    sf_ok   = abs(sf_pct_diff)   <= sf_percent_change) %>% 
+                    sf_ok   = abs(sf_pct_diff)   <= sf_percent_change) %>%
       dplyr::rowwise() %>%
       dplyr::mutate(ok_count = paste0(sum(c_across(c(bsb_ok, scup_ok, sf_ok))), "/3")) %>%
       dplyr::ungroup()%>%
@@ -3937,10 +3942,9 @@ server <- function(input, output, session) {
       ggplot2::geom_point(color = "steelblue", size = 3) +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::labs(
-        title = "SF vs BSB Harvest Limits by state",
+        title = "SF vs BSB Harvest Limits in Massachusettes",
         x = "Summer Flounder RHL",
-        y = "Black Sea Bass RHL"
-      ) +
+        y = "Black Sea Bass RHL" ) +
       ggplot2::theme_minimal()
     
     fig<- plotly::ggplotly(harv2) %>% 
@@ -3948,7 +3952,99 @@ server <- function(input, output, session) {
     fig
   })
   
+  output$ma_discards_fig <- plotly::renderPlotly({
+    disc<- all_data %>% #outputs() %>% 
+      dplyr::filter(keep_release == "release", 
+                    number_weight == "weight", 
+                    mode == "all modes", 
+                    state == "MA") %>% 
+      dplyr::group_by(filename, category, keep_release, number_weight, draw) %>% 
+      dplyr::summarise(Value = sum(as.numeric(value))) %>% 
+      tidyr::pivot_wider(names_from = category, values_from = Value)
+    
+    disc2 <- disc %>% 
+      ggplot2::ggplot(ggplot2::aes(x = sf, y = bsb, label = filename)) +
+      ggplot2::geom_point(color = "steelblue", size = 3) +
+      ggplot2::geom_text(vjust = -0.5, size = 3) +
+      ggplot2::labs(
+        title = "SF vs BSB Released Fished",
+        x = "Summer Flounder discards",
+        y = "Black Sea Bass discrads"
+      ) +
+      ggplot2::theme_minimal()
+    
+    fig<- plotly::ggplotly(disc2) %>% 
+      plotly::style(textposition = "top center")
+    fig
+  })
   
+  output$ma_CV_fig<- plotly::renderPlotly({
+    
+    welfare <-  outputs() %>%
+      dplyr::filter(category %in% c("CV")) %>%
+      dplyr::group_by( filename, category, draw) %>%
+      dplyr::summarise(Value = sum(as.numeric(value))) %>%
+      dplyr::group_by(filename, category) %>%
+      dplyr::summarise(CV = median(Value), 
+                       ci_lower = quantile(Value, 0.05),
+                       ci_upper = quantile(Value, 0.95))
+    
+    p1<- welfare %>% ggplot2::ggplot(ggplot2::aes(x = filename, y = CV))+
+      ggplot2::geom_point() +
+      ggplot2::geom_hline( yintercept =0)+
+      #ggplot2::geom_text(ggplot2::aes(label=run_number, hjust=1, vjust=1))+
+      ggplot2::ggtitle("Angler Satisfaction between possible regulations")+
+      ggplot2::ylab("Angler Satisfaction ($)")+
+      #ggplot2::xlab()+
+      ggplot2::theme(legend.position = "none")+
+      ggplot2::geom_errorbar(ggplot2::aes(x = filename, ymin = ci_lower, ymax = ci_upper),
+                    inherit.aes = FALSE, width = 0.1, color = "black")
+    
+      fig<- plotly::ggplotly(p1) %>% 
+      plotly::style(textposition = "top center")
+    fig
+  })
+  
+  output$ma_trips_fig<- plotly::renderPlotly({
+    
+    trips <-  all_data %>% #outputs() %>%
+      dplyr::filter(category %in% c("predicted trips")) %>%
+      dplyr::group_by( filename, category, draw) %>%
+      dplyr::summarise(Value = sum(as.numeric(value))) %>%
+      dplyr::group_by(filename, category) %>%
+      dplyr::summarise(trips = median(Value), 
+                       ci_lower = quantile(Value, 0.05),
+                       ci_upper = quantile(Value, 0.95))
+    
+    p1<- trips %>% ggplot2::ggplot(ggplot2::aes(x = filename, y = trips))+
+      ggplot2::geom_point() +
+      ggplot2::geom_hline( yintercept =0)+
+      #ggplot2::geom_text(ggplot2::aes(label=run_number, hjust=1, vjust=1))+
+      ggplot2::ggtitle("Predicted number of angler trips between possible regulations")+
+      ggplot2::ylab("Number of angler trips")+
+      #ggplot2::xlab()+
+      ggplot2::theme(legend.position = "none")+
+      ggplot2::geom_errorbar(ggplot2::aes(x = filename, ymin = ci_lower, ymax = ci_upper),
+                             inherit.aes = FALSE, width = 0.1, color = "black")
+    
+    fig<- plotly::ggplotly(p1) %>% 
+      plotly::style(textposition = "top center")
+    fig
+  })
+  
+  output$ma_regs_table <- DT::renderDT({
+    Regs_out <- regs_data %>% 
+      dplyr::filter(state == "MA") %>% 
+      tidyr::separate(input, into = c("species", "season", "measure"), sep = "_") %>% 
+      dplyr::mutate(season = stringr::str_remove(season, "^seas")) %>% 
+      tidyr::extract(species, into = c("species", "state2", "mode"), regex =  "([^a-z]+)([a-z]+)(.*)") %>% 
+      dplyr::select(-state2) %>% 
+      dplyr::group_by(run_name, state, species, mode, season) %>% 
+      tidyr::pivot_wider(names_from = measure, values_from = value) %>% 
+      dplyr::filter(!bag == 0) %>% 
+      dplyr::mutate(season2 = paste0(op, " - ", cl))  
+    
+  })
   
   ####  Storing Inputs for decoupled model ####
   
