@@ -213,7 +213,7 @@ print("out of loop")
 #predictions_out10<- furrr::future_map_dfr(1:3, ~get_predictions_out(.), .id = "draw")
 
 #readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
-readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_Alt_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
+readr::write_csv(predictions_out10, file = here::here(paste0("output/output_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
 
 
 end_time <- Sys.time()
