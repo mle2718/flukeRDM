@@ -6,10 +6,10 @@ Run_Name <- args[1]
 
 saved_regs<- read.csv(here::here(paste0("saved_regs/regs_", Run_Name, ".csv")))
 
-for (a in seq_len(nrow(save_regs))) {
+for (a in seq_len(nrow(saved_regs))) {
   # Extract name and value
-  obj_name <- save_regs$input[a]
-  obj_value <- save_regs$value[a]
+  obj_name <- saved_regs$input[a]
+  obj_value <- saved_regs$value[a]
   
   # Assign to object in the environment
   assign(obj_name, obj_value)
@@ -213,7 +213,7 @@ print("out of loop")
 #predictions_out10<- furrr::future_map_dfr(1:3, ~get_predictions_out(.), .id = "draw")
 
 #readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
-readr::write_csv(predictions_out10, file = here::here(paste0("output/output_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
+readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
 
 
 end_time <- Sys.time()
