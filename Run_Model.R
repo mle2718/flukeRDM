@@ -17,3 +17,12 @@ if(any(grepl("ma", saved_regs$input))){
   
   source(here::here("recDST/model_run_MA.R"))
 }
+
+## Rhode Island
+if(any(grepl("ri", saved_regs$input))){
+  
+  save_regs <- saved_regs %>%
+    dplyr::filter(grepl("ri", saved_regs$input))
+  
+  source(here::here("recDST/model_run_RI.R"))
+}
