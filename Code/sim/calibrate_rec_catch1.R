@@ -178,7 +178,7 @@ if (rel_to_keep_sf==1 & sum_sf_rel>0){
 if (keep_to_rel_sf==1 & sum_sf_keep>0){
   
   # If all kept must be release, p_keep_to_rel_sf==1
-  if (p_keep_to_rel_sf==1){
+  if (all_keep_to_rel_sf==1){
     
     n_kept_sf_rel<-sum(catch_size_data$keep) 
     prop_legal_sf_rel<-n_kept_sf_rel/sum(catch_size_data$keep)
@@ -194,7 +194,7 @@ if (keep_to_rel_sf==1 & sum_sf_keep>0){
   }
   
   #If not all kept must be release, p_keep_to_rel_sf<1
-  if (p_keep_to_rel_sf<1){
+  if (all_keep_to_rel_sf!=1){
     
     catch_size_data_re_allocate<- catch_size_data %>%
       dplyr::filter(keep==1)
@@ -367,7 +367,7 @@ if (rel_to_keep_bsb==1 & sum_bsb_rel>0){
 if (keep_to_rel_bsb==1 & sum_bsb_keep>0){
   
   #If all kept must be release, p_keep_to_rel_bsb==1
-  if (p_keep_to_rel_bsb==1){
+  if (all_keep_to_rel_bsb==1){
     
     n_kept_bsb_rel<-sum(catch_size_data$keep) 
     prop_legal_bsb_rel<-n_kept_bsb_rel/sum(catch_size_data$keep)
@@ -383,7 +383,7 @@ if (keep_to_rel_bsb==1 & sum_bsb_keep>0){
   }
   
   #If not all kept must be release, p_keep_to_rel_bsb<1
-  if (p_keep_to_rel_bsb<1){
+  if (all_keep_to_rel_bsb!=1){
     
     catch_size_data_re_allocate<- catch_size_data %>%
       dplyr::filter(keep==1)
@@ -556,7 +556,7 @@ if (rel_to_keep_scup==1 & sum_scup_rel>0){
 if (keep_to_rel_scup==1 & sum_scup_keep>0){
   
   #If all kept must be release, p_keep_to_rel_scup==1
-  if (p_keep_to_rel_scup==1){
+  if (all_keep_to_rel_scup==1){
     
     n_kept_scup_rel<-sum(catch_size_data$keep) 
     prop_legal_scup_rel<-n_kept_scup_rel/sum(catch_size_data$keep)
@@ -572,7 +572,7 @@ if (keep_to_rel_scup==1 & sum_scup_keep>0){
   }
   
   #If not all kept must be release, p_keep_to_rel_scup<1
-  if (p_keep_to_rel_scup<1){
+  if (all_keep_to_rel_scup!=1){
     
     catch_size_data_re_allocate<- catch_size_data %>%
       dplyr::filter(keep==1)
