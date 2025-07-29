@@ -33,9 +33,9 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
       #2) If the fishery is closed the entire season, floor_subl_harvest=mean(catch_length)-0.5*sd(catch_length). 
       #1) and #1a) below:
       
-  floor_subl_sf_harv<-min(directed_trips$fluke_min)-2*2.54
-  floor_subl_bsb_harv<-min(directed_trips$bsb_min)-2*2.54
-  floor_subl_scup_harv<-min(directed_trips$scup_min)-2*2.54
+  floor_subl_sf_harv<-min(directed_trips$fluke_min)
+  floor_subl_bsb_harv<-min(directed_trips$bsb_min)
+  floor_subl_scup_harv<-min(directed_trips$scup_min)
   
   #####END Part A 
   
@@ -70,8 +70,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     dplyr::mutate(fitted_length = sample(sf_size_data$length,
                                          nrow(.),
                                          prob = sf_size_data$fitted_prob,
-                                         replace = TRUE)) %>%  
-    dplyr::mutate(fitted_length=fitted_length*2.54)
+                                         replace = TRUE)) 
   
   
   # Impose regulations, calculate keep and release per trip
@@ -253,8 +252,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     dplyr::mutate(fitted_length = sample(bsb_size_data$length,
                                          nrow(.),
                                          prob = bsb_size_data$fitted_prob,
-                                         replace = TRUE)) %>%     #dplyr::arrange(period2, tripid, catch_draw) 
-    dplyr::mutate(fitted_length=fitted_length*2.54)
+                                         replace = TRUE)) 
   
   # Impose regulations, calculate keep and release per trip
   catch_size_data <- catch_size_data %>%
@@ -320,7 +318,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
       catch_size_data_re_allocate <- catch_size_data_re_allocate %>% 
         dplyr::mutate(fishid2=1:n_row_re_allocate) %>% 
         dplyr::mutate(keep_new=dplyr::case_when(fishid2<=n_sub_bsb_kept~1, TRUE~ 0))
-      
+     
       catch_size_data_re_allocate <- catch_size_data_re_allocate %>% 
         dplyr::mutate(rel_new=dplyr::case_when(keep_new==0~1, TRUE~ 0)) %>% 
         dplyr::select(-keep, -release, -uniform, -fishid2, -uniform) %>% 
@@ -419,8 +417,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     dplyr::mutate(fitted_length = sample(scup_size_data$length,
                                          nrow(.),
                                          prob = scup_size_data$fitted_prob,
-                                         replace = TRUE)) %>% 
-    dplyr::mutate(fitted_length=fitted_length*2.54)
+                                         replace = TRUE)) 
   
   
   # Impose regulations, calculate keep and release per trip
