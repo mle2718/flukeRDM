@@ -33,9 +33,9 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
       #2) If the fishery is closed the entire season, floor_subl_harvest=mean(catch_length)-0.5*sd(catch_length). 
       #1) and #1a) below:
       
-  floor_subl_sf_harv<-min(directed_trips$fluke_min)
-  floor_subl_bsb_harv<-min(directed_trips$bsb_min)
-  floor_subl_scup_harv<-min(directed_trips$scup_min)
+  floor_subl_sf_harv<-min(directed_trips$fluke_min)-(3*2.54)
+  floor_subl_bsb_harv<-min(directed_trips$bsb_min)-(3*2.54)
+  floor_subl_scup_harv<-min(directed_trips$scup_min)-(3*2.54)
   
   #####END Part A 
   
