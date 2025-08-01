@@ -456,12 +456,102 @@ gen scup_only_rel=1 if meanscup_rel>0 & meanscup_keep==0
 gen scup_keep_and_rel=1 if meanscup_rel>0 & meanscup_keep>0
 gen scup_no_catch=1 if meanscup_rel==0 & meanscup_keep==0
 
+
 mvencode sf_only_keep sf_only_rel sf_keep_and_rel sf_no_catch bsb_only_keep bsb_only_rel bsb_keep_and_rel bsb_no_catch scup_only_keep scup_only_rel scup_keep_and_rel scup_no_catch, mv(0) override
 
 merge 1:m my_dom_id_string using `basefile'
 
+*condition for when keep and release are both positive for a stratum, but they never occur on the same trip
+*Will model these distributions as independent
+gen tab=1 if sf_keep>0 & sf_keep!=. & sf_rel>0 & sf_rel!=.
+egen sumtab=sum(tab), by(my_dom_id_string)
+gen sf_keep_and_rel_ind=1 if sf_keep_and_rel==1 & sumtab==0
+replace sf_keep_and_rel=0 if sf_keep_and_rel_ind==1
+drop tab sumtab
 
-keep wp_int my_dom_id_string meanbsb_cat-id_code year yr2 st  state common_dom sf_cat-scup_rel my_dom_id sf_only_keep sf_only_rel sf_keep_and_rel sf_no_catch bsb_only_keep bsb_only_rel bsb_keep_and_rel bsb_no_catch scup_only_keep scup_only_rel scup_keep_and_rel scup_no_catch
+gen tab=1 if bsb_keep>0 & bsb_keep!=. & bsb_rel>0 & bsb_rel!=.
+egen sumtab=sum(tab), by(my_dom_id_string)
+gen bsb_keep_and_rel_ind=1 if bsb_keep_and_rel==1 & sumtab==0
+replace bsb_keep_and_rel=0 if bsb_keep_and_rel_ind==1
+drop tab sumtab
+
+gen tab=1 if scup_keep>0 & scup_keep!=. & scup_rel>0 & scup_rel!=.
+egen sumtab=sum(tab), by(my_dom_id_string)
+gen scup_keep_and_rel_ind=1 if scup_keep_and_rel==1 & sumtab==0
+replace scup_keep_and_rel=0 if scup_keep_and_rel_ind==1
+drop tab sumtab
+
+*condition for when keep and release are both positive for a stratum, but occured together on only one trip so that the correlation==1.
+*Will model these distributions as independent
+*sf
+gen perfect_corr=.
+levelsof my_dom_id_string if sf_keep_and_rel==1, local(doms)
+foreach d of local doms{
+di "`d'" 
+egen rank_keep = rank(sf_keep) if my_dom_id_string=="`d'" 
+egen rank_rel  = rank(sf_rel) if my_dom_id_string=="`d'" 
+count if  my_dom_id_string=="`d'" 
+if `r(N)'>1{
+corr rank_keep rank_rel if my_dom_id_string=="`d'"  [aw=wp_int]
+if `r(rho)'==1{
+	replace perfect_corr=1 if my_dom_id_string=="`d'"
+}
+}
+	drop rank*
+
+}
+
+replace sf_keep_and_rel=0 if sf_keep_and_rel==1 & perfect_corr==1
+replace sf_keep_and_rel_ind=1 if perfect_corr==1
+
+drop perfect_corr
+
+*bsb
+gen perfect_corr=.
+levelsof my_dom_id_string if bsb_keep_and_rel==1, local(doms)
+foreach d of local doms{
+di "`d'" 
+egen rank_keep = rank(bsb_keep) if my_dom_id_string=="`d'" 
+egen rank_rel  = rank(bsb_rel) if my_dom_id_string=="`d'" 
+count if  my_dom_id_string=="`d'" 
+if `r(N)'>1{
+corr rank_keep rank_rel if my_dom_id_string=="`d'"  [aw=wp_int]
+if `r(rho)'==1{
+	replace perfect_corr=1 if my_dom_id_string=="`d'"
+}
+}
+	drop rank*
+
+}
+
+replace bsb_keep_and_rel=0 if bsb_keep_and_rel==1 & perfect_corr==1
+replace bsb_keep_and_rel_ind=1 if perfect_corr==1
+drop perfect_corr
+
+*scup
+gen perfect_corr=.
+levelsof my_dom_id_string if scup_keep_and_rel==1, local(doms)
+foreach d of local doms{
+di "`d'" 
+egen rank_keep = rank(scup_keep) if my_dom_id_string=="`d'" 
+egen rank_rel  = rank(scup_rel) if my_dom_id_string=="`d'" 
+count if  my_dom_id_string=="`d'" 
+if `r(N)'>1{
+corr rank_keep rank_rel if my_dom_id_string=="`d'"  [aw=wp_int]
+if `r(rho)'==1{
+	replace perfect_corr=1 if my_dom_id_string=="`d'"
+}
+}
+	drop rank*
+
+}
+
+replace scup_keep_and_rel=0 if scup_keep_and_rel==1 & perfect_corr==1
+replace scup_keep_and_rel_ind=1 if perfect_corr==1
+drop perfect_corr
+
+
+keep wp_int my_dom_id_string meanbsb_cat-id_code year yr2 st  state common_dom sf_cat-scup_rel my_dom_id sf_only_keep sf_only_rel sf_keep_and_rel sf_no_catch bsb_only_keep bsb_only_rel bsb_keep_and_rel bsb_no_catch scup_only_keep scup_only_rel scup_keep_and_rel scup_no_catch bsb_keep_and_rel_ind sf_keep_and_rel_ind scup_keep_and_rel_ind
 
 mvencode se*, mv(0) override
 mvencode missing*, mv(0) override

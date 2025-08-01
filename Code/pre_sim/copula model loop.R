@@ -17,12 +17,13 @@ library(dplyr)
 library(ggplot2)
 library(writexl)
 
-s<-"NJ"
+conflicts_prefer(dplyr::filter)
+
+#s<-"DE"
 
 state_datasets <- list()
-#statez<-c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
-
-statez<-c("NJ", "DE", "MD", "VA", "NC")
+statez<-c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+statez<-c("DE")
 
 for(s in statez) {
   
@@ -30,8 +31,8 @@ for(s in statez) {
   df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/baseline_mrip_catch_processed.xlsx") %>% 
     filter(state==s)
   
-
- 
+  
+  
   # Strata can fall into one of four categories:
   
   # 1) both mean harvest- and discards-per-trip>0 
@@ -42,7 +43,7 @@ for(s in statez) {
   # I used copula model to simulate 1), whereas 2) and 3) are distributed NB
   
   n_sim <- 5000   # number of samples per draw
-  n_draws <- 100  # number of simulated datasets
+  n_draws <- 110  # number of simulated datasets
   
   
   ############ SUMMER FLOUNDER ############
@@ -60,16 +61,21 @@ for(s in statez) {
   df_full4 <- df %>% filter(sf_no_catch==1)
   
   
+  ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0 BUT positive values of harvest/discards never occur simultaneously
+  df_full5 <- df %>% filter(sf_keep_and_rel_ind==1)
+  
+  
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0
   if (nrow(df_full1) > 0) {
     
-   
+    
     all_results1 <- list()
     
     for (dom in unique(df_full1$my_dom_id_string)) {
-
+      
       df <- df_full1 %>% filter(my_dom_id_string == dom)
       
+
       # Define survey design
       svy_design <- svydesign(ids=~psu_id,strata=~strat_id,
                               weights=~wp_int,nest=TRUE,data=df)
@@ -78,14 +84,14 @@ for(s in statez) {
       # Estimate means, variances using survey design
       mean_keep <- svymean(~sf_keep, svy_design)
       mean_rel  <- svymean(~sf_rel,  svy_design)
-
+      
       var_keep <- attr(mean_keep, "var")
       var_rel  <- attr(mean_rel, "var")
-
+      
       mu_keep <- coef(mean_keep)
       mu_rel  <- coef(mean_rel)
-
-
+      
+      
       # Handle zero or missing variance (certainty units)
       # Use imputed linearized standard error 
       if (is.na(var_keep) || var_keep == 0) {
@@ -98,8 +104,13 @@ for(s in statez) {
         var_rel <- imputed_se^2
       }
       
-      max_keep <- round(max(df$sf_keep))
-      max_rel <- round(max(df$sf_rel))
+      max_keep <- round(max(df$sf_keep))+2
+      max_rel <- round(max(df$sf_rel))+6
+      
+      mu_keep
+      mu_rel
+      var_keep
+      var_rel
       
       # Bootstrap replicate design (R = number of replicates)
       rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
@@ -131,18 +142,19 @@ for(s in statez) {
       # Protect against negative denominators
       rep_theta_keep <- rep_means_keep^2 / pmax(rep_vars_keep - rep_means_keep, 1e-6)
       rep_theta_rel  <- rep_means_rel^2  / pmax(rep_vars_rel  - rep_means_rel,  1e-6)
-      
+      rep_theta_rel <- pmin(rep_theta_rel, 1000) 
       # Estimate NB dispersion for when there is only one PSU 
       if (nrow(df)==1) {
         theta_hat_keep_single <- mu_keep^2 / pmax((var_keep - mu_keep), 1e-6)
         theta_hat_rel_single <- mu_rel^2 / pmax((var_rel - mu_rel), 1e-6)
       }
-
+      
       # Fit the copula to a sample (max 5000 obs.) of the original data b/c it can take a while if N is large
       
       df$w_int_rounded <- round(df$wp_int)
       df_expanded <- uncount(df, weights = w_int_rounded) 
       df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), n_sim)) 
+
       
       # Create pseudo-observations (rank-based empirical CDFs)
       df_expanded <- df_expanded %>%
@@ -152,18 +164,21 @@ for(s in statez) {
           u_keep = rank_keep / (n() + 1),
           u_rel  = rank_rel / (n() + 1)
         )
-  
+      
       # Fit copula using pseudo-observations
       
       u_mat <- cbind(df_expanded$u_keep, df_expanded$u_rel)
       
+
+      
+      tau_hat <- cor(u_mat[,1], u_mat[,2], method = "kendall")
+
       # Assess dependence:
       # tau>=0.3: use Gumbel copula
       # tau<=-.3: normal copula, which allows for negative dependence. 
       # -.3>=tau<=.3: frank copula, for moderate, neutral dependence
       
-      tau_hat <- cor(u_mat[,1], u_mat[,2], method = "kendall")
-      
+
       if (tau_hat >= 0.3) {
         cop <- gumbelCopula(dim = 2)
         cop_name <- "Gumbel"
@@ -184,7 +199,7 @@ for(s in statez) {
       i <- 1
       while (i <= n_draws) {
         
-        sim_u <- rCopula(n_sim, copula_fit@copula)
+       sim_u <- rCopula(n_sim, copula_fit@copula)
         
         # Sample mu_keep and mu_rel with uncertainty
         sampled_mu_keep <-  rnorm(1, mu_keep, sqrt(var_keep))
@@ -202,20 +217,53 @@ for(s in statez) {
         
         
         # Convert uniform to NB using quantiles
-          sim_keep <- qnbinom(sim_u[,1], size = sampled_theta_keep, mu = sampled_mu_keep)
-
+        sim_keep <- qnbinom(sim_u[,1], size = sampled_theta_keep, mu = sampled_mu_keep)
         
         # Convert uniform to NB using quantiles
-          sim_rel  <- qnbinom(sim_u[,2], size = sampled_theta_rel, mu = sampled_mu_rel)
-
+        sim_rel  <- qnbinom(sim_u[,2], size = sampled_theta_rel, mu = sampled_mu_rel)
+        
         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
           
-          sim_keep <- pmin(sim_keep, max_keep*2)
-          sim_rel <- pmin(sim_rel, max_rel*2.5)
+          ###### REDISTRIBUTE KEEP ########
+          excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
+          total_excess_keep <- sum(excess_keep)
+          
+          # Set max values to max_keep
+          sim_keep[sim_keep > max_keep] <- max_keep
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_keep_idx <- which(sim_keep > 0 & sim_keep < max_keep)
+          if (length(positive_keep_idx) > 0 && total_excess_keep > 0) {
+            weights_keep <- sim_keep[positive_keep_idx] / sum(sim_keep[positive_keep_idx])
+            sim_keep[positive_keep_idx] <- sim_keep[positive_keep_idx] +
+              rmultinom(1, total_excess_keep, prob = weights_keep)
+          }
+          
+          ####### REDISTRIBUTE RELEASE ########
+          excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
+          total_excess_rel <- sum(excess_rel)
+          
+          # Set max values to max_rel
+          sim_rel[sim_rel > max_rel] <- max_rel
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_rel_idx <- which(sim_rel > 0 & sim_rel < max_rel)
+          if (length(positive_rel_idx) > 0 && total_excess_rel > 0) {
+            weights_rel <- sim_rel[positive_rel_idx] / sum(sim_rel[positive_rel_idx])
+            sim_rel[positive_rel_idx] <- sim_rel[positive_rel_idx] +
+              rmultinom(1, total_excess_rel, prob = weights_rel)
+          }
+          
+          
+          #sim_keep <- pmin(sim_keep, max_keep*2)
+          #sim_rel <- pmin(sim_rel, round(max_rel*2.5))
           
           my_dom_id_string<-dom
           
-          sim_datasets[[i]] <- data.frame(sim_id = i, sf_keep_sim = sim_keep, sf_rel_sim = sim_rel,  my_dom_id_string = my_dom_id_string) 
+          sim_datasets[[i]] <- data.frame(sim_id = i, 
+                                          sf_keep_sim = sim_keep, 
+                                          sf_rel_sim = sim_rel,  
+                                          my_dom_id_string = my_dom_id_string) 
           
           i <- i + 1  # Only increment if no NaNs
         }
@@ -230,7 +278,7 @@ for(s in statez) {
         })
       )
       all_results1[[dom]] <- combined_sim
-      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results1", "n_sim", "n_draws", "s")
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "all_results1", "n_sim", "n_draws", "s")
       rm(list = setdiff(ls(), keep))
       
       
@@ -244,162 +292,13 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s")
+  keep <- c("final_result1", "df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
   
-  # df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/baseline_mrip_catch_processed.xlsx") %>% 
-  #   filter(state==s & sf_keep_and_rel==1 )
-  # 
-  # 
-  # # Define survey design
-  # svy_design <- svydesign(ids=~psu_id,strata=~strat_id,
-  #                         weights=~wp_int,nest=TRUE,data=df)
-  # options(survey.lonely.psu = "certainty")
-  # 
-  # # Estimate means, variances using survey design
-  # mean_keep_full <- svymean(~sf_keep, svy_design)
-  # mean_rel_full  <- svymean(~sf_rel,  svy_design)
-  # mean_cat_full <- svymean(~sf_cat, svy_design)
-  # 
-  # var_keep_full <- attr(mean_keep_full, "var")
-  # var_rel_full  <- attr(mean_rel_full, "var")
-  # var_cat_full  <- attr(mean_cat_full, "var")
-  # 
-  # df$w_int_rounded <- round(df$wp_int)
-  # df_expanded <- uncount(df, weights = w_int_rounded)
-  # 
-  # sd_keep_full <- sd(df_expanded$sf_keep)
-  # sd_rel_full  <- sd(df_expanded$sf_rel)
-  # sd_cat_full  <- sd(df_expanded$sf_cat)
-  # 
-  # mu_keep_full <- coef(mean_keep_full)
-  # mu_rel_full  <- coef(mean_rel_full)
-  # mu_cat_full  <- coef(mean_cat_full)
-  # 
-  # corr <- as.data.frame(wtd.cor(df$sf_keep, df$sf_rel, weight = df$wp_int))
-  # corr  <- corr$correlation
-  # 
-  # ############### compare
-  # # Now summarize the means by simulation ID
-  # sim_means <- final_result1 %>%
-  #   dplyr::mutate(sf_catch_sim=sf_keep_sim+sf_rel_sim) %>% 
-  #   dplyr::group_by(sim_id) %>%
-  #   dplyr::summarize(
-  #     mean_sf_keep = mean(sf_keep_sim),
-  #     mean_sf_rel  = mean(sf_rel_sim),
-  #     mean_sf_catch  = mean(sf_catch_sim),
-  #     sd_sf_keep = sd(sf_keep_sim),
-  #     sd_sf_rel  = sd(sf_rel_sim),
-  #     sd_sf_catch  = sd(sf_catch_sim),
-  #     corr= cor(sf_keep_sim, sf_rel_sim, method = "pearson"),
-  #     .groups = "drop"
-  #   )
-  # sim_means$corr[is.na(sim_means$corr)] <- 0
-  # 
-  # # Summarize simulated means
-  # sim_summary <- sim_means %>%
-  #   dplyr::summarize(
-  #     mean_keep = mean(mean_sf_keep),
-  #     mean_rel  = mean(mean_sf_rel),
-  #     mean_cat  = mean(mean_sf_catch),
-  #     sdm_keep   = sd(mean_sf_keep),
-  #     sdm_rel    = sd(mean_sf_rel),
-  #     sdm_cat    = sd(mean_sf_catch),
-  #     sd_keep   = mean(sd_sf_keep),
-  #     sd_rel    = mean(sd_sf_rel),
-  #     sd_cat    = mean(sd_sf_catch), 
-  #     sd_sd_keep   = sd(sd_sf_keep),
-  #     sd_sd_rel    = sd(sd_sf_rel),
-  #     sd_sd_cat    = sd(sd_sf_catch),
-  #     mean_corr=mean(corr), 
-  #     sd_corr=sd(corr)
-  #     
-  #   )
-  # 
-  # 
-  # 
-  # # Build tidy comparison table
-  # comparison_plot_df <- tibble::tibble(
-  #   metric = rep(c("sf_keep", "sf_rel", "sf_catch"), times = 2),
-  #   value = c(
-  #     # Means
-  #     coef(mean_keep_full), coef(mean_rel_full), coef(mean_cat_full),
-  #     sim_summary$mean_keep, sim_summary$mean_rel, sim_summary$mean_cat
-  #   ),
-  #   se = c(
-  #     sqrt(var_keep_full), sqrt(var_rel_full), sqrt(var_cat_full),
-  #     sim_summary$sdm_keep, sim_summary$sdm_rel, sim_summary$sdm_cat
-  #   ),
-  #   source = rep(c("Survey", "Simulated"), each = 3),
-  #   statistic = "Mean"
-  # )
-  # 
-  # # Add SD comparison
-  # sd_plot_df <- tibble::tibble(
-  #   metric = rep(c("sf_keep", "sf_rel", "sf_catch"), times = 2),
-  #   value = c(
-  #     sd_keep_full, sd_rel_full, sd_cat_full,
-  #     sim_summary$sd_keep, sim_summary$sd_rel, sim_summary$sd_cat
-  #   ),
-  #   se = c(
-  #     NA, NA, NA,
-  #     sim_summary$sd_sd_keep, sim_summary$sd_sd_rel, sim_summary$sd_sd_cat
-  #   ),
-  #   source = rep(c("Survey", "Simulated"), each = 3),
-  #   statistic = "SD"
-  # )
-  # 
-  # # Create correlation plot data
-  # corr_data <- tibble(
-  #   variable = "Correlation",
-  #   value = c(corr, sim_summary$mean_corr),  # your observed correlation
-  #   se = c(0, sim_summary$sd_corr),
-  #   source = c("Survey", "Simulated")
-  # )
-  # 
-  # # Replace NA standard errors with 0
-  # corr_data$se[is.na(corr_data$se)] <- 0
-  # 
-  # # Combine for plotting
-  # plot_data <- bind_rows(comparison_plot_df, sd_plot_df)
-  # plot_data$se[is.na(plot_data$se)] <- 0
-  # 
-  # 
-  # pA<- ggplot(plot_data, aes(x = metric, y = value, fill = source)) +
-  #   geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
-  #   geom_errorbar(
-  #     aes(ymin = value - 1.96 * se, ymax = value + 1.96 * se),
-  #     width = 0.2,
-  #     position = position_dodge(width = 0.8)
-  #   ) +
-  #   facet_wrap(~statistic, scales = "free_y") +
-  #   labs(
-  #     title = "Survey vs Simulated: Means and Standard Deviations",
-  #     x = "Metric",
-  #     y = "Value (Fish per Trip)",
-  #     fill = "Source"
-  #   ) +
-  #   scale_fill_manual(values = c("Survey" = "red", "Simulated" = "steelblue")) +
-  #   theme_minimal()
-  # 
-  # p3 <- ggplot(corr_data, aes(x = variable, y = value, fill = source)) +
-  #   geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.5) +
-  #   geom_errorbar(aes(ymin = value - 1.96 * se, ymax = value + 1.96 * se),
-  #                 width = 0.2, position = position_dodge(width = 0.8)) +
-  #   labs(title = "Pearson Correlation ± 95% CI", y = "Correlation", x = NULL) +
-  #   theme_minimal() +
-  #   scale_fill_manual(values = c("Survey" = "steelblue", "Simulated" = "orange"))
-  # 
-  # # Combine with patchwork
-  # (pA | p3) + plot_layout(guides = "collect") & theme(legend.position = "bottom")
 
-  
-  
-  
-  
   
   ################
   
@@ -417,7 +316,7 @@ for(s in statez) {
       svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
       options(survey.lonely.psu = "certainty")
       
-      max_rel <- round(max(df$sf_rel))
+      max_rel <- round(max(df$sf_rel))+6
       
       df$w_int_rounded <- round(df$wp_int)
       df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
@@ -476,10 +375,26 @@ for(s in statez) {
         }
         
         sim_rel <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
-
-
+        
+        
         if (!any(is.na(sim_rel))) {
-          sim_rel <- pmin(sim_rel, max_rel*2.5)
+          
+          ####### REDISTRIBUTE RELEASE ########
+          excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
+          total_excess_rel <- sum(excess_rel)
+          
+          # Set max values to max_rel
+          sim_rel[sim_rel > max_rel] <- max_rel
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_rel_idx <- which(sim_rel > 0 & sim_rel < max_rel)
+          if (length(positive_rel_idx) > 0 && total_excess_rel > 0) {
+            weights_rel <- sim_rel[positive_rel_idx] / sum(sim_rel[positive_rel_idx])
+            sim_rel[positive_rel_idx] <- sim_rel[positive_rel_idx] +
+              rmultinom(1, total_excess_rel, prob = weights_rel)
+          }
+          
+          #sim_rel <- pmin(sim_rel, round(max_rel*2.5))
           
           my_dom_id_string<-dom
           
@@ -498,7 +413,7 @@ for(s in statez) {
       )
       
       all_results2[[dom]] <- combined_sim
-      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results2", "final_result1", "n_sim", "n_draws", "s")
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "all_results2", "final_result1", "n_sim", "n_draws", "s")
       rm(list = setdiff(ls(), keep))
     }
     
@@ -510,13 +425,13 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "final_result2", "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s")
+  keep <- c("final_result1", "final_result2", "df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
   
- 
+  
   ### MEAN(DISCARDS-PER-TRIP)==0, MEAN(HARVEST-PER-TRIP)>0
   if (nrow(df_full3) > 0) {
     
@@ -530,7 +445,7 @@ for(s in statez) {
       svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
       options(survey.lonely.psu = "certainty")
       
-      max_keep <- round(max(df$sf_keep))
+      max_keep <- round(max(df$sf_keep))+2
       
       df$w_int_rounded <- round(df$wp_int)
       df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
@@ -590,9 +505,25 @@ for(s in statez) {
         }
         
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
-    
+        
         if (!any(is.na(sim_keep))) {
-          sim_keep <- pmin(sim_keep, max_keep*2)
+          
+          ###### REDISTRIBUTE KEEP ########
+          excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
+          total_excess_keep <- sum(excess_keep)
+          
+          # Set max values to max_keep
+          sim_keep[sim_keep > max_keep] <- max_keep
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_keep_idx <- which(sim_keep > 0 & sim_keep < max_keep)
+          if (length(positive_keep_idx) > 0 && total_excess_keep > 0) {
+            weights_keep <- sim_keep[positive_keep_idx] / sum(sim_keep[positive_keep_idx])
+            sim_keep[positive_keep_idx] <- sim_keep[positive_keep_idx] +
+              rmultinom(1, total_excess_keep, prob = weights_keep)
+          }
+          
+          #sim_keep <- pmin(sim_keep, max_keep*2)
           
           my_dom_id_string<-dom
           
@@ -611,7 +542,7 @@ for(s in statez) {
       )
       
       all_results3[[dom]] <- combined_sim
-      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results3", "final_result1", "final_result2","n_sim", "n_draws", "s")
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "all_results3", "final_result1", "final_result2","n_sim", "n_draws", "s")
       rm(list = setdiff(ls(), keep))
     }
     
@@ -623,16 +554,12 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "final_result2","final_result3",  "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s")
+  keep <- c("final_result1", "final_result2","final_result3",  "df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
-  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/baseline_mrip_catch_processed.xlsx") %>% 
-    filter(state==s & sf_only_keep==1 )
   
-  
- 
   ### MEAN(DISCARDS-PER-TRIP)==0, MEAN(HARVEST-PER-TRIP)==0
   if (nrow(df_full4) > 0) {
     
@@ -661,7 +588,7 @@ for(s in statez) {
       )
       
       all_results4[[dom]] <- combined_sim
-      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results4", "final_result1", "final_result2","final_result3", "n_sim", "n_draws", "s")
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "all_results4", "final_result1", "final_result2","final_result3", "n_sim", "n_draws", "s")
       rm(list = setdiff(ls(), keep))
     }
     
@@ -673,10 +600,196 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "final_result2","final_result3", "final_result4","df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s")
+  keep <- c("final_result1", "final_result2","final_result3", "final_result4","df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
+  
+  
+  ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0 BUT positive values of harvest/discards never occur simultaneously
+  if (nrow(df_full5) > 0) {
+    
+    all_results5 <- list()
+    
+    for (dom in unique(df_full5$my_dom_id_string)) {
+      
+      df <- df_full5 %>% filter(my_dom_id_string == dom)
+      
+      # Define survey design
+      svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
+      options(survey.lonely.psu = "certainty")
+      
+      max_rel <- round(max(df$sf_rel))+6
+      max_keep <- round(max(df$sf_keep))+2
+      
+      df$w_int_rounded <- round(df$wp_int)
+      df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
+      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), 5000)) 
+      obs_sd_rel <- sd(df_expanded$sf_rel)
+      
+      # Estimate means, variances using survey design
+      mean_rel <- svymean(~sf_rel, svy_design)
+      mu_rel <- coef(mean_rel)
+      var_rel <- attr(mean_rel, "var")
+      
+      # Handle zero or missing variance (certainty units)
+      # Use imputed linearized standard error 
+      if (is.na(var_rel) || var_rel == 0) {
+        imputed_se <- mean(df$sesf_rel)  
+        var_rel <- imputed_se^2
+      }
+      
+      mean_keep <- svymean(~sf_keep, svy_design)
+      mu_keep <- coef(mean_keep)
+      var_keep <- attr(mean_keep, "var")
+      
+      # Handle zero or missing variance (certainty units)
+      # Use imputed linearized standard error 
+      if (is.na(var_keep) || var_keep == 0) {
+        imputed_se <- mean(df$sesf_keep)  
+        var_keep <- imputed_se^2
+      }
+      
+      # Bootstrap replicate design
+      rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
+      
+      # Extract the full replicate weights matrix
+      rep_wgts <- weights(rep_design, type = "analysis")  # matrix: rows = obs, cols = replicates
+      
+      # Replicate mean and variance
+      rep_means_rel <- coef(svymean(~sf_rel, rep_design, return.replicates = TRUE, na.rm = TRUE))
+      rep_means_keep <- coef(svymean(~sf_keep, rep_design, return.replicates = TRUE, na.rm = TRUE))
+      
+      rep_vars_rel <- sapply(1:ncol(rep_wgts),  function(i) {
+        rep_data <- rep_wgts[, i]
+        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
+                              nest=TRUE, weights = ~rep_data, data = df)
+        coef(svyvar(~sf_rel, svy_var, na.rm = TRUE))
+      })
+      
+      rep_vars_keep <- sapply(1:ncol(rep_wgts),  function(i) {
+        rep_data <- rep_wgts[, i]
+        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
+                              nest=TRUE, weights = ~rep_data, data = df)
+        coef(svyvar(~sf_keep, svy_var, na.rm = TRUE))
+      })
+      
+      # Estimate NB dispersion (theta)
+      rep_theta_rel <- rep_means_rel^2 / pmax(rep_vars_rel - rep_means_rel, 1e-6)
+      rep_theta_keep <- rep_vars_keep^2 / pmax(rep_vars_keep - rep_vars_keep, 1e-6)
+      
+      # Estimate NB dispersion for when there is only one PSU 
+      if (nrow(df)==1) {
+        theta_hat_rel_single <- mu_rel^2 / pmax((var_rel - mu_rel), 1e-6)
+      }
+      
+      if (nrow(df)==1) {
+        theta_hat_keep_single <- mu_keep^2 / pmax((var_keep - mu_keep), 1e-6)
+      }
+      
+      
+      sim_datasets <- vector("list", n_draws)
+      i <- 1
+      while (i <= n_draws) {
+        
+        sampled_mu_rel <- rnorm(1, mu_rel, sqrt(var_rel))  # Sample mean with uncertainty  
+        sampled_mu_keep <- rnorm(1, mu_keep, sqrt(var_keep))  # Sample mean with uncertainty  
+        
+        if (nrow(df)==1) {
+          sampled_theta_rel <- theta_hat_rel_single         # Single-PSU theta
+        }
+        
+        if (nrow(df)==1) {
+          sampled_theta_keep <- theta_hat_keep_single         # Single-PSU theta
+        }
+        
+        if (nrow(df)>1) {
+          sampled_theta_rel <- sample(rep_theta_rel, 1, replace = TRUE)         # Sample theta
+          
+        }
+        
+        if (nrow(df)>1) {
+          sampled_theta_keep <- sample(rep_theta_keep, 1, replace = TRUE)         # Sample theta
+          
+        }
+        
+        
+        sim_rel <- qnbinom(runif(n_sim), size = sampled_theta_rel, mu = sampled_mu_rel)
+        sim_keep <- qnbinom(runif(n_sim), size = sampled_theta_keep, mu = sampled_mu_keep)
+        
+        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
+          
+          ###### REDISTRIBUTE KEEP ########
+          excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
+          total_excess_keep <- sum(excess_keep)
+          
+          # Set max values to max_keep
+          sim_keep[sim_keep > max_keep] <- max_keep
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_keep_idx <- which(sim_keep > 0 & sim_keep < max_keep)
+          if (length(positive_keep_idx) > 0 && total_excess_keep > 0) {
+            weights_keep <- sim_keep[positive_keep_idx] / sum(sim_keep[positive_keep_idx])
+            sim_keep[positive_keep_idx] <- sim_keep[positive_keep_idx] +
+              rmultinom(1, total_excess_keep, prob = weights_keep)
+          }
+          
+          ####### REDISTRIBUTE RELEASE ########
+          excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
+          total_excess_rel <- sum(excess_rel)
+          
+          # Set max values to max_rel
+          sim_rel[sim_rel > max_rel] <- max_rel
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_rel_idx <- which(sim_rel > 0 & sim_rel < max_rel)
+          if (length(positive_rel_idx) > 0 && total_excess_rel > 0) {
+            weights_rel <- sim_rel[positive_rel_idx] / sum(sim_rel[positive_rel_idx])
+            sim_rel[positive_rel_idx] <- sim_rel[positive_rel_idx] +
+              rmultinom(1, total_excess_rel, prob = weights_rel)
+          }
+          
+          
+          #sim_keep <- pmin(sim_keep, max_keep*2)
+          #sim_rel <- pmin(sim_rel, round(max_rel*2.5))
+          
+          my_dom_id_string<-dom
+          
+          sim_datasets[[i]] <- data.frame(sim_id = i, sf_keep_sim = sim_keep, sf_rel_sim = sim_rel,  my_dom_id_string = my_dom_id_string) 
+          
+          i <- i + 1  # Only increment if no NaNs
+        }
+        
+        
+      }
+      
+      # Combine all simulations
+      combined_sim <- bind_rows(
+        lapply(seq_along(sim_datasets),  function(i) {
+          sim_datasets[[i]] %>%
+            dplyr::mutate(sim_id = i)
+        })
+      )
+      
+      all_results5[[dom]] <- combined_sim
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "all_results5","final_result1", "final_result2","final_result3", "final_result4", "n_sim", "n_draws", "s")
+      rm(list = setdiff(ls(), keep))
+    }
+    
+    final_result5 <- bind_rows(all_results5) %>%
+      group_by(my_dom_id_string, sim_id) %>%
+      mutate(id = row_number()) %>%
+      ungroup()
+
+  }
+  
+  # List the objects you want to keep
+  keep <- c("final_result1", "final_result2","final_result3", "final_result4","final_result5", "df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s")
+  
+  # Remove everything else
+  rm(list = setdiff(ls(), keep))
+  
+  
   
   # COMBINE DRAWS ACROSS DOMAINS AND SIMULATIONS
   
@@ -688,18 +801,19 @@ for(s in statez) {
   if (exists("final_result2")) results_list <- append(results_list, list(final_result2))
   if (exists("final_result3")) results_list <- append(results_list, list(final_result3))
   if (exists("final_result4")) results_list <- append(results_list, list(final_result4))
+  if (exists("final_result5")) results_list <- append(results_list, list(final_result5))
   
   # Combine all existing results into one data frame
   combined_results_SF <- do.call(rbind, results_list)
   
- 
+  
   # List the objects you want to keep
   keep <- c("n_sim", "n_draws", "combined_results_SF", "s")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
-
+  
   
   ############ BLACK SEA BASS ############  
   df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/baseline_mrip_catch_processed.xlsx") %>% 
@@ -717,17 +831,18 @@ for(s in statez) {
   ### MEAN(DISCARDS-PER-TRIP)==0, MEAN(HARVEST-PER-TRIP)==0
   df_full4 <- df %>% filter(bsb_no_catch==1)
   
+  ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0 BUT positive values of harvest/discards never occur simultaneously
+  df_full5 <- df %>% filter(bsb_keep_and_rel_ind==1)
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0
   if (nrow(df_full1) > 0) {
-    
+    min_n=round(min(df_full1$wp_int))
     
     all_results1 <- list()
     
     for (dom in unique(df_full1$my_dom_id_string)) {
-      
       df <- df_full1 %>% filter(my_dom_id_string == dom)
-      
+
       # Define survey design
       svy_design <- svydesign(ids=~psu_id,strata=~strat_id,
                               weights=~wp_int,nest=TRUE,data=df)
@@ -756,8 +871,8 @@ for(s in statez) {
         var_rel <- imputed_se^2
       }
       
-      max_keep <- round(max(df$bsb_keep))
-      max_rel <- round(max(df$bsb_rel))
+      max_keep <- round(max(df$bsb_keep))+2
+      max_rel <- round(max(df$bsb_rel))+6
       
       # Bootstrap replicate design (R = number of replicates)
       rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
@@ -868,8 +983,38 @@ for(s in statez) {
         
         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
           
-          sim_keep <- pmin(sim_keep, max_keep*2)
-          sim_rel <- pmin(sim_rel, max_rel*2.5)
+          ###### REDISTRIBUTE KEEP ########
+          excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
+          total_excess_keep <- sum(excess_keep)
+          
+          # Set max values to max_keep
+          sim_keep[sim_keep > max_keep] <- max_keep
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_keep_idx <- which(sim_keep > 0 & sim_keep < max_keep)
+          if (length(positive_keep_idx) > 0 && total_excess_keep > 0) {
+            weights_keep <- sim_keep[positive_keep_idx] / sum(sim_keep[positive_keep_idx])
+            sim_keep[positive_keep_idx] <- sim_keep[positive_keep_idx] +
+              rmultinom(1, total_excess_keep, prob = weights_keep)
+          }
+          
+          ####### REDISTRIBUTE RELEASE ########
+          excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
+          total_excess_rel <- sum(excess_rel)
+          
+          # Set max values to max_rel
+          sim_rel[sim_rel > max_rel] <- max_rel
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_rel_idx <- which(sim_rel > 0 & sim_rel < max_rel)
+          if (length(positive_rel_idx) > 0 && total_excess_rel > 0) {
+            weights_rel <- sim_rel[positive_rel_idx] / sum(sim_rel[positive_rel_idx])
+            sim_rel[positive_rel_idx] <- sim_rel[positive_rel_idx] +
+              rmultinom(1, total_excess_rel, prob = weights_rel)
+          }
+          
+          #sim_keep <- pmin(sim_keep, max_keep*2)
+          #sim_rel <- pmin(sim_rel, round(max_rel*2.5))
           
           my_dom_id_string<-dom
           
@@ -888,7 +1033,7 @@ for(s in statez) {
         })
       )
       all_results1[[dom]] <- combined_sim
-      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results1", "n_sim", "n_draws", "s", "combined_results_SF")
+      keep <- c("min_n", "df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "all_results1", "n_sim", "n_draws", "s", "combined_results_SF")
       rm(list = setdiff(ls(), keep))
       
       
@@ -902,13 +1047,12 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s", "combined_results_SF")
+  keep <- c("final_result1", "df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s", "combined_results_SF")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
-  
- 
+
   ################
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)==0
@@ -925,7 +1069,7 @@ for(s in statez) {
       svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
       options(survey.lonely.psu = "certainty")
       
-      max_rel <- round(max(df$bsb_rel))
+      max_rel <- round(max(df$bsb_rel))+6
       
       df$w_int_rounded <- round(df$wp_int)
       df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
@@ -987,7 +1131,23 @@ for(s in statez) {
         
         
         if (!any(is.na(sim_rel))) {
-          sim_rel <- pmin(sim_rel, max_rel*2.5)
+          
+          ####### REDISTRIBUTE RELEASE ########
+          excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
+          total_excess_rel <- sum(excess_rel)
+          
+          # Set max values to max_rel
+          sim_rel[sim_rel > max_rel] <- max_rel
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_rel_idx <- which(sim_rel > 0 & sim_rel < max_rel)
+          if (length(positive_rel_idx) > 0 && total_excess_rel > 0) {
+            weights_rel <- sim_rel[positive_rel_idx] / sum(sim_rel[positive_rel_idx])
+            sim_rel[positive_rel_idx] <- sim_rel[positive_rel_idx] +
+              rmultinom(1, total_excess_rel, prob = weights_rel)
+          }
+          
+          #sim_rel <- pmin(sim_rel, round(max_rel*2.5))
           
           my_dom_id_string<-dom
           
@@ -1006,7 +1166,7 @@ for(s in statez) {
       )
       
       all_results2[[dom]] <- combined_sim
-      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results2", "final_result1", "n_sim", "n_draws", "s", "combined_results_SF")
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "all_results2", "final_result1", "n_sim", "n_draws", "s", "combined_results_SF")
       rm(list = setdiff(ls(), keep))
     }
     
@@ -1018,7 +1178,7 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "final_result2", "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s", "combined_results_SF")
+  keep <- c("final_result1", "final_result2", "df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s", "combined_results_SF")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
@@ -1038,7 +1198,7 @@ for(s in statez) {
       svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
       options(survey.lonely.psu = "certainty")
       
-      max_keep <- round(max(df$bsb_keep))
+      max_keep <- round(max(df$bsb_keep))+2
       
       df$w_int_rounded <- round(df$wp_int)
       df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
@@ -1100,7 +1260,22 @@ for(s in statez) {
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
         if (!any(is.na(sim_keep))) {
-          sim_keep <- pmin(sim_keep, max_keep*2)
+          
+          ###### REDISTRIBUTE KEEP ########
+          excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
+          total_excess_keep <- sum(excess_keep)
+          
+          # Set max values to max_keep
+          sim_keep[sim_keep > max_keep] <- max_keep
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_keep_idx <- which(sim_keep > 0 & sim_keep < max_keep)
+          if (length(positive_keep_idx) > 0 && total_excess_keep > 0) {
+            weights_keep <- sim_keep[positive_keep_idx] / sum(sim_keep[positive_keep_idx])
+            sim_keep[positive_keep_idx] <- sim_keep[positive_keep_idx] +
+              rmultinom(1, total_excess_keep, prob = weights_keep)
+          }
+          #sim_keep <- pmin(sim_keep, max_keep*2)
           
           my_dom_id_string<-dom
           
@@ -1119,7 +1294,7 @@ for(s in statez) {
       )
       
       all_results3[[dom]] <- combined_sim
-      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results3", "final_result1", "final_result2","n_sim", "n_draws", "s", "combined_results_SF")
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "all_results3", "final_result1", "final_result2","n_sim", "n_draws", "s", "combined_results_SF")
       rm(list = setdiff(ls(), keep))
     }
     
@@ -1131,13 +1306,11 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "final_result2","final_result3",  "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s", "combined_results_SF")
+  keep <- c("final_result1", "final_result2","final_result3",  "df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s", "combined_results_SF")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
-  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/baseline_mrip_catch_processed.xlsx") %>% 
-    filter(state==s & bsb_only_keep==1 )
   
   
   
@@ -1169,7 +1342,7 @@ for(s in statez) {
       )
       
       all_results4[[dom]] <- combined_sim
-      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results4", "final_result1", "final_result2","final_result3", "n_sim", "n_draws", "s", "combined_results_SF")
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "all_results4", "final_result1", "final_result2","final_result3", "n_sim", "n_draws", "s", "combined_results_SF")
       rm(list = setdiff(ls(), keep))
     }
     
@@ -1181,7 +1354,190 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "final_result2","final_result3", "final_result4","df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s", "combined_results_SF")
+  keep <- c("final_result1", "final_result2","final_result3", "final_result4","df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s", "combined_results_SF")
+  
+  # Remove everything else
+  rm(list = setdiff(ls(), keep))
+  
+  
+  ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0 BUT positive values of harvest/discards never occur simultaneously
+  if (nrow(df_full5) > 0) {
+    
+    all_results5 <- list()
+    
+    for (dom in unique(df_full5$my_dom_id_string)) {
+      
+      df <- df_full5 %>% filter(my_dom_id_string == dom)
+      
+      # Define survey design
+      svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
+      options(survey.lonely.psu = "certainty")
+      
+      max_rel <- round(max(df$bsb_rel))+6
+      max_keep <- round(max(df$bsb_keep))+2
+      
+      df$w_int_rounded <- round(df$wp_int)
+      df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
+      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), 5000)) 
+      obs_sd_rel <- sd(df_expanded$bsb_rel)
+      
+      # Estimate means, variances using survey design
+      mean_rel <- svymean(~bsb_rel, svy_design)
+      mu_rel <- coef(mean_rel)
+      var_rel <- attr(mean_rel, "var")
+      
+      # Handle zero or missing variance (certainty units)
+      # Use imputed linearized standard error 
+      if (is.na(var_rel) || var_rel == 0) {
+        imputed_se <- mean(df$sebsb_rel)  
+        var_rel <- imputed_se^2
+      }
+      
+      mean_keep <- svymean(~bsb_keep, svy_design)
+      mu_keep <- coef(mean_keep)
+      var_keep <- attr(mean_keep, "var")
+      
+      # Handle zero or missing variance (certainty units)
+      # Use imputed linearized standard error 
+      if (is.na(var_keep) || var_keep == 0) {
+        imputed_se <- mean(df$sebsb_keep)  
+        var_keep <- imputed_se^2
+      }
+      
+      # Bootstrap replicate design
+      rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
+      
+      # Extract the full replicate weights matrix
+      rep_wgts <- weights(rep_design, type = "analysis")  # matrix: rows = obs, cols = replicates
+      
+      # Replicate mean and variance
+      rep_means_rel <- coef(svymean(~bsb_rel, rep_design, return.replicates = TRUE, na.rm = TRUE))
+      rep_means_keep <- coef(svymean(~bsb_keep, rep_design, return.replicates = TRUE, na.rm = TRUE))
+      
+      rep_vars_rel <- sapply(1:ncol(rep_wgts),  function(i) {
+        rep_data <- rep_wgts[, i]
+        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
+                              nest=TRUE, weights = ~rep_data, data = df)
+        coef(svyvar(~bsb_rel, svy_var, na.rm = TRUE))
+      })
+      
+      rep_vars_keep <- sapply(1:ncol(rep_wgts),  function(i) {
+        rep_data <- rep_wgts[, i]
+        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
+                              nest=TRUE, weights = ~rep_data, data = df)
+        coef(svyvar(~bsb_keep, svy_var, na.rm = TRUE))
+      })
+      
+      # Estimate NB dispersion (theta)
+      rep_theta_rel <- rep_means_rel^2 / pmax(rep_vars_rel - rep_means_rel, 1e-6)
+      rep_theta_keep <- rep_vars_keep^2 / pmax(rep_vars_keep - rep_vars_keep, 1e-6)
+      
+      # Estimate NB dispersion for when there is only one PSU 
+      if (nrow(df)==1) {
+        theta_hat_rel_single <- mu_rel^2 / pmax((var_rel - mu_rel), 1e-6)
+      }
+      
+      if (nrow(df)==1) {
+        theta_hat_keep_single <- mu_keep^2 / pmax((var_keep - mu_keep), 1e-6)
+      }
+      
+      
+      sim_datasets <- vector("list", n_draws)
+      i <- 1
+      while (i <= n_draws) {
+        
+        sampled_mu_rel <- rnorm(1, mu_rel, sqrt(var_rel))  # Sample mean with uncertainty  
+        sampled_mu_keep <- rnorm(1, mu_keep, sqrt(var_keep))  # Sample mean with uncertainty  
+        
+        if (nrow(df)==1) {
+          sampled_theta_rel <- theta_hat_rel_single         # Single-PSU theta
+        }
+        
+        if (nrow(df)==1) {
+          sampled_theta_keep <- theta_hat_keep_single         # Single-PSU theta
+        }
+        
+        if (nrow(df)>1) {
+          sampled_theta_rel <- sample(rep_theta_rel, 1, replace = TRUE)         # Sample theta
+          
+        }
+        
+        if (nrow(df)>1) {
+          sampled_theta_keep <- sample(rep_theta_keep, 1, replace = TRUE)         # Sample theta
+          
+        }
+        
+        
+        sim_rel <- qnbinom(runif(n_sim), size = sampled_theta_rel, mu = sampled_mu_rel)
+        sim_keep <- qnbinom(runif(n_sim), size = sampled_theta_keep, mu = sampled_mu_keep)
+        
+        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
+          
+          ###### REDISTRIBUTE KEEP ########
+          excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
+          total_excess_keep <- sum(excess_keep)
+          
+          # Set max values to max_keep
+          sim_keep[sim_keep > max_keep] <- max_keep
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_keep_idx <- which(sim_keep > 0 & sim_keep < max_keep)
+          if (length(positive_keep_idx) > 0 && total_excess_keep > 0) {
+            weights_keep <- sim_keep[positive_keep_idx] / sum(sim_keep[positive_keep_idx])
+            sim_keep[positive_keep_idx] <- sim_keep[positive_keep_idx] +
+              rmultinom(1, total_excess_keep, prob = weights_keep)
+          }
+          
+          ####### REDISTRIBUTE RELEASE ########
+          excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
+          total_excess_rel <- sum(excess_rel)
+          
+          # Set max values to max_rel
+          sim_rel[sim_rel > max_rel] <- max_rel
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_rel_idx <- which(sim_rel > 0 & sim_rel < max_rel)
+          if (length(positive_rel_idx) > 0 && total_excess_rel > 0) {
+            weights_rel <- sim_rel[positive_rel_idx] / sum(sim_rel[positive_rel_idx])
+            sim_rel[positive_rel_idx] <- sim_rel[positive_rel_idx] +
+              rmultinom(1, total_excess_rel, prob = weights_rel)
+          }
+          
+          #sim_keep <- pmin(sim_keep, max_keep*2)
+          #sim_rel <- pmin(sim_rel, round(max_rel*2.5))
+          
+          my_dom_id_string<-dom
+          
+          sim_datasets[[i]] <- data.frame(sim_id = i, bsb_keep_sim = sim_keep, bsb_rel_sim = sim_rel,  my_dom_id_string = my_dom_id_string) 
+          
+          i <- i + 1  # Only increment if no NaNs
+        }
+        
+        
+      }
+      
+      # Combine all simulations
+      combined_sim <- bind_rows(
+        lapply(seq_along(sim_datasets),  function(i) {
+          sim_datasets[[i]] %>%
+            dplyr::mutate(sim_id = i)
+        })
+      )
+      
+      all_results5[[dom]] <- combined_sim
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "all_results5","final_result1", "final_result2","final_result3", "final_result4", "n_sim", "n_draws", "s", "combined_results_SF")
+      rm(list = setdiff(ls(), keep))
+    }
+    
+    final_result5 <- bind_rows(all_results5) %>% 
+    group_by(my_dom_id_string, sim_id) %>%
+      mutate(id = row_number()) %>%
+      ungroup()
+    
+    }
+  
+  # List the objects you want to keep
+  keep <- c("final_result1", "final_result2","final_result3", "final_result4","final_result5", "df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s",  "combined_results_SF")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
@@ -1196,6 +1552,7 @@ for(s in statez) {
   if (exists("final_result2")) results_list <- append(results_list, list(final_result2))
   if (exists("final_result3")) results_list <- append(results_list, list(final_result3))
   if (exists("final_result4")) results_list <- append(results_list, list(final_result4))
+  if (exists("final_result5")) results_list <- append(results_list, list(final_result5))
   
   # Combine all existing results into one data frame
   combined_results_BSB <- do.call(rbind, results_list)
@@ -1209,7 +1566,7 @@ for(s in statez) {
   
   
   
-
+  
   ############ SCUP ############  
   df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/baseline_mrip_catch_processed.xlsx") %>% 
     filter(state==s)
@@ -1225,6 +1582,9 @@ for(s in statez) {
   
   ### MEAN(DISCARDS-PER-TRIP)==0, MEAN(HARVEST-PER-TRIP)==0
   df_full4 <- df %>% filter(scup_no_catch==1)
+  
+  ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0 BUT positive values of harvest/discards never occur simultaneously
+  df_full5 <- df %>% filter(scup_keep_and_rel_ind==1)
   
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0
@@ -1243,6 +1603,9 @@ for(s in statez) {
       options(survey.lonely.psu = "certainty")
       
       # Estimate means, variances using survey design
+      sum_keep <- svytotal(~scup_keep, svy_design)
+      sum_rel <- svytotal(~scup_rel, svy_design)
+      
       mean_keep <- svymean(~scup_keep, svy_design)
       mean_rel  <- svymean(~scup_rel,  svy_design)
       
@@ -1265,8 +1628,8 @@ for(s in statez) {
         var_rel <- imputed_se^2
       }
       
-      max_keep <- round(max(df$scup_keep))
-      max_rel <- round(max(df$scup_rel))
+      max_keep <- round(max(df$scup_keep))+2
+      max_rel <- round(max(df$scup_rel))+6
       
       # Bootstrap replicate design (R = number of replicates)
       rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
@@ -1310,8 +1673,9 @@ for(s in statez) {
       df$w_int_rounded <- round(df$wp_int)
       df_expanded <- uncount(df, weights = w_int_rounded) 
       df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), n_sim)) 
+    
       
-      # Create pseudo-observations (rank-based empirical CDFs)
+            # Create pseudo-observations (rank-based empirical CDFs)
       df_expanded <- df_expanded %>%
         mutate(
           rank_keep = rank(scup_keep, ties.method = "average"),
@@ -1350,7 +1714,7 @@ for(s in statez) {
       sim_datasets <- list()
       i <- 1
       while (i <= n_draws) {
-        
+
         sim_u <- rCopula(n_sim, copula_fit@copula)
         
         # Sample mu_keep and mu_rel with uncertainty
@@ -1377,8 +1741,38 @@ for(s in statez) {
         
         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
           
-          sim_keep <- pmin(sim_keep, max_keep*2)
-          sim_rel <- pmin(sim_rel, max_rel*2.5)
+          ###### REDISTRIBUTE KEEP ########
+          excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
+          total_excess_keep <- sum(excess_keep)
+          
+          # Set max values to max_keep
+          sim_keep[sim_keep > max_keep] <- max_keep
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_keep_idx <- which(sim_keep > 0 & sim_keep < max_keep)
+          if (length(positive_keep_idx) > 0 && total_excess_keep > 0) {
+            weights_keep <- sim_keep[positive_keep_idx] / sum(sim_keep[positive_keep_idx])
+            sim_keep[positive_keep_idx] <- sim_keep[positive_keep_idx] +
+              rmultinom(1, total_excess_keep, prob = weights_keep)
+          }
+          
+          ####### REDISTRIBUTE RELEASE ########
+          excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
+          total_excess_rel <- sum(excess_rel)
+          
+          # Set max values to max_rel
+          sim_rel[sim_rel > max_rel] <- max_rel
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_rel_idx <- which(sim_rel > 0 & sim_rel < max_rel)
+          if (length(positive_rel_idx) > 0 && total_excess_rel > 0) {
+            weights_rel <- sim_rel[positive_rel_idx] / sum(sim_rel[positive_rel_idx])
+            sim_rel[positive_rel_idx] <- sim_rel[positive_rel_idx] +
+              rmultinom(1, total_excess_rel, prob = weights_rel)
+          }
+          
+          #sim_keep <- pmin(sim_keep, max_keep*2)
+          #sim_rel <- pmin(sim_rel, round(max_rel*2.5))
           
           my_dom_id_string<-dom
           
@@ -1397,7 +1791,7 @@ for(s in statez) {
         })
       )
       all_results1[[dom]] <- combined_sim
-      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results1", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "all_results1", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
       rm(list = setdiff(ls(), keep))
       
       
@@ -1411,7 +1805,7 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s", "combined_results_SF","combined_results_BSB")
+  keep <- c("final_result1", "df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s", "combined_results_SF","combined_results_BSB")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
@@ -1434,7 +1828,7 @@ for(s in statez) {
       svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
       options(survey.lonely.psu = "certainty")
       
-      max_rel <- round(max(df$scup_rel))
+      max_rel <- round(max(df$scup_rel))+6
       
       df$w_int_rounded <- round(df$wp_int)
       df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
@@ -1496,7 +1890,23 @@ for(s in statez) {
         
         
         if (!any(is.na(sim_rel))) {
-          sim_rel <- pmin(sim_rel, max_rel*2.5)
+          
+          ####### REDISTRIBUTE RELEASE ########
+          excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
+          total_excess_rel <- sum(excess_rel)
+          
+          # Set max values to max_rel
+          sim_rel[sim_rel > max_rel] <- max_rel
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_rel_idx <- which(sim_rel > 0 & sim_rel < max_rel)
+          if (length(positive_rel_idx) > 0 && total_excess_rel > 0) {
+            weights_rel <- sim_rel[positive_rel_idx] / sum(sim_rel[positive_rel_idx])
+            sim_rel[positive_rel_idx] <- sim_rel[positive_rel_idx] +
+              rmultinom(1, total_excess_rel, prob = weights_rel)
+          }
+          
+          #sim_rel <- pmin(sim_rel, round(max_rel*2.5))
           
           my_dom_id_string<-dom
           
@@ -1515,7 +1925,7 @@ for(s in statez) {
       )
       
       all_results2[[dom]] <- combined_sim
-      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results2", "final_result1", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "all_results2", "final_result1", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
       rm(list = setdiff(ls(), keep))
     }
     
@@ -1527,7 +1937,7 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "final_result2", "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
+  keep <- c("final_result1", "final_result2", "df_full1", "df_full2", "df_full3", "df_full4","df_full5",  "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
@@ -1547,7 +1957,7 @@ for(s in statez) {
       svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
       options(survey.lonely.psu = "certainty")
       
-      max_keep <- round(max(df$scup_keep))
+      max_keep <- round(max(df$scup_keep))+2
       
       df$w_int_rounded <- round(df$wp_int)
       df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
@@ -1609,7 +2019,23 @@ for(s in statez) {
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
         if (!any(is.na(sim_keep))) {
-          sim_keep <- pmin(sim_keep, max_keep*2)
+          
+          ###### REDISTRIBUTE KEEP ########
+          excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
+          total_excess_keep <- sum(excess_keep)
+          
+          # Set max values to max_keep
+          sim_keep[sim_keep > max_keep] <- max_keep
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_keep_idx <- which(sim_keep > 0 & sim_keep < max_keep)
+          if (length(positive_keep_idx) > 0 && total_excess_keep > 0) {
+            weights_keep <- sim_keep[positive_keep_idx] / sum(sim_keep[positive_keep_idx])
+            sim_keep[positive_keep_idx] <- sim_keep[positive_keep_idx] +
+              rmultinom(1, total_excess_keep, prob = weights_keep)
+          }
+          
+          #sim_keep <- pmin(sim_keep, max_keep*2)
           
           my_dom_id_string<-dom
           
@@ -1628,7 +2054,7 @@ for(s in statez) {
       )
       
       all_results3[[dom]] <- combined_sim
-      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results3", "final_result1", "final_result2","n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "all_results3", "final_result1", "final_result2","n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
       rm(list = setdiff(ls(), keep))
     }
     
@@ -1640,16 +2066,12 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "final_result2","final_result3",  "df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
+  keep <- c("final_result1", "final_result2","final_result3",  "df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
-  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/baseline_mrip_catch_processed.xlsx") %>% 
-    filter(state==s & scup_only_keep==1 )
-  
-  
-  
+
   ### MEAN(DISCARDS-PER-TRIP)==0, MEAN(HARVEST-PER-TRIP)==0
   if (nrow(df_full4) > 0) {
     
@@ -1678,7 +2100,7 @@ for(s in statez) {
       )
       
       all_results4[[dom]] <- combined_sim
-      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "all_results4", "final_result1", "final_result2","final_result3", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "all_results4", "final_result1", "final_result2","final_result3", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
       rm(list = setdiff(ls(), keep))
     }
     
@@ -1690,10 +2112,198 @@ for(s in statez) {
   }
   
   # List the objects you want to keep
-  keep <- c("final_result1", "final_result2","final_result3", "final_result4","df_full1", "df_full2", "df_full3", "df_full4", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
+  keep <- c("final_result1", "final_result2","final_result3", "final_result4","df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
+  
+
+  # Remove everything else
+  rm(list = setdiff(ls(), keep))
+
+  
+  
+  ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0 BUT positive values of harvest/discards never occur simultaneously
+  if (nrow(df_full5) > 0) {
+    
+    all_results5 <- list()
+    
+    for (dom in unique(df_full5$my_dom_id_string)) {
+      
+      df <- df_full5 %>% filter(my_dom_id_string == dom)
+      
+      # Define survey design
+      svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
+      options(survey.lonely.psu = "certainty")
+      
+      max_rel <- round(max(df$scup_rel))+6
+      max_keep <- round(max(df$scup_keep))+2
+      
+      df$w_int_rounded <- round(df$wp_int)
+      df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
+      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), 5000)) 
+      obs_sd_rel <- sd(df_expanded$scup_rel)
+      
+      # Estimate means, variances using survey design
+      mean_rel <- svymean(~scup_rel, svy_design)
+      mu_rel <- coef(mean_rel)
+      var_rel <- attr(mean_rel, "var")
+      
+      # Handle zero or missing variance (certainty units)
+      # Use imputed linearized standard error 
+      if (is.na(var_rel) || var_rel == 0) {
+        imputed_se <- mean(df$sescup_rel)  
+        var_rel <- imputed_se^2
+      }
+      
+      mean_keep <- svymean(~scup_keep, svy_design)
+      mu_keep <- coef(mean_keep)
+      var_keep <- attr(mean_keep, "var")
+      
+      # Handle zero or missing variance (certainty units)
+      # Use imputed linearized standard error 
+      if (is.na(var_keep) || var_keep == 0) {
+        imputed_se <- mean(df$sescup_keep)  
+        var_keep <- imputed_se^2
+      }
+      
+      # Bootstrap replicate design
+      rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
+      
+      # Extract the full replicate weights matrix
+      rep_wgts <- weights(rep_design, type = "analysis")  # matrix: rows = obs, cols = replicates
+      
+      # Replicate mean and variance
+      rep_means_rel <- coef(svymean(~scup_rel, rep_design, return.replicates = TRUE, na.rm = TRUE))
+      rep_means_keep <- coef(svymean(~scup_keep, rep_design, return.replicates = TRUE, na.rm = TRUE))
+      
+      rep_vars_rel <- sapply(1:ncol(rep_wgts),  function(i) {
+        rep_data <- rep_wgts[, i]
+        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
+                              nest=TRUE, weights = ~rep_data, data = df)
+        coef(svyvar(~scup_rel, svy_var, na.rm = TRUE))
+      })
+      
+      rep_vars_keep <- sapply(1:ncol(rep_wgts),  function(i) {
+        rep_data <- rep_wgts[, i]
+        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
+                              nest=TRUE, weights = ~rep_data, data = df)
+        coef(svyvar(~scup_keep, svy_var, na.rm = TRUE))
+      })
+      
+      # Estimate NB dispersion (theta)
+      rep_theta_rel <- rep_means_rel^2 / pmax(rep_vars_rel - rep_means_rel, 1e-6)
+      rep_theta_keep <- rep_vars_keep^2 / pmax(rep_vars_keep - rep_vars_keep, 1e-6)
+      
+      # Estimate NB dispersion for when there is only one PSU 
+      if (nrow(df)==1) {
+        theta_hat_rel_single <- mu_rel^2 / pmax((var_rel - mu_rel), 1e-6)
+      }
+      
+      if (nrow(df)==1) {
+        theta_hat_keep_single <- mu_keep^2 / pmax((var_keep - mu_keep), 1e-6)
+      }
+      
+      
+      sim_datasets <- vector("list", n_draws)
+      i <- 1
+      while (i <= n_draws) {
+        
+        sampled_mu_rel <- rnorm(1, mu_rel, sqrt(var_rel))  # Sample mean with uncertainty  
+        sampled_mu_keep <- rnorm(1, mu_keep, sqrt(var_keep))  # Sample mean with uncertainty  
+        
+        if (nrow(df)==1) {
+          sampled_theta_rel <- theta_hat_rel_single         # Single-PSU theta
+        }
+        
+        if (nrow(df)==1) {
+          sampled_theta_keep <- theta_hat_keep_single         # Single-PSU theta
+        }
+        
+        if (nrow(df)>1) {
+          sampled_theta_rel <- sample(rep_theta_rel, 1, replace = TRUE)         # Sample theta
+          
+        }
+        
+        if (nrow(df)>1) {
+          sampled_theta_keep <- sample(rep_theta_keep, 1, replace = TRUE)         # Sample theta
+          
+        }
+        
+        
+        sim_rel <- qnbinom(runif(n_sim), size = sampled_theta_rel, mu = sampled_mu_rel)
+        sim_keep <- qnbinom(runif(n_sim), size = sampled_theta_keep, mu = sampled_mu_keep)
+        
+        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
+          
+          ###### REDISTRIBUTE KEEP ########
+          excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
+          total_excess_keep <- sum(excess_keep)
+          
+          # Set max values to max_keep
+          sim_keep[sim_keep > max_keep] <- max_keep
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_keep_idx <- which(sim_keep > 0 & sim_keep < max_keep)
+          if (length(positive_keep_idx) > 0 && total_excess_keep > 0) {
+            weights_keep <- sim_keep[positive_keep_idx] / sum(sim_keep[positive_keep_idx])
+            sim_keep[positive_keep_idx] <- sim_keep[positive_keep_idx] +
+              rmultinom(1, total_excess_keep, prob = weights_keep)
+          }
+          
+          ####### REDISTRIBUTE RELEASE ########
+          excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
+          total_excess_rel <- sum(excess_rel)
+          
+          # Set max values to max_rel
+          sim_rel[sim_rel > max_rel] <- max_rel
+          
+          # Identify candidates for redistribution (positive and not at max already)
+          positive_rel_idx <- which(sim_rel > 0 & sim_rel < max_rel)
+          if (length(positive_rel_idx) > 0 && total_excess_rel > 0) {
+            weights_rel <- sim_rel[positive_rel_idx] / sum(sim_rel[positive_rel_idx])
+            sim_rel[positive_rel_idx] <- sim_rel[positive_rel_idx] +
+              rmultinom(1, total_excess_rel, prob = weights_rel)
+          }
+          
+          
+          #sim_keep <- pmin(sim_keep, max_keep*2)
+          #sim_rel <- pmin(sim_rel, round(max_rel*2.5))
+          
+          my_dom_id_string<-dom
+          
+          sim_datasets[[i]] <- data.frame(sim_id = i, scup_keep_sim = sim_keep, scup_rel_sim = sim_rel,  my_dom_id_string = my_dom_id_string) 
+          
+          i <- i + 1  # Only increment if no NaNs
+        }
+        
+
+      }
+      
+      # Combine all simulations
+      combined_sim <- bind_rows(
+        lapply(seq_along(sim_datasets),  function(i) {
+          sim_datasets[[i]] %>%
+            dplyr::mutate(sim_id = i)
+        })
+      )
+      
+      all_results5[[dom]] <- combined_sim
+      keep <- c("df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "all_results5","final_result1", "final_result2","final_result3", "final_result4", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
+      rm(list = setdiff(ls(), keep))
+    }
+    
+    final_result5 <- bind_rows(all_results5) %>%
+    group_by(my_dom_id_string, sim_id) %>%
+      mutate(id = row_number()) %>%
+      ungroup()    
+  }
+  
+  # List the objects you want to keep
+  keep <- c("final_result1", "final_result2","final_result3", "final_result4","final_result5", "df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
   
   # Remove everything else
   rm(list = setdiff(ls(), keep))
+  
+  
+  
   
   # COMBINE DRAWS ACROSS DOMAINS AND SIMULATIONS
   
@@ -1705,6 +2315,7 @@ for(s in statez) {
   if (exists("final_result2")) results_list <- append(results_list, list(final_result2))
   if (exists("final_result3")) results_list <- append(results_list, list(final_result3))
   if (exists("final_result4")) results_list <- append(results_list, list(final_result4))
+  if (exists("final_result5")) results_list <- append(results_list, list(final_result5))
   
   # Combine all existing results into one data frame
   combined_results_SCUP <- do.call(rbind, results_list)
@@ -1733,7 +2344,7 @@ for(s in statez) {
     safe_name <- gsub("[^A-Za-z0-9_]", "_", name)
     
     # Write to Excel
-    write_xlsx(split_datasets[[name]], paste0("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/catch_draws_", s, "_", safe_name, ".xlsx"))
+    write_xlsx(split_datasets[[name]], paste0("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/calib_catch_draws_", s, "_", safe_name, ".xlsx"))
   }
   
   rm(catch_draws, combined_results_BSB, combined_results_SF, combined_results_SCUP, split_datasets)

@@ -873,3 +873,148 @@ keep if dom_id=="1" // keep directed trip estimates for species group of interes
 drop dom
 
 save "$iterative_input_data_cd\directed_trip_calib_mrip_state_total.dta", replace 
+
+
+
+
+
+
+* by state mode wave 
+
+cd $input_data_cd
+
+clear
+
+* Pull in MRIP data
+tempfile tl1 cl1
+dsconcat $triplist
+
+// dtrip will be used to estimate total directed trips
+gen dtrip=1
+
+sort year strat_id psu_id id_code
+save `tl1'
+
+clear
+
+dsconcat $catchlist
+sort year strat_id psu_id id_code
+replace common=subinstr(lower(common)," ","",.)
+save `cl1'
+
+use `tl1'
+merge 1:m year strat_id psu_id id_code using `cl1', keep(1 3) nogen // keep all trips including those w/catch==0
+
+keep if $calibration_year
+
+* Format MRIP data for estimation 
+
+replace common=subinstr(lower(common)," ","",.)
+replace prim1_common=subinstr(lower(prim1_common)," ","",.)
+replace prim2_common=subinstr(lower(prim2_common)," ","",.)
+
+* ensure only relevant states 
+keep if inlist(st, 25, 44, 9,  36 , 34, 10, 24, 51, 37)
+
+gen state="MA" if st==25
+replace state="MD" if st==24
+replace state="RI" if st==44
+replace state="CT" if st==9
+replace state="NY" if st==36
+replace state="NJ" if st==34
+replace state="DE" if st==10
+replace state="VA" if st==51
+replace state="NC" if st==37
+
+
+// classify trips into dom_id=1 (DOMAIN OF INTEREST) and dom_id=2 ('OTHER' DOMAIN)
+gen str1 dom_id="2"
+replace dom_id="1" if strmatch(common, "summerflounder") 
+replace dom_id="1" if strmatch(prim1_common, "summerflounder") 
+
+replace dom_id="1" if strmatch(common, "blackseabass") 
+replace dom_id="1" if strmatch(prim1_common, "blackseabass") 
+
+replace dom_id="1" if strmatch(common, "scup") 
+replace dom_id="1" if strmatch(prim1_common, "scup") 
+
+tostring wave, gen(w2)
+tostring year, gen(year2)
+gen st2 = string(st,"%02.0f")
+gen date=substr(id_code, 6,8)
+gen month1=substr(date, 5, 2)
+gen day1=substr(date, 7, 2)
+drop if inlist(day1,"9x", "xx") 
+destring day1, replace
+
+gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
+replace mode1="pr" if inlist(mode_fx, "7")
+replace mode1="fh" if inlist(mode_fx, "4", "5")
+
+
+// Deal with Group Catch: 
+	// This bit of code generates a flag for each year-strat_id psu_id leader. (equal to the lowest of the dom_id)
+	// Then it generates a flag for claim equal to the largest claim.  
+	// Then it re-classifies the trip into dom_id=1 if that trip had catch of species in dom_id1 
+
+replace claim=0 if claim==.
+
+bysort strat_id psu_id leader (dom_id): gen gc_flag=dom_id[1]
+bysort strat_id psu_id leader (claim): gen claim_flag=claim[_N]
+replace dom_id="1" if strmatch(dom_id,"2") & claim_flag>0 & claim_flag!=. & strmatch(gc_flag,"1")
+
+gen my_dom_id_string=state+"_"+year2+"_"+ dom_id + "_"+ w2 +"_"+mode1
+replace my_dom_id_string=ltrim(rtrim(my_dom_id_string))
+
+encode my_dom_id_string, gen(my_dom_id) // total with over(<overvar>) requires a numeric variable 
+
+// keep 1 observation per year-strat-psu-id_code. This will have dom_id=1 if it targeted or caught my_common1 or my_common2. Else it will be dom_id=2
+bysort year wave strat_id psu_id id_code (dom_id): gen count_obs1=_n
+keep if count_obs1==1
+
+replace wp_int=0 if wp_int<=0
+svyset psu_id [pweight= wp_int], strata(strat_id) singleunit(certainty)
+
+
+// retain estimation strata names (xsvmat below seems to retain encoded rather than string strata names)
+preserve
+keep my_dom_id my_dom_id_string
+duplicates drop 
+tostring my_dom_id, gen(my_dom_id2)
+keep my_dom_id2 my_dom_id_string
+tempfile domains
+save `domains', replace 
+restore
+
+encode mode1, gen(mode2)
+
+svy: total dtrip, over(my_dom_id) // estimate total # trips by domain
+
+xsvmat, from(r(table)') rownames(rname) names(col) norestor // save point estimates and SEs
+split rname, parse("@")
+drop rname1
+split rname2, parse(.)
+drop rname2 rname22
+rename rname21 my_dom_id2
+merge 1:1 my_dom_id2 using `domains' // merge back to strata names dataset 
+drop rname my_dom_id2 _merge 
+order my_dom_id_string
+
+keep my b se ll ul
+
+split my, parse(_)
+rename my_dom_id_string1 state
+rename my_dom_id_string2 year
+rename my_dom_id_string3 dom_id
+rename my_dom_id_string4 wave
+rename my_dom_id_string5 mode
+
+rename b dtrip_mrip
+rename se se_mrip
+rename ll ll_mrip
+rename ul ul_mrip
+
+keep if dom_id=="1" // keep directed trip estimates for species group of interest 
+drop dom
+
+save "$iterative_input_data_cd\directed_trip_calib_mrip_state_wave_total.dta", replace 
