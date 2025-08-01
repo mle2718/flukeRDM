@@ -89,9 +89,9 @@ statez <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
 for(s in statez) {
   dtrip0<-read.csv(file.path(input_data_cd, paste0("directed_trips_calibration_", s,".csv")))
   write_feather(dtrip0, file.path(input_data_cd, paste0("directed_trips_calibration_", s,".feather")))
-for(i in 1:5) {
+for(i in 1:3) {
   catch<-read_dta(file.path(iterative_input_data_cd, paste0("calib_catch_draws_",s, "_", i,".dta")))
-  write_feather(catch, file.path(iterative_input_data_cd, paste0("calib_catch_draws_",s, "_", i,".feather")))
+  #write_feather(catch, file.path(iterative_input_data_cd, paste0("calib_catch_draws_",s, "_", i,".feather")))
   
   # make fake projection draws
   write_feather(catch, file.path(iterative_input_data_cd, paste0("projected_catch_draws_",s, "_", i,".feather")))

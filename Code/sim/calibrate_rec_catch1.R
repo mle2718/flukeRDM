@@ -60,14 +60,14 @@ scup_size_data <- read_csv(file.path(input_data_cd, "baseline_catch_at_length.cs
 
 
 #Create as an object the minimum size at which fish may be illegally harvested.
-  #1) This floor_subl_harvest size will be 2 inches below the minimum size, by mode. 
+  #1) This floor_subl_harvest size will be 3 inches below the minimum size, by mode. 
   #1a) If the minimum size changes across the season, floor_subl_harvest=min(min_size). 
   #2) If the fishery is closed the entire season, floor_subl_harvest=mean(catch_length)-0.5*sd(catch_length). 
   #1) and #1a) below:
 
-floor_subl_sf_harv<-min(dtripz$fluke_min)-2*2.54
-floor_subl_bsb_harv<-min(dtripz$bsb_min)-2*2.54
-floor_subl_scup_harv<-min(dtripz$scup_min)-2*2.54
+floor_subl_sf_harv<-min(dtripz$fluke_min)-3*2.54
+floor_subl_bsb_harv<-min(dtripz$bsb_min)-3*2.54
+floor_subl_scup_harv<-min(dtripz$scup_min)-3*2.54
 
 
 # begin trip simulation
@@ -455,7 +455,8 @@ if (bsb_catch_check==0){
     dplyr::select("date", "catch_draw","tripid","mode") %>% 
     dplyr::mutate(tot_keep_bsb_new = 0, 
                   tot_rel_bsb_new= 0, 
-                  domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid)) 
+                  domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid)) %>% 
+    dplyr::select(-c("date", "catch_draw","tripid","mode"))
   
   bsb_trip_data<-data.table::as.data.table(bsb_trip_data)
   data.table::setkey(bsb_trip_data, "domain2")  
@@ -641,9 +642,10 @@ data.table::setkey(scup_trip_data, "domain2")
 if (scup_catch_check==0){
   scup_trip_data<-catch_data %>% 
     dplyr::select("date", "catch_draw","tripid","mode") %>% 
-    dplyr::mutate(tot_keep_v_new = 0, 
+    dplyr::mutate(tot_keep_scup_new = 0, 
                   tot_rel_scup_new= 0, 
-                  domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid)) 
+                  domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid)) %>% 
+    dplyr::select(-c("date", "catch_draw","tripid","mode"))
   
   scup_trip_data<-data.table::as.data.table(scup_trip_data)
   data.table::setkey(scup_trip_data, "domain2")  
@@ -973,7 +975,11 @@ compare1_c<-compare1 %>%
   dplyr::left_join(compare1_r, by=c("mode", "species"))
 
 calib_comparison1<-compare1_c %>%
-  dplyr::mutate(draw=i, state=s)
+  dplyr::mutate(draw=i, state=s) %>% 
+  dplyr::mutate(rel_to_keep_new = if_else(diff_keep < 0, 1, 0), 
+                keep_to_rel_new = if_else(diff_keep > 0, 1, 0)) %>% 
+  dplyr::mutate(p_rel_to_keep_new=abs(diff_keep/model_rel), 
+                p_keep_to_rel_new=abs(diff_keep/model_keep)) 
 
 
 # Vector of object names you want to remove
