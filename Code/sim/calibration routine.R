@@ -34,11 +34,11 @@ baseline_output0<-feather::read_feather(file.path(iterative_input_data_cd, "cali
 
 states <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
 mode_draw <- c("sh", "pr", "fh")
-draws <- 1:5
-
-# i<-2
-# s<-"NJ"
-# md<-"sh"
+draws <- 1:3
+# 
+#   i<-1
+#   s<-"CT"
+#   md<-"fh"
 #  
 # Create an empty list to collect results
 calibrated <- list()
@@ -88,7 +88,8 @@ for (s in states){
           assign(paste0("model_keep_", sp), calib_comparison1$model_keep[p])
           assign(paste0("harv_diff_", sp), calib_comparison1$diff_keep[p])
           assign(paste0("harv_pct_diff_", sp), calib_comparison1$pct_diff_keep[p])
-          
+          # assign(paste0("rel_to_keep_", sp), calib_comparison1$rel_to_keep_new[p])
+          # assign(paste0("keep_to_rel_", sp), calib_comparison1$keep_to_rel_new[p])
         }
         
         message("run ", i, " state ", s, " mode ", md)
@@ -120,7 +121,12 @@ for (s in states){
         bsb_achieved<-case_when((abs(harv_diff_bsb)<500 | (abs(harv_pct_diff_bsb)<5 & !is.na(harv_pct_diff_bsb))) ~1, TRUE~0)
         scup_achieved<-case_when((abs(harv_diff_scup)<500 | (abs(harv_pct_diff_scup)<5 & !is.na(harv_pct_diff_scup))) ~1, TRUE~0)
       
-
+        # Here I add a non-convergence indicator and artificially deem the run as achieved
+        sf_convergence<-1
+        bsb_convergence<-1
+        scup_convergence<-1
+        
+        
         while(sf_achieved+bsb_achieved+scup_achieved<3){
        
           #For draws where release_to_keep==1:
@@ -238,7 +244,8 @@ for (s in states){
             assign(paste0("model_keep_", sp), calib_comparison1$model_keep[p])
             assign(paste0("harv_diff_", sp), calib_comparison1$diff_keep[p])
             assign(paste0("harv_pct_diff_", sp), calib_comparison1$pct_diff_keep[p])
-
+            # assign(paste0("rel_to_keep_", sp), calib_comparison1$rel_to_keep_new[p])
+            # assign(paste0("keep_to_rel_", sp), calib_comparison1$keep_to_rel_new[p])
           
           }
           
@@ -258,7 +265,7 @@ for (s in states){
           message("rel_to_keep_bsb: ", rel_to_keep_bsb)
           message("p_rel_to_keep_bsb: ", p_rel_to_keep_bsb)
           message("p_keep_to_rel_bsb: ", p_keep_to_rel_bsb)
-          
+
           message("model_scup_harv: ", model_keep_scup)
           message("mrip_scup_harv: ", MRIP_keep_scup)
           message("diff_scup_harv: ", harv_diff_scup)
@@ -266,12 +273,35 @@ for (s in states){
           message("rel_to_keep_scup: ", rel_to_keep_scup)
           message("p_rel_to_keep_scup: ", p_rel_to_keep_scup)
           message("p_keep_to_rel_scup: ", p_keep_to_rel_scup)
-          
+
           sf_achieved<-case_when((abs(harv_diff_sf)<500 | (abs(harv_pct_diff_sf)<5 & !is.na(harv_pct_diff_sf))) ~1, TRUE~0)
           bsb_achieved<-case_when((abs(harv_diff_bsb)<500 | (abs(harv_pct_diff_bsb)<5 & !is.na(harv_pct_diff_bsb))) ~1, TRUE~0)
           scup_achieved<-case_when((abs(harv_diff_scup)<500 | (abs(harv_pct_diff_scup)<5 & !is.na(harv_pct_diff_scup))) ~1, TRUE~0)
           
+          # In some cases, there are not enough fish within 3-inches of the minimum size to re-allocate 
+          # from kept to release. In this case, p_rel_to_keep_SP will continue to grow unbounded. 
+          
+
+          
+          if(rel_to_keep_sf==1 & p_rel_to_keep_sf>1){
+            sf_convergence<-0
+            sf_achieved<-1
+            
+          }
          
+          
+          if(rel_to_keep_bsb==1 & p_rel_to_keep_bsb>1){
+            bsb_convergence<-0
+            bsb_achieved<-1
+            
+          }
+          
+          
+          if(rel_to_keep_scup==1 & p_rel_to_keep_scup>1){
+            scup_convergence<-0
+            scup_achieved<-1
+            
+          }
         }
         
         k <- k + 1
@@ -281,16 +311,19 @@ for (s in states){
                         rel_to_keep_sf=  rel_to_keep_sf,
                         p_rel_to_keep_sf=p_rel_to_keep_sf,
                         p_keep_to_rel_sf= p_keep_to_rel_sf,
+                        sf_convergence=sf_convergence,
                         
                         keep_to_rel_bsb=keep_to_rel_bsb, 
                         rel_to_keep_bsb=  rel_to_keep_bsb,
                         p_rel_to_keep_bsb= p_rel_to_keep_bsb, 
                         p_keep_to_rel_bsb= p_keep_to_rel_bsb,
+                        bsb_convergence=bsb_convergence,
                         
                         keep_to_rel_scup=keep_to_rel_scup, 
                         rel_to_keep_scup =rel_to_keep_scup,
                         p_rel_to_keep_scup=p_rel_to_keep_scup,
                         p_keep_to_rel_scup=p_keep_to_rel_scup, 
+                        scup_convergence=scup_convergence,
                         
                         n_sub_scup_kept=n_sub_scup_kept, 
                         prop_sub_scup_kept=prop_sub_scup_kept, 
@@ -313,8 +346,13 @@ for (s in states){
 }
 
 
-calibrated_combined <- do.call(rbind, calibrated) 
+calibrated_combined <- do.call(rbind, calibrated) %>% 
+  dplyr::select(-rel_to_keep_new, -keep_to_rel_new, -p_keep_to_rel_new, -p_rel_to_keep_new)
+
 saveRDS(calibrated_combined, file = file.path(iterative_input_data_cd, "calibrated_model_stats.rds"))
-#check<-readRDS(file = file.path(iterative_input_data_cd, "calibrated_model_stats.rds"))
+
+
+# check<-calibrated_combined %>% 
+#   dplyr::filter(abs(diff_keep)>500 & abs(pct_diff_keep)>5 & !is.na(pct_diff_keep) )
 
 
