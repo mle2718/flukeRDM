@@ -189,7 +189,7 @@ setkey(calib_lookup, mode)
 
 md="sh"
 
-simulate_mode <- function(md) {
+simulate_mode_sf <- function(md) {
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
   
@@ -329,7 +329,7 @@ simulate_mode <- function(md) {
 }
 
 #Step 4: Run for all modes + aggregate
-results_list <- lapply(mode_draw, simulate_mode)
+results_list <- lapply(mode_draw_sf, simulate_mode_sf)
 
 sf_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data"))
 data.table::setkey(sf_trip_data, domain2)
