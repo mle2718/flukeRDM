@@ -11,7 +11,7 @@ input_data_cd="C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025"
 # Variables to change 
 dr<-1
 st="MA"
-
+ndraws=50 #number of choice occasions simulte per strata
 
 library(magrittr)
 ############# To Run in Loop 
@@ -66,6 +66,11 @@ library(magrittr)
       dplyr::filter(!is.na(fitted_prob)) %>% 
       dplyr::select(state,  fitted_prob, length)
     
+    calendar_adjustments <- readr::read_csv(
+      file.path(input_data_cd, paste0("proj_year_calendar_adjustments_", st, ".csv")), show_col_types = FALSE) %>%
+      dplyr::filter(state == st, draw==dr) %>% 
+      dplyr::select(-dtrip, -dtrip_y2, -state, -draw)
+      
     # base-year trip outcomes
     base_outcomes0 <- list()
     n_choice_occasions0 <- list()
