@@ -10,7 +10,6 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
                               base_outcomes){
   
   
-  
   ## Run for all modes + aggregate  - summer flounder 
   results_list <- lapply(mode_draw, simulate_mode_sf)
   
@@ -324,14 +323,14 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
                        names(length_data), value = TRUE)
   
   length_data<-length_data  %>% data.table::as.data.table() %>%
-      .[,lapply(.SD, mean), by = c("date_parsed","mode", "tripid"), .SDcols = all_vars]  
+      .[,lapply(.SD, mean), by = c("date_parsed","mode", "tripid"), .SDcols = pattern_vars]  
     
   length_data<-length_data %>% 
       dplyr::left_join(expansion_factors, b=c("date_parsed","mode", "tripid"))
     
   length_data <- length_data %>%
     data.table::as.data.table() %>%
-    .[,as.vector(pattern_vars) := lapply(.SD, function(x) x * expand), .SDcols = all_vars] %>%
+    .[,as.vector(pattern_vars) := lapply(.SD, function(x) x * expand), .SDcols = pattern_vars] %>%
     .[]  
     
   ## Compute welfare and predicted trips
@@ -473,7 +472,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     fill = TRUE)
   
   print("Finished predict_rec_catch")
-      
+  
   return(predictions) 
 }
 
