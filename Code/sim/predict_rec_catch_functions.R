@@ -1,0 +1,504 @@
+
+#Functions for the main loop of predict_rec_catch
+
+
+########## summer flounder ##############
+
+#Convert key data frames to data.table format early:
+setDT(directed_trips)
+setDT(catch_data)
+setDT(calib_comparison)
+setDT(sf_size_data)
+
+#Set up constants (unchanged):
+floor_subl_sf_harv <- min(directed_trips$fluke_min_y2) - 3 * 2.54
+mode_draw <- c("sh", "pr", "fh")
+
+#Step 2: Reorganize calibration parameters#
+calib_lookup <- calib_comparison %>%
+  dplyr::select(mode, species, rel_to_keep, keep_to_rel, 
+                p_rel_to_keep, p_keep_to_rel, 
+                prop_sub_kept, prop_legal_rel) %>%
+  tidyr::pivot_wider(
+    names_from = species,
+    values_from = c(rel_to_keep, keep_to_rel, p_rel_to_keep, p_keep_to_rel, prop_sub_kept, prop_legal_rel),
+    names_glue = "{.value}_{species}"
+  )
+
+setDT(calib_lookup)
+setkey(calib_lookup, mode)
+
+simulate_mode_sf <- function(md) {
+  # Extract calibration parameters
+  calib_row <- calib_lookup[mode == md]
+  
+  rel_to_keep_sf     <- calib_row$rel_to_keep_sf
+  keep_to_rel_sf     <- calib_row$keep_to_rel_sf
+  p_rel_to_keep_sf   <- calib_row$p_rel_to_keep_sf
+  p_keep_to_rel_sf   <- calib_row$p_keep_to_rel_sf
+  prop_sublegal_kept_sf <- calib_row$prop_sub_kept_sf
+  prop_legal_rel_sf     <- calib_row$prop_legal_rel_sf
+  all_keep_to_rel_sf <- as.integer(p_keep_to_rel_sf == 1)
+  
+  # Filter catch data by mode
+  catch_data_md <- catch_data[mode == md]
+  sf_catch_check_md <- sum(catch_data_md$sf_cat)
+  
+  if (sf_catch_check_md == 0) {
+    return(list(
+      trip_data = catch_data_md[, .(date, catch_draw, tripid, mode,
+                                    tot_keep_sf_new = 0L, tot_rel_sf_new = 0L,
+                                    domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid))],
+      zero_catch = catch_data_md[sf_cat == 0]
+    ))
+  }
+  
+  # Expand fish by number caught
+  sf_catch_data <- catch_data_md[sf_cat > 0]
+  sf_catch_data <- sf_catch_data[rep(1:.N, sf_cat)]
+  sf_catch_data[, fishid := .I]
+  
+  # Sample fish lengths
+  sf_catch_data[, fitted_length := sample(sf_size_data$length, .N, 
+                                          prob = sf_size_data$fitted_prob, replace = TRUE)]
+  
+  # Identify keepable fish
+  sf_catch_data[, posskeep := as.integer(fitted_length >= fluke_min_y2)]
+  sf_catch_data[, csum_keep := ave(posskeep, tripid, date, mode, catch_draw, FUN = cumsum)]
+  sf_catch_data[, keep_adj := as.integer(posskeep == 1 & csum_keep <= fluke_bag_y2)]
+  sf_catch_data[, `:=`(keep = keep_adj, release = 1L - keep_adj)]
+  sf_catch_data[, subl_harv_indicator := as.integer(release == 1 & fitted_length >= floor_subl_sf_harv)]
+  
+  # --- Reallocate rel to keep ---
+  if (rel_to_keep_sf == 1 && sum(sf_catch_data$release) > 0) {
+    sublegal_keeps <- sf_catch_data[subl_harv_indicator == 1]
+    base <- sf_catch_data[subl_harv_indicator == 0]
+    
+    n_to_keep <- round(prop_sublegal_kept_sf * nrow(sublegal_keeps))
+    sublegal_keeps[, uniform := runif(.N)]
+    setorder(sublegal_keeps, uniform)
+    sublegal_keeps[, fishid2 := .I]
+    sublegal_keeps[, `:=`(
+      keep = as.integer(fishid2 <= n_to_keep),
+      release = as.integer(fishid2 > n_to_keep)
+    )]
+    sum(sublegal_keeps$release)
+    sum(sublegal_keeps$keep)
+    
+    # Drop helper columns *only if they exist*
+    cols_to_drop_sub <- intersect(names(sublegal_keeps), c("uniform", "fishid2", "subl_harv_indicator"))
+    sublegal_keeps[, (cols_to_drop_sub) := NULL]
+    
+    cols_to_drop_base <- intersect(names(base), "subl_harv_indicator")
+    base[, (cols_to_drop_base) := NULL]
+    
+    sf_catch_data <- rbindlist(list(sublegal_keeps, base), use.names = TRUE, fill = TRUE)
+  }
+  
+  # --- Reallocate keep to rel ---
+  if (keep_to_rel_sf == 1 && sum(sf_catch_data$keep) > 0) {
+    if (all_keep_to_rel_sf == 1) {
+      sf_catch_data[, `:=`(release = keep + release, keep = 0L)]
+    } else {
+      kept <- sf_catch_data[keep == 1]
+      base <- sf_catch_data[keep == 0]
+      n_to_release <- round(prop_legal_rel_sf * nrow(kept))
+      
+      kept[, uniform := runif(.N)]
+      setorder(kept, uniform)
+      kept[, fishid2 := .I]
+      kept[, `:=`(
+        release = as.integer(fishid2 <= n_to_release),
+        keep = as.integer(fishid2 > n_to_release)
+      )]
+      kept[, `:=`(uniform = NULL, fishid2 = NULL)]
+      
+      sf_catch_data <- rbindlist(list(kept, base), use.names = TRUE)
+    }
+  }
+  
+  # --- Append length-specific keep/release summary ---
+  sf_catch_data <- data.table::as.data.table(sf_catch_data)
+  
+  new_size_data <- sf_catch_data[, .(
+    keep = sum(keep),
+    release = sum(release)
+  ), by = .(mode, date, catch_draw, tripid, fitted_length)]
+  
+  keep_size_data <- new_size_data %>%
+    dplyr::select(-release) %>%
+    tidyr::pivot_wider(
+      names_from = fitted_length,
+      names_glue = "keep_sf_{fitted_length}",
+      names_sort = TRUE,
+      values_from = keep,
+      values_fill = 0
+    )
+  
+  release_size_data <- new_size_data %>%
+    dplyr::select(-keep) %>%
+    tidyr::pivot_wider(
+      names_from = fitted_length,
+      names_glue = "release_sf_{fitted_length}",
+      names_sort = TRUE,
+      values_from = release,
+      values_fill = 0
+    )
+  
+  keep_release_size_data <- keep_size_data %>%
+    dplyr::left_join(release_size_data, by = c("date", "mode", "tripid", "catch_draw"))
+  
+  
+  # Summarize trip-level data
+  trip_summary <- sf_catch_data[, .(tot_keep_sf_new = sum(keep), tot_rel_sf_new = sum(release)), 
+                                by = .(date, catch_draw, tripid, mode)]
+  
+  # Add zero-catch trips
+  zero_catch <- catch_data_md[sf_cat == 0, .(date, catch_draw, tripid, mode)]
+  zero_catch[, `:=`(tot_keep_sf_new = 0L, tot_rel_sf_new = 0L)]
+  
+  trip_data <- rbindlist(list(trip_summary, zero_catch))
+  trip_data[, domain2 := paste0(date, "_", mode, "_", catch_draw, "_", tripid)]
+  
+  return(list(
+    trip_data = trip_data,
+    zero_catch = zero_catch,
+    size_data = keep_release_size_data
+  ))
+}
+
+
+########## black sea bass ##############
+
+#Convert key data frames to data.table format early:
+setDT(directed_trips)
+setDT(catch_data)
+setDT(calib_comparison)
+setDT(bsb_size_data)
+
+#Set up constants (unchanged):
+floor_subl_bsb_harv <- min(directed_trips$bsb_min_y2) - 3 * 2.54
+mode_draw <- c("sh", "pr", "fh")
+
+#Step 2: Reorganize calibration parameters#
+calib_lookup <- calib_comparison %>%
+  dplyr::select(mode, species, rel_to_keep, keep_to_rel, 
+                p_rel_to_keep, p_keep_to_rel, 
+                prop_sub_kept, prop_legal_rel) %>%
+  tidyr::pivot_wider(
+    names_from = species,
+    values_from = c(rel_to_keep, keep_to_rel, p_rel_to_keep, p_keep_to_rel, prop_sub_kept, prop_legal_rel),
+    names_glue = "{.value}_{species}"
+  )
+
+setDT(calib_lookup)
+setkey(calib_lookup, mode)
+
+
+simulate_mode_bsb <- function(md) {
+  
+  # Extract calibration parameters
+  calib_row <- calib_lookup[mode == md]
+  
+  rel_to_keep_bsb     <- calib_row$rel_to_keep_bsb
+  keep_to_rel_bsb     <- calib_row$keep_to_rel_bsb
+  p_rel_to_keep_bsb   <- calib_row$p_rel_to_keep_bsb
+  p_keep_to_rel_bsb   <- calib_row$p_keep_to_rel_bsb
+  prop_sublegal_kept_bsb <- calib_row$prop_sub_kept_bsb
+  prop_legal_rel_bsb     <- calib_row$prop_legal_rel_bsb
+  all_keep_to_rel_bsb <- as.integer(p_keep_to_rel_bsb == 1)
+  
+  # Filter catch data by mode
+  catch_data_md <- catch_data[mode == md]
+  bsb_catch_check_md <- sum(catch_data_md$bsb_cat)
+  
+  if (bsb_catch_check_md == 0) {
+    return(list(
+      trip_data = catch_data_md[, .(date, catch_draw, tripid, mode,
+                                    tot_keep_bsb_new = 0L, tot_rel_bsb_new = 0L,
+                                    domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid))],
+      zero_catch = catch_data_md[bsb_cat == 0]
+    ))
+  }
+  
+  # Expand fish by number caught
+  bsb_catch_data <- catch_data_md[bsb_cat > 0]
+  bsb_catch_data <- bsb_catch_data[rep(1:.N, bsb_cat)]
+  bsb_catch_data[, fishid := .I]
+  
+  # Sample fish lengths
+  bsb_catch_data[, fitted_length := sample(bsb_size_data$length, .N, 
+                                          prob = bsb_size_data$fitted_prob, replace = TRUE)]
+  
+  # Identify keepable fish
+  bsb_catch_data[, posskeep := as.integer(fitted_length >= bsb_min_y2)]
+  bsb_catch_data[, csum_keep := ave(posskeep, tripid, date, mode, catch_draw, FUN = cumsum)]
+  bsb_catch_data[, keep_adj := as.integer(posskeep == 1 & csum_keep <= bsb_bag_y2)]
+  bsb_catch_data[, `:=`(keep = keep_adj, release = 1L - keep_adj)]
+  bsb_catch_data[, subl_harv_indicator := as.integer(release == 1 & fitted_length >= floor_subl_bsb_harv)]
+  
+  # --- Reallocate rel to keep ---
+  if (rel_to_keep_bsb == 1 && sum(bsb_catch_data$release) > 0) {
+    sublegal_keeps <- bsb_catch_data[subl_harv_indicator == 1]
+    base <- bsb_catch_data[subl_harv_indicator == 0]
+    
+    n_to_keep <- round(prop_sublegal_kept_bsb * nrow(sublegal_keeps))
+    sublegal_keeps[, uniform := runif(.N)]
+    setorder(sublegal_keeps, uniform)
+    sublegal_keeps[, fishid2 := .I]
+    sublegal_keeps[, `:=`(
+      keep = as.integer(fishid2 <= n_to_keep),
+      release = as.integer(fishid2 > n_to_keep)
+    )]
+    sum(sublegal_keeps$release)
+    sum(sublegal_keeps$keep)
+    
+    # Drop helper columns *only if they exist*
+    cols_to_drop_sub <- intersect(names(sublegal_keeps), c("uniform", "fishid2", "subl_harv_indicator"))
+    sublegal_keeps[, (cols_to_drop_sub) := NULL]
+    
+    cols_to_drop_base <- intersect(names(base), "subl_harv_indicator")
+    base[, (cols_to_drop_base) := NULL]
+    
+    bsb_catch_data <- rbindlist(list(sublegal_keeps, base), use.names = TRUE, fill = TRUE)
+  }
+  
+  # --- Reallocate keep to rel ---
+  if (keep_to_rel_bsb == 1 && sum(bsb_catch_data$keep) > 0) {
+    if (all_keep_to_rel_bsb == 1) {
+      bsb_catch_data[, `:=`(release = keep + release, keep = 0L)]
+    } else {
+      kept <- bsb_catch_data[keep == 1]
+      base <- bsb_catch_data[keep == 0]
+      n_to_release <- round(prop_legal_rel_bsb * nrow(kept))
+      
+      kept[, uniform := runif(.N)]
+      setorder(kept, uniform)
+      kept[, fishid2 := .I]
+      kept[, `:=`(
+        release = as.integer(fishid2 <= n_to_release),
+        keep = as.integer(fishid2 > n_to_release)
+      )]
+      kept[, `:=`(uniform = NULL, fishid2 = NULL)]
+      
+      bsb_catch_data <- rbindlist(list(kept, base), use.names = TRUE)
+    }
+  }
+  
+  # --- Append length-specific keep/release summary ---
+  bsb_catch_data <- data.table::as.data.table(bsb_catch_data)
+  
+  new_size_data <- bsb_catch_data[, .(
+    keep = sum(keep),
+    release = sum(release)
+  ), by = .(mode, date, catch_draw, tripid, fitted_length)]
+  
+  keep_size_data <- new_size_data %>%
+    dplyr::select(-release) %>%
+    tidyr::pivot_wider(
+      names_from = fitted_length,
+      names_glue = "keep_bsb_{fitted_length}",
+      names_sort = TRUE,
+      values_from = keep,
+      values_fill = 0
+    )
+  
+  release_size_data <- new_size_data %>%
+    dplyr::select(-keep) %>%
+    tidyr::pivot_wider(
+      names_from = fitted_length,
+      names_glue = "release_bsb_{fitted_length}",
+      names_sort = TRUE,
+      values_from = release,
+      values_fill = 0
+    )
+  
+  keep_release_size_data <- keep_size_data %>%
+    dplyr::left_join(release_size_data, by = c("date", "mode", "tripid", "catch_draw"))
+  
+  
+  # Summarize trip-level data
+  trip_summary <- bsb_catch_data[, .(tot_keep_bsb_new = sum(keep), tot_rel_bsb_new = sum(release)), 
+                                by = .(date, catch_draw, tripid, mode)]
+  
+  # Add zero-catch trips
+  zero_catch <- catch_data_md[bsb_cat == 0, .(date, catch_draw, tripid, mode)]
+  zero_catch[, `:=`(tot_keep_bsb_new = 0L, tot_rel_bsb_new = 0L)]
+  
+  trip_data <- rbindlist(list(trip_summary, zero_catch))
+  trip_data[, domain2 := paste0(date, "_", mode, "_", catch_draw, "_", tripid)]
+  
+  return(list(
+    trip_data = trip_data,
+    zero_catch = zero_catch,
+    size_data = keep_release_size_data
+  ))
+}
+
+
+########## scup ##############
+
+#Convert key data frames to data.table format early:
+setDT(directed_trips)
+setDT(catch_data)
+setDT(calib_comparison)
+setDT(scup_size_data)
+
+#Set up constants (unchanged):
+floor_subl_scup_harv <- min(directed_trips$scup_min_y2) - 3 * 2.54
+mode_draw <- c("sh", "pr", "fh")
+
+#Step 2: Reorganize calibration parameters#
+calib_lookup <- calib_comparison %>%
+  dplyr::select(mode, species, rel_to_keep, keep_to_rel, 
+                p_rel_to_keep, p_keep_to_rel, 
+                prop_sub_kept, prop_legal_rel) %>%
+  tidyr::pivot_wider(
+    names_from = species,
+    values_from = c(rel_to_keep, keep_to_rel, p_rel_to_keep, p_keep_to_rel, prop_sub_kept, prop_legal_rel),
+    names_glue = "{.value}_{species}"
+  )
+
+setDT(calib_lookup)
+setkey(calib_lookup, mode)
+
+
+simulate_mode_scup <- function(md) {
+  
+  # Extract calibration parameters
+  calib_row <- calib_lookup[mode == md]
+  
+  rel_to_keep_scup     <- calib_row$rel_to_keep_scup
+  keep_to_rel_scup     <- calib_row$keep_to_rel_scup
+  p_rel_to_keep_scup   <- calib_row$p_rel_to_keep_scup
+  p_keep_to_rel_scup   <- calib_row$p_keep_to_rel_scup
+  prop_sublegal_kept_scup <- calib_row$prop_sub_kept_scup
+  prop_legal_rel_scup     <- calib_row$prop_legal_rel_scup
+  all_keep_to_rel_scup <- as.integer(p_keep_to_rel_scup == 1)
+  
+  # Filter catch data by mode
+  catch_data_md <- catch_data[mode == md]
+  scup_catch_check_md <- sum(catch_data_md$scup_cat)
+  
+  if (scup_catch_check_md == 0) {
+    return(list(
+      trip_data = catch_data_md[, .(date, catch_draw, tripid, mode,
+                                    tot_keep_scup_new = 0L, tot_rel_scup_new = 0L,
+                                    domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid))],
+      zero_catch = catch_data_md[scup_cat == 0]
+    ))
+  }
+  
+  # Expand fish by number caught
+  scup_catch_data <- catch_data_md[scup_cat > 0]
+  scup_catch_data <- scup_catch_data[rep(1:.N, scup_cat)]
+  scup_catch_data[, fishid := .I]
+  
+  # Sample fish lengths
+  scup_catch_data[, fitted_length := sample(scup_size_data$length, .N, 
+                                           prob = scup_size_data$fitted_prob, replace = TRUE)]
+  
+  # Identify keepable fish
+  scup_catch_data[, posskeep := as.integer(fitted_length >= scup_min_y2)]
+  scup_catch_data[, csum_keep := ave(posskeep, tripid, date, mode, catch_draw, FUN = cumsum)]
+  scup_catch_data[, keep_adj := as.integer(posskeep == 1 & csum_keep <= scup_bag_y2)]
+  scup_catch_data[, `:=`(keep = keep_adj, release = 1L - keep_adj)]
+  scup_catch_data[, subl_harv_indicator := as.integer(release == 1 & fitted_length >= floor_subl_scup_harv)]
+  
+  # --- Reallocate rel to keep ---
+  if (rel_to_keep_scup == 1 && sum(scup_catch_data$release) > 0) {
+    sublegal_keeps <- scup_catch_data[subl_harv_indicator == 1]
+    base <- scup_catch_data[subl_harv_indicator == 0]
+    
+    n_to_keep <- round(prop_sublegal_kept_scup * nrow(sublegal_keeps))
+    sublegal_keeps[, uniform := runif(.N)]
+    setorder(sublegal_keeps, uniform)
+    sublegal_keeps[, fishid2 := .I]
+    sublegal_keeps[, `:=`(
+      keep = as.integer(fishid2 <= n_to_keep),
+      release = as.integer(fishid2 > n_to_keep)
+    )]
+    sum(sublegal_keeps$release)
+    sum(sublegal_keeps$keep)
+    
+    # Drop helper columns *only if they exist*
+    cols_to_drop_sub <- intersect(names(sublegal_keeps), c("uniform", "fishid2", "subl_harv_indicator"))
+    sublegal_keeps[, (cols_to_drop_sub) := NULL]
+    
+    cols_to_drop_base <- intersect(names(base), "subl_harv_indicator")
+    base[, (cols_to_drop_base) := NULL]
+    
+    scup_catch_data <- rbindlist(list(sublegal_keeps, base), use.names = TRUE, fill = TRUE)
+  }
+  
+  # --- Reallocate keep to rel ---
+  if (keep_to_rel_scup == 1 && sum(scup_catch_data$keep) > 0) {
+    if (all_keep_to_rel_scup == 1) {
+      scup_catch_data[, `:=`(release = keep + release, keep = 0L)]
+    } else {
+      kept <- scup_catch_data[keep == 1]
+      base <- scup_catch_data[keep == 0]
+      n_to_release <- round(prop_legal_rel_scup * nrow(kept))
+      
+      kept[, uniform := runif(.N)]
+      setorder(kept, uniform)
+      kept[, fishid2 := .I]
+      kept[, `:=`(
+        release = as.integer(fishid2 <= n_to_release),
+        keep = as.integer(fishid2 > n_to_release)
+      )]
+      kept[, `:=`(uniform = NULL, fishid2 = NULL)]
+      
+      scup_catch_data <- rbindlist(list(kept, base), use.names = TRUE)
+    }
+  }
+  
+  # --- Append length-specific keep/release summary ---
+  scup_catch_data <- data.table::as.data.table(scup_catch_data)
+  
+  new_size_data <- scup_catch_data[, .(
+    keep = sum(keep),
+    release = sum(release)
+  ), by = .(mode, date, catch_draw, tripid, fitted_length)]
+  
+  keep_size_data <- new_size_data %>%
+    dplyr::select(-release) %>%
+    tidyr::pivot_wider(
+      names_from = fitted_length,
+      names_glue = "keep_scup_{fitted_length}",
+      names_sort = TRUE,
+      values_from = keep,
+      values_fill = 0
+    )
+  
+  release_size_data <- new_size_data %>%
+    dplyr::select(-keep) %>%
+    tidyr::pivot_wider(
+      names_from = fitted_length,
+      names_glue = "release_scup_{fitted_length}",
+      names_sort = TRUE,
+      values_from = release,
+      values_fill = 0
+    )
+  
+  keep_release_size_data <- keep_size_data %>%
+    dplyr::left_join(release_size_data, by = c("date", "mode", "tripid", "catch_draw"))
+  
+  
+  # Summarize trip-level data
+  trip_summary <- scup_catch_data[, .(tot_keep_scup_new = sum(keep), tot_rel_scup_new = sum(release)), 
+                                 by = .(date, catch_draw, tripid, mode)]
+  
+  # Add zero-catch trips
+  zero_catch <- catch_data_md[scup_cat == 0, .(date, catch_draw, tripid, mode)]
+  zero_catch[, `:=`(tot_keep_scup_new = 0L, tot_rel_scup_new = 0L)]
+  
+  trip_data <- rbindlist(list(trip_summary, zero_catch))
+  trip_data[, domain2 := paste0(date, "_", mode, "_", catch_draw, "_", tripid)]
+  
+  return(list(
+    trip_data = trip_data,
+    zero_catch = zero_catch,
+    size_data = keep_release_size_data
+  ))
+}

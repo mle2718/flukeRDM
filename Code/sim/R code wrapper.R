@@ -84,17 +84,17 @@ n_draws<-50 #Number of simulated trips per day
 #excluded after Step 2. From the pool of remaining iterations, I use the first 100 in the projection.
 
 #Prior to running the model, transfer the catch_draw files from .csv to .feather to reduce computing time
-statez<-c("MA", "RI")
+statez <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
 
 for(s in statez) {
   dtrip0<-read.csv(file.path(input_data_cd, paste0("directed_trips_calibration_", s,".csv")))
   write_feather(dtrip0, file.path(input_data_cd, paste0("directed_trips_calibration_", s,".feather")))
-for(i in 1:5) {
-  catch<-read.csv(file.path(iterative_input_data_cd, paste0("calib_catch_draws_",s, "_", i,".csv")))
-  write_feather(catch, file.path(iterative_input_data_cd, paste0("calib_catch_draws_",s, "_", i,".feather")))
+for(i in 1:3) {
+  catch<-read_dta(file.path(iterative_input_data_cd, paste0("calib_catch_draws_",s, "_", i,".dta")))
+  #write_feather(catch, file.path(iterative_input_data_cd, paste0("calib_catch_draws_",s, "_", i,".feather")))
   
   # make fake projection draws
-  #write_feather(catch, file.path(iterative_input_data_cd, paste0("projected_catch_draws_",s, "_", i,".feather")))
+  write_feather(catch, file.path(iterative_input_data_cd, paste0("projected_catch_draws_",s, "_", i,".feather")))
   
 }
 }
@@ -118,7 +118,7 @@ MRIP_comparison = read_dta(file.path(iterative_input_data_cd,"simulated_catch_to
               scup_keep=tot_scup_keep_sim,
               sf_rel=tot_sf_rel_sim, 
               bsb_rel=tot_bsb_rel_sim, 
-              scup_rel=tot_scup_rel_sim)
+              scup_rel=tot_scup_rel_sim) 
 
 #size_data_read = read.csv(file.path(input_data_cd,"rec_selectivity_CaL_open_seasons_cm.csv"))
 
@@ -132,8 +132,6 @@ MRIP_comparison = read_dta(file.path(iterative_input_data_cd,"simulated_catch_to
 #calibrate_rec_catch_hstar_code.R
 
 source(file.path(code_cd,"calibrate_rec_catch0.R"))
-
-#source(file.path(code_cd,"find_harvest_differences1.R"))
 
 #Output files: 
 #MRIP_simulated_data.rds

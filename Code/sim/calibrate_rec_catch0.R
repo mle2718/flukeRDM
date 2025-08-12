@@ -2,13 +2,9 @@
 
 #This is the calibration-year trip simulation WITHOUT any adjustments for illegal harvest or voluntary release
 
-states <- c("MA", "RI")
+states <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
 mode_draw <- c("sh", "pr", "fh")
-draws <- 1:2
-
- i<-1
- s<-"MA"
- md<-"fh"
+draws <- 1:5
 
 # Create an empty list to collect results
 calib_comparison <- list()
@@ -210,7 +206,8 @@ for (s in states) {
           dplyr::select("date", "catch_draw","tripid","mode") %>% 
           dplyr::mutate(tot_keep_bsb_new = 0, 
                         tot_rel_bsb_new= 0, 
-                        domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid)) 
+                        domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid)) %>% 
+          dplyr::select(-c("date", "catch_draw","tripid","mode"))
         
         bsb_trip_data<-data.table::as.data.table(bsb_trip_data)
         data.table::setkey(bsb_trip_data, "domain2")  
@@ -276,6 +273,7 @@ for (s in states) {
       scup_trip_data<- scup_trip_data %>% 
         dplyr::mutate(domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid)) %>% 
         dplyr::select(-c("date", "catch_draw","tripid","mode"))
+      
       scup_trip_data<-data.table::as.data.table(scup_trip_data)
       data.table::setkey(scup_trip_data, "domain2") 
     }
@@ -284,8 +282,9 @@ for (s in states) {
         scup_trip_data<-catch_data %>% 
           dplyr::select("date", "catch_draw","tripid","mode") %>% 
           dplyr::mutate(tot_keep_scup_new = 0, 
-                        tot_rel_v_new= 0, 
-                        domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid)) 
+                        tot_rel_scup_new= 0, 
+                        domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid)) %>% 
+          dplyr::select(-c("date", "catch_draw","tripid","mode"))
         
         scup_trip_data<-data.table::as.data.table(scup_trip_data)
         data.table::setkey(scup_trip_data, "domain2")  
