@@ -6,10 +6,10 @@ Run_Name <- args[1]
 
 saved_regs<- read.csv(here::here(paste0("saved_regs/regs_", Run_Name, ".csv")))
 
-for (a in seq_len(nrow(save_regs))) {
+for (a in seq_len(nrow(saved_regs))) {
   # Extract name and value
-  obj_name <- save_regs$input[a]
-  obj_value <- save_regs$value[a]
+  obj_name <- saved_regs$input[a]
+  obj_value <- saved_regs$value[a]
   
   # Assign to object in the environment
   assign(obj_name, obj_value)
@@ -25,21 +25,21 @@ data_path <- here::here("Data/")
 
 
 #### Read in size data ####
-sf_size_data <- readr::read_csv(file.path(data_path, "fluke_projected_catch_at_lengths.csv"), show_col_types = FALSE)  %>% 
-  dplyr::filter(state == "MA") %>% 
+size_data <- readr::read_csv(file.path(here::here("Data"), "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+  dplyr::filter(state == "MA")
+
+sf_size_data <- size_data %>% 
+  dplyr::filter(species=="sf") %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
   dplyr::select(state, fitted_prob, length, draw)
-
-bsb_size_data <- readr::read_csv(file.path(data_path, "bsb_projected_catch_at_lengths.csv"), show_col_types = FALSE)  %>% 
-  dplyr::filter(state == "MA") %>% 
+bsb_size_data <- size_data  %>% 
+  dplyr::filter(species=="bsb") %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
   dplyr::select(state, fitted_prob, length, draw)
-
-scup_size_data <- readr::read_csv(file.path(data_path, "scup_projected_catch_at_lengths.csv"), show_col_types = FALSE)  %>% 
-  dplyr::filter(state == "MA") %>% 
+scup_size_data <- size_data %>% 
+  dplyr::filter(species=="scup") %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
   dplyr::select(state,  fitted_prob, length, draw)
-
 
 l_w_conversion <- readr::read_csv(file.path(data_path, "L_W_Conversion.csv"), show_col_types = FALSE)  %>% 
   dplyr::filter(state=="MA")
@@ -116,17 +116,17 @@ predictions_out10 <- data.frame()
 #future::plan(future::multisession, workers = 36)
 #future::plan(future::multisession, workers = 3)
 #get_predictions_out<- function(x){
-for(x in 1:1){
+for(x in 1:3){
   
   print(x)
   
-  directed_trips <- directed_trips %>% 
+  directed_trips2 <- directed_trips %>% 
     dplyr::filter(draw == x) # %>%
     # dplyr::mutate(day = stringr::str_extract(day, "^\\d{2}"), 
     #               period2 = paste0(month24, "-", day, "-", mode))
   
   catch_data <- feather::read_feather(file.path(data_path, paste0("projected_catch_draws_MA", "_", x,".feather"))) %>% 
-    dplyr::left_join(directed_trips, by=c("mode", "date", "draw")) 
+    dplyr::left_join(directed_trips2, by=c("mode", "date", "draw")) 
   
   catch_data<-catch_data %>% 
     dplyr::select(-cost, -total_trips_12, -age, -bsb_keep_sim, -bsb_rel_sim, -day_i, -my_dom_id_string, 
@@ -166,19 +166,19 @@ for(x in 1:1){
   
   
   # Pull in calibration comparison information about trip-level harvest/discard re-allocations 
-  calib_comparison<-feather::read_feather(file.path(data_path, "calibration_comparison.feather")) %>% 
+  calib_comparison<-readRDS(file.path(data_path,"calibrated_model_stats.rds")) %>%
     dplyr::filter(state=="MA" & draw==x )   
 
-  sf_size_data <- sf_size_data %>% 
+  sf_size_data2 <- sf_size_data %>% 
     dplyr::filter(draw == x) %>%  #Change to X for model for sf and scup
     dplyr::select(-draw)
     
   ### Change when bsb_size is updated
-  bsb_size_data <- bsb_size_data %>% 
-    dplyr::filter(draw == 0) %>% 
+  bsb_size_data2 <- bsb_size_data %>% 
+    dplyr::filter(draw == x) %>% 
     dplyr::select(-draw)
   
-  scup_size_data <- scup_size_data %>% 
+  scup_size_data2 <- scup_size_data %>% 
     dplyr::filter(draw == x) %>% 
     dplyr::select(-draw)
   
@@ -187,8 +187,10 @@ for(x in 1:1){
   source(here::here("Code/sim/predict_rec_catch.R"))
   
   test<- predict_rec_catch(st = "MA", dr = x,
-                           directed_trips, catch_data, 
-                           sf_size_data, bsb_size_data, scup_size_data, 
+                           directed_trips = directed_trips2, catch_data, 
+                           sf_size_data = sf_size_data2,
+                           bsb_size_data = bsb_size_data2, 
+                           scup_size_data = scup_size_data2, 
                            l_w_conversion, calib_comparison, n_choice_occasions, 
                            base_outcomes)
   
@@ -213,7 +215,7 @@ print("out of loop")
 #predictions_out10<- furrr::future_map_dfr(1:3, ~get_predictions_out(.), .id = "draw")
 
 #readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
-readr::write_csv(predictions_out10, file = here::here(paste0("output/output_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
+readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
 
 
 end_time <- Sys.time()
