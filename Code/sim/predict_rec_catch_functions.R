@@ -28,7 +28,7 @@
 # setDT(calib_lookup)
 # setkey(calib_lookup, mode)
 
-simulate_mode_sf <- function( md,calib_lookup) {
+simulate_mode_sf <- function( md,calib_lookup, floor_subl_sf_harv) {
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
   
@@ -195,7 +195,7 @@ simulate_mode_sf <- function( md,calib_lookup) {
 # setkey(calib_lookup, mode)
 
 
-simulate_mode_bsb <- function(md,calib_lookup) {
+simulate_mode_bsb <- function(md,calib_lookup, floor_subl_bsb_harv) {
   
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
@@ -364,7 +364,7 @@ simulate_mode_bsb <- function(md,calib_lookup) {
 # setkey(calib_lookup, mode)
 
 
-simulate_mode_scup <- function(md,calib_lookup) {
+simulate_mode_scup <- function(md,calib_lookup, floor_subl_scup_harv) {
   
   
   # Extract calibration parameters
