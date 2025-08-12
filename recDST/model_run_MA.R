@@ -134,7 +134,7 @@ for(x in 1:3){
                   -scup_keep_sim, -scup_rel_sim, -sf_keep_sim, -sf_rel_sim, -wave)
   
   calendar_adjustments <- readr::read_csv(
-    file.path(input_data_cd, paste0("proj_year_calendar_adjustments_MA.csv")), show_col_types = FALSE) %>%
+    file.path(here::here(paste0("Data/proj_year_calendar_adjustments_MA.csv"))), show_col_types = FALSE) %>%
     dplyr::filter(state == "MA", draw==x) %>% 
     dplyr::select(-dtrip, -dtrip_y2, -state, -draw)
   
