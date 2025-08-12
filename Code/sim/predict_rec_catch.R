@@ -314,7 +314,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   # We will multiply each simulated choice equation by an appropriate expansion factor, 
   # then multiply this expansion factor by the projection-year calendar adjustment to account for
   # different numbers of weekend vs. weekday in the projection year versus the calibration
-  
+  ndraws = 50
   mean_trip_data<-mean_trip_data %>% 
     dplyr::left_join(n_choice_occasions, by = c("mode", "date_parsed")) %>% 
     dplyr::mutate(month = lubridate::month(date_parsed))  %>% 
@@ -492,7 +492,8 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   predictions <- rbindlist(
     list(length_output, model_output1),
     use.names = TRUE,
-    fill = TRUE)
+    fill = TRUE) %>% 
+    dplyr::mutate(state = st, draw=dr)
   
   print("Finished predict_rec_catch")
   
