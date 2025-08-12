@@ -4,7 +4,7 @@ RUN apt-get update \
     nano \
     && rm -rf /var/lib/apt/lists/*
 COPY shiny-server.conf /etc/shiny-server/shiny-server.conf
-COPY ./recDST /srv/rdmtool/
+COPY ./recDST /srv/rdmtool/recDST
 COPY ./app.R /srv/rdmtool/.
 RUN install2.r -e -s \
     shiny \
