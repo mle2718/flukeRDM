@@ -24,18 +24,19 @@ data_path <- here::here("Data/")
 
 
 #### Read in size data ####
-sf_size_data <- readr::read_csv(file.path(data_path, "fluke_projected_catch_at_lengths.csv"), show_col_types = FALSE)  %>% 
-  dplyr::filter(state == "RI") %>% 
+size_data <- readr::read_csv(file.path(here::here("Data"), "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+  dplyr::filter(state == "RI")
+
+sf_size_data <- size_data %>% 
+  dplyr::filter(species=="sf") %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
   dplyr::select(state, fitted_prob, length, draw)
-
-bsb_size_data <- readr::read_csv(file.path(data_path, "bsb_projected_catch_at_lengths.csv"), show_col_types = FALSE)  %>% 
-  dplyr::filter(state == "RI") %>% 
+bsb_size_data <- size_data  %>% 
+  dplyr::filter(species=="bsb") %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
   dplyr::select(state, fitted_prob, length, draw)
-
-scup_size_data <- readr::read_csv(file.path(data_path, "scup_projected_catch_at_lengths.csv"), show_col_types = FALSE)  %>% 
-  dplyr::filter(state == "RI") %>% 
+scup_size_data <- size_data %>% 
+  dplyr::filter(species=="scup") %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
   dplyr::select(state,  fitted_prob, length, draw)
 
@@ -131,11 +132,11 @@ predictions_out10 <- data.frame()
 #future::plan(future::multisession, workers = 36)
 #future::plan(future::multisession, workers = 3)
 #get_predictions_out<- function(x){
-for(x in 1:1){
+for(x in 1:3){
   
   print(x)
   
-  directed_trips <- directed_trips %>% 
+  directed_trips2 <- directed_trips %>% 
     dplyr::filter(draw == x) # %>%
   # dplyr::mutate(day = stringr::str_extract(day, "^\\d{2}"), 
   #               period2 = paste0(month24, "-", day, "-", mode))
@@ -184,16 +185,16 @@ for(x in 1:1){
   calib_comparison<-feather::read_feather(file.path(data_path, "calibration_comparison.feather")) %>% 
     dplyr::filter(state=="RI" & draw==x )   
   
-  sf_size_data <- sf_size_data %>% 
+  sf_size_data2 <- sf_size_data %>% 
     dplyr::filter(draw == x) %>%  #Change to X for model for sf and scup
     dplyr::select(-draw)
   
   ### Change when bsb_size is updated
-  bsb_size_data <- bsb_size_data %>% 
+  bsb_size_data2 <- bsb_size_data %>% 
     dplyr::filter(draw == x) %>% 
     dplyr::select(-draw)
   
-  scup_size_data <- scup_size_data %>% 
+  scup_size_data2 <- scup_size_data %>% 
     dplyr::filter(draw == x) %>% 
     dplyr::select(-draw)
   
