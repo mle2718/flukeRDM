@@ -34,18 +34,20 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   setDT(calib_lookup)
   setkey(calib_lookup, mode)
   ## Run for all modes + aggregate  - summer flounder 
-  results_list <- lapply(mode_draw, simulate_mode_sf, calib_lookup = calib_lookup, floor_subl_sf_harv= floor_subl_sf_harv)
+  results_list <- lapply(mode_draw, simulate_mode_sf, calib_lookup = calib_lookup, 
+                         floor_subl_sf_harv= floor_subl_sf_harv, sf_size_data = sf_size_data)
   
   sf_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data"))
   data.table::setkey(sf_trip_data, domain2)
   
   zero_catch_sf <- rbindlist(lapply(results_list, `[[`, "zero_catch"))
-  
+  print("Starting SF Size")
   size_data_sf <- rbindlist(lapply(results_list, `[[`, "size_data"))
-  
+  print("made it out SF Size")
   
   ## Run for all modes + aggregate  - black sea bass 
-  results_list <- lapply(mode_draw, simulate_mode_bsb, calib_lookup = calib_lookup, floor_subl_bsb_harv = floor_subl_bsb_harv)
+  results_list <- lapply(mode_draw, simulate_mode_bsb, calib_lookup = calib_lookup, 
+                         floor_subl_bsb_harv = floor_subl_bsb_harv, bsb_size_data = bsb_size_data)
   
   bsb_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
     dplyr::select(-date, -mode, -catch_draw, -tripid)
@@ -58,7 +60,8 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   
   ## Run for all modes + aggregate  - scup 
-  results_list <- lapply(mode_draw, simulate_mode_scup, calib_lookup = calib_lookup, floor_subl_scup_harv= floor_subl_scup_harv)
+  results_list <- lapply(mode_draw, simulate_mode_scup, calib_lookup = calib_lookup, 
+                         floor_subl_scup_harv= floor_subl_scup_harv, scup_size_data = scup_size_data)
   
   scup_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
     dplyr::select(-date, -mode, -catch_draw, -tripid)
