@@ -7,22 +7,47 @@
 predict_rec_catch <- function(st, dr, directed_trips, catch_data, 
                               sf_size_data, bsb_size_data, scup_size_data, 
                               l_w_conversion, calib_comparison, n_choice_occasions, 
-                              base_outcomes){
+                              calendar_adjustments, base_outcomes){
   
+   setDT(directed_trips)
+   setDT(catch_data)
+   setDT(calib_comparison)
+   setDT(sf_size_data)
+   setDT(bsb_size_data)
+   setDT(scup_size_data)
   
+  mode_draw <- c("sh", "pr", "fh")
+  floor_subl_sf_harv <- min(directed_trips$fluke_min_y2) - 3 * 2.54
+  floor_subl_bsb_harv <- min(directed_trips$bsb_min_y2) - 3 * 2.54
+  floor_subl_scup_harv <- min(directed_trips$scup_min_y2) - 3 * 2.54
+  
+  calib_lookup <- calib_comparison %>%
+    dplyr::select(mode, species, rel_to_keep, keep_to_rel,
+                  p_rel_to_keep, p_keep_to_rel,
+                  prop_sub_kept, prop_legal_rel) %>%
+    tidyr::pivot_wider(
+      names_from = species,
+      values_from = c(rel_to_keep, keep_to_rel, p_rel_to_keep, p_keep_to_rel, prop_sub_kept, prop_legal_rel),
+      names_glue = "{.value}_{species}"
+    )
+  
+  setDT(calib_lookup)
+  setkey(calib_lookup, mode)
   ## Run for all modes + aggregate  - summer flounder 
-  results_list <- lapply(mode_draw, simulate_mode_sf)
+  results_list <- lapply(mode_draw, simulate_mode_sf, calib_lookup = calib_lookup, 
+                         floor_subl_sf_harv= floor_subl_sf_harv, sf_size_data = sf_size_data)
   
   sf_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data"))
   data.table::setkey(sf_trip_data, domain2)
   
   zero_catch_sf <- rbindlist(lapply(results_list, `[[`, "zero_catch"))
-  
+  print("Starting SF Size")
   size_data_sf <- rbindlist(lapply(results_list, `[[`, "size_data"))
-  
+  print("made it out SF Size")
   
   ## Run for all modes + aggregate  - black sea bass 
-  results_list <- lapply(mode_draw, simulate_mode_bsb)
+  results_list <- lapply(mode_draw, simulate_mode_bsb, calib_lookup = calib_lookup, 
+                         floor_subl_bsb_harv = floor_subl_bsb_harv, bsb_size_data = bsb_size_data)
   
   bsb_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
     dplyr::select(-date, -mode, -catch_draw, -tripid)
@@ -35,7 +60,8 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   
   ## Run for all modes + aggregate  - scup 
-  results_list <- lapply(mode_draw, simulate_mode_scup)
+  results_list <- lapply(mode_draw, simulate_mode_scup, calib_lookup = calib_lookup, 
+                         floor_subl_scup_harv= floor_subl_scup_harv, scup_size_data = scup_size_data)
   
   scup_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
     dplyr::select(-date, -mode, -catch_draw, -tripid)
@@ -47,6 +73,21 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   size_data_scup <- rbindlist(lapply(results_list, `[[`, "size_data"))
  
+  #merge the trip data
+  # Join summer flounder (sf) and black sea bass (bsb) on domain2
+  trip_data_a <- merge(sf_trip_data, bsb_trip_data, by = "domain2", all = TRUE)
+  
+  # Join the result with scup data on domain2
+  trip_data <- merge(trip_data_a, scup_trip_data, by = "domain2", all = TRUE)
+  
+  sf_catch_check<-sum(sf_trip_data$tot_keep_sf_new+sf_trip_data$tot_rel_sf_new)
+  bsb_catch_check<-sum(bsb_trip_data$tot_keep_bsb_new+bsb_trip_data$tot_rel_bsb_new)
+  scup_catch_check<-sum(scup_trip_data$tot_keep_scup_new+scup_trip_data$tot_rel_scup_new)
+  
+  rm(trip_data_a)
+  
+  
+  # merge the length data
   #If there is catch of all three species:
   if(sf_catch_check !=0 & bsb_catch_check!=0 & scup_catch_check!=0){
     
@@ -96,7 +137,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     length_data<-data.table::as.data.table(length_data) 
   }
   
-
+  
   # #If there is catch of only sf 
   # if(sf_catch_check !=0 & bsb_catch_check==0){
   #   
@@ -142,7 +183,10 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   )]
   
   length_data[, date_parsed := lubridate::dmy(date)][, date := NULL]
-
+  
+  # Merge
+  trip_data <- trip_data[base_outcomes, on = .(date_parsed, mode, tripid, catch_draw), nomatch = 0]
+  
   trip_data[, domain2 := NULL]
   
   rm(sf_trip_data, scup_trip_data, bsb_trip_data, 
@@ -219,7 +263,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   mean_trip_data[, `:=`(exp_vA = exp(vA), exp_v0 = exp(v0))]
   
   # Group by group_index and calculate probabilities and log-sums
-
+  
   mean_trip_data[, `:=`(
     probA = exp_vA / sum(exp_vA),
     prob0 = exp_v0 / sum(exp_v0), 
@@ -268,12 +312,12 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     .[,as.vector(all_vars) := lapply(.SD, function(x) x * probA), .SDcols = all_vars] %>%
     .[]
   
-
+  
   ## select the same number of choice occasions in the prediction year as in the calibration year
   # We will multiply each simulated choice equation by an appropriate expansion factor, 
   # then multiply this expansion factor by the projection-year calendar adjustment to account for
   # different numbers of weekend vs. weekday in the projection year versus the calibration
-  
+  ndraws = 50
   mean_trip_data<-mean_trip_data %>% 
     dplyr::left_join(n_choice_occasions, by = c("mode", "date_parsed")) %>% 
     dplyr::mutate(month = lubridate::month(date_parsed))  %>% 
@@ -284,14 +328,177 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
                   expand=n_choice_occasions/ndraws) 
   
   # Expand outcomes for projection year
-
+  list_names <- c("tot_keep_sf_new",   "tot_rel_sf_new",  "tot_cat_sf_new", 
+                  "tot_keep_bsb_new",  "tot_rel_bsb_new", "tot_cat_bsb_new",  
+                  "tot_keep_scup_new","tot_rel_scup_new",  "tot_cat_scup_new", 
+                  "probA", "change_CS")
+  
+  all_vars <- c(list_names)
+  
+  mean_trip_data <- mean_trip_data %>%
+    data.table::as.data.table() %>%
+    .[,as.vector(all_vars) := lapply(.SD, function(x) x * expand), .SDcols = all_vars] %>%
+    .[]
+  
+  #retain expansion factors by strata to multiply with length data 
+  expansion_factors<-mean_trip_data %>% 
+    dplyr::select("date_parsed","mode", "tripid", "expand")
+  
+  #process length data 
+  pattern_vars <- grep("^keep_(sf_|bsb_|scup_)[0-9.]*$|^release_(sf_|bsb_|scup_)[0-9.]*$", 
+                       names(length_data), value = TRUE)
+  
+  length_data<-length_data  %>% data.table::as.data.table() %>%
+    .[,lapply(.SD, mean), by = c("date_parsed","mode", "tripid"), .SDcols = pattern_vars]  
+  
+  length_data<-length_data %>% 
+    dplyr::left_join(expansion_factors, b=c("date_parsed","mode", "tripid"))
+  
+  length_data <- length_data %>%
+    data.table::as.data.table() %>%
+    .[,as.vector(pattern_vars) := lapply(.SD, function(x) x * expand), .SDcols = pattern_vars] %>%
+    .[]  
+  
+  ## Compute welfare and predicted trips
+  # Aggregate by mode
+  mean_trip_data <- mean_trip_data %>%
+    dplyr::rename(n_trips_alt = probA)
+  
+  # Ensure mean_trip_data is a data.table
+  data.table::setDT(mean_trip_data)
+  list_names <- c("change_CS","n_trips_alt")
+  
+  aggregate_trip_data_mode <- mean_trip_data[, lapply(.SD, sum), by = .(mode), .SDcols = list_names]
+  
+  # Aggregate for all modes
+  aggregate_trip_data_allmodes <- mean_trip_data[, lapply(.SD, sum), .SDcols = list_names][
+    , mode := "all modes"
+  ]
+  
+  # Combine and reshape
+  model_output1 <- rbindlist(list(aggregate_trip_data_mode, aggregate_trip_data_allmodes), use.names=TRUE)[
+    , .(CV = change_CS, ntrips = n_trips_alt, mode)
+  ][
+    , .(var = c("CV", "ntrips"), value = c(CV, ntrips)), by = mode
+  ][
+    , `:=`(
+      category = fifelse(var == "CV", "CV", "predicted trips"),
+      keep_release = "N/A",
+      param = "N/A",
+      number_weight = fifelse(var == "CV", "dollars", "trips")
+    )
+  ][, var := NULL]
+  
+  
+  
+  ## Compute catch weight estimates
+  # Process length-frequency data
+  ## Identify the length columns
+  pattern_vars <- grep(
+    "^keep_(sf_|bsb_|scup_)[0-9.]*$|^release_(sf_|bsb_|scup_)[0-9.]*$",
+    names(length_data),
+    value = TRUE
+  )
+  
+  ## Select needed columns and add month
+  length_data1 <- length_data[, .SD, .SDcols = c("date_parsed", "mode", pattern_vars)]
+  length_data1[, month := lubridate::month(date_parsed)]
+  
+  ## Aggregate sums by mode + month
+  length_data1 <- length_data1[, lapply(.SD, sum), 
+                               by = .(mode, month), 
+                               .SDcols = pattern_vars]
+  
+  ## MELT to long
+  length_data1 <- melt(
+    length_data1,
+    id.vars = c("month", "mode"),
+    variable.name = "Var",
+    value.name = "number_at_length"
+  )
+  
+  ## Split Var into keep_release, species, length
+  length_data1[, c("keep_release", "species", "length") := tstrsplit(Var, "_", fixed = TRUE)]
+  length_data1[, length := as.numeric(length)]
+  
+  ## Join with l_w_conversion
+  setDT(l_w_conversion)
+  length_data1 <- l_w_conversion[length_data1, on = .(month, species)]
+  
+  ## Compute weight
+  length_data1[, weight := fcase(
+    species == "scup", exp(ln_a + b * log(length)),
+    species %chin% c("sf", "bsb"), a * length^b,
+    default = NA_real_
+  )]
+  
+  ## Convert to lbs
+  length_data1[, weight := weight * 2.20462262185]
+  
+  ## Totals
+  length_data1[, total_weight := number_at_length * weight]
+  
+  ## Discard mortality weight
+  length_data1[, discmort_weight := fcase(
+    keep_release == "release" & species == "sf", 0.10 * number_at_length * weight,
+    keep_release == "release" & species == "scup", 0.15 * number_at_length * weight,
+    keep_release == "release" & species == "bsb", 0.15 * number_at_length * weight,
+    default = 0
+  )]
+  
+  ## Discard mortality number
+  length_data1[, discmort_number := fcase(
+    keep_release == "release" & species == "sf", 0.10 * number_at_length,
+    keep_release == "release" & species == "scup", 0.15 * number_at_length,
+    keep_release == "release" & species == "bsb", 0.15 * number_at_length,
+    default = 0
+  )]
+  
+  ## Summarise by species, mode, keep_release
+  length_data1 <- length_data1[, .(
+    total_numbers = sum(number_at_length),
+    total_weight = sum(total_weight),
+    discmort_weight = sum(discmort_weight),
+    discmort_number = sum(discmort_number)
+  ), by = .(species, mode, keep_release)]
+  
+  ## Create var1 and melt again
+  length_data_long <- melt(
+    length_data1[, var1 := paste(species, mode, keep_release, sep = "_")],
+    id.vars = c("var1"),  # only identifiers
+    measure.vars = c("total_numbers", "total_weight", "discmort_weight", "discmort_number"),
+    variable.name = "param",
+    value.name = "value"
+  )
+  
+  ## Remove NAs
+  length_data_long <- length_data_long[!is.na(value)]
+  
+  ## Split and classify
+  length_data_long[, c("category", "mode", "keep_release") := tstrsplit(var1, "_")]
+  length_data_long[, number_weight := fifelse(grepl("weight", param), "weight", "number")]
+  length_data_long[, param := gsub("total_|discmort_", "", param)]
+  
+  ## All modes aggregation
+  length_data_long_all <- length_data_long[, .(value = sum(value)),
+                                           by = .(category, keep_release, param, number_weight)]
+  length_data_long_all[, mode := "all modes"]
+  
+  ## Final bind
+  length_output <- rbindlist(
+    list(length_data_long_all, length_data_long),
+    use.names = TRUE,
+    fill = TRUE
+  )[ , var1 := NULL ]
+  
+  
   predictions <- rbindlist(
     list(length_output, model_output1),
     use.names = TRUE,
-    fill = TRUE)
+    fill = TRUE) %>% 
+    dplyr::mutate(state = st, draw=dr)
   
   print("Finished predict_rec_catch")
   
   return(predictions) 
 }
-

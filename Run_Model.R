@@ -3,6 +3,8 @@
 # Rscript Run_Model.R Run_Name
 
 library(magrittr)
+library(data.table)
+args = "kb2"
 
 args <- commandArgs(trailingOnly = TRUE)
 
