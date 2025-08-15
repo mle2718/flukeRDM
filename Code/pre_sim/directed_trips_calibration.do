@@ -64,7 +64,7 @@ foreach s of local sts{
 
 u `basefile', clear
 
-*local s "DE"
+*local s "MA"
 keep if inlist(state,"`s'")
 
 // classify trips into dom_id=1 (DOMAIN OF INTEREST) and dom_id=2 ('OTHER' DOMAIN)
@@ -99,12 +99,16 @@ replace mode1="fh" if inlist(mode_fx, "4", "5")
 
 replace claim=0 if claim==.
 
+gen domain_claim=claim if inlist(common, "summerflounder", "blackseabass", "scup") 
+mvencode domain_claim, mv(0) override
+
 bysort strat_id psu_id leader (dom_id): gen gc_flag=dom_id[1]
-bysort strat_id psu_id leader (claim): gen claim_flag=claim[_N]
+bysort strat_id psu_id leader (domain_claim): gen claim_flag=domain_claim[_N]
 replace dom_id="1" if strmatch(dom_id,"2") & claim_flag>0 & claim_flag!=. & strmatch(gc_flag,"1")
 
 // generate the estimation strata - year, month, kind-of-day (weekend including fed holidays/weekday), mode (pr/fh)
 gen my_dom_id_string=state+"_"+year2+"_"+month1+"_"+kod+"_"+mode1+"_"+ dom_id+"_"+w2
+
 replace my_dom_id_string=ltrim(rtrim(my_dom_id_string))
 
 encode my_dom_id_string, gen(my_dom_id) // total with over(<overvar>) requires a numeric variable 
@@ -594,7 +598,7 @@ export delimited using "$input_data_cd\proj_year_calendar_adjustments_`s'.csv", 
 
 
 ************** Part B  **************
-* Compute estimates to compare with calibraiton output
+* Compute totals estimates to compare with calibration output
 
 * by state and mode
 
@@ -676,8 +680,11 @@ replace mode1="fh" if inlist(mode_fx, "4", "5")
 
 replace claim=0 if claim==.
 
+gen domain_claim=claim if inlist(common, "summerflounder", "blackseabass", "scup") 
+mvencode domain_claim, mv(0) override
+
 bysort strat_id psu_id leader (dom_id): gen gc_flag=dom_id[1]
-bysort strat_id psu_id leader (claim): gen claim_flag=claim[_N]
+bysort strat_id psu_id leader (domain_claim): gen claim_flag=domain_claim[_N]
 replace dom_id="1" if strmatch(dom_id,"2") & claim_flag>0 & claim_flag!=. & strmatch(gc_flag,"1")
 
 gen my_dom_id_string=state+"_"+year2+"_"+mode1+"_"+ dom_id
@@ -817,8 +824,11 @@ replace mode1="fh" if inlist(mode_fx, "4", "5")
 
 replace claim=0 if claim==.
 
+gen domain_claim=claim if inlist(common, "summerflounder", "blackseabass", "scup") 
+mvencode domain_claim, mv(0) override
+
 bysort strat_id psu_id leader (dom_id): gen gc_flag=dom_id[1]
-bysort strat_id psu_id leader (claim): gen claim_flag=claim[_N]
+bysort strat_id psu_id leader (domain_claim): gen claim_flag=domain_claim[_N]
 replace dom_id="1" if strmatch(dom_id,"2") & claim_flag>0 & claim_flag!=. & strmatch(gc_flag,"1")
 
 gen my_dom_id_string=state+"_"+year2+"_"+ dom_id
@@ -959,8 +969,11 @@ replace mode1="fh" if inlist(mode_fx, "4", "5")
 
 replace claim=0 if claim==.
 
+gen domain_claim=claim if inlist(common, "summerflounder", "blackseabass", "scup") 
+mvencode domain_claim, mv(0) override
+
 bysort strat_id psu_id leader (dom_id): gen gc_flag=dom_id[1]
-bysort strat_id psu_id leader (claim): gen claim_flag=claim[_N]
+bysort strat_id psu_id leader (domain_claim): gen claim_flag=domain_claim[_N]
 replace dom_id="1" if strmatch(dom_id,"2") & claim_flag>0 & claim_flag!=. & strmatch(gc_flag,"1")
 
 gen my_dom_id_string=state+"_"+year2+"_"+ dom_id + "_"+ w2 +"_"+mode1
