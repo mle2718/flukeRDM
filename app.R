@@ -3866,7 +3866,9 @@ server <- function(input, output, session) {
                     mode == "all modes") %>% 
       dplyr::group_by(state,filename, category, keep_release, number_weight, draw) %>% 
       dplyr::summarise(Value = sum(as.numeric(value))) %>% 
-      tidyr::pivot_wider(names_from = category, values_from = Value)
+      tidyr::pivot_wider(names_from = category, values_from = Value) %>% 
+      dplyr::group_by(state,filename, keep_release, number_weight) %>%
+      dplyr::summarise(bsb = median(bsb), sf = median(sf), scup = median(scup))
     
     harv2 <- harv %>% 
       ggplot2::ggplot(ggplot2::aes(x = bsb, y = sf, label = filename)) +
@@ -3886,18 +3888,26 @@ server <- function(input, output, session) {
   })
   
   output$summary_percdiff_table <- DT::renderDT({
-    tab<- all_data %>%  #outputs() %>% 
+    
+    tab<- outputs() %>% 
       dplyr::filter(keep_release == "keep", 
                     number_weight == "weight", 
                     mode == "all modes") %>% 
       dplyr::group_by(state,filename, category, keep_release, number_weight, draw) %>% 
       dplyr::summarise(Value = sum(as.numeric(value))) %>% 
-      tidyr::pivot_wider(names_from = category, values_from = Value) %>% 
-      dplyr::group_by(state) %>%
+      tidyr::pivot_wider(names_from = category, values_from = Value) 
+    
+    reference_vals <- tab %>%
+      filter(grepl("test2$", filename)) %>%
+      group_by(state) %>%
+      summarise(
+        bsb_ref = median(bsb, na.rm = TRUE),
+        scup_ref = median(scup, na.rm = TRUE),
+        sf_ref = median(sf, na.rm = TRUE))
+    
+    tab<- tab %>% dplyr::left_join(reference_vals, by = "state") %>% 
+      dplyr::group_by(filename) %>%
       dplyr::mutate(
-        bsb_ref  = bsb[filename == "SQ"], 
-        scup_ref = scup[filename == "SQ"],
-        sf_ref   = sf[filename == "SQ"],
         bsb_pct_diff  = (bsb  - bsb_ref)  / bsb_ref  * 100,
         scup_pct_diff = (scup - scup_ref) / scup_ref * 100,
         sf_pct_diff   = (sf   - sf_ref)   / sf_ref   * 100) %>%
@@ -3908,13 +3918,15 @@ server <- function(input, output, session) {
       dplyr::rowwise() %>%
       dplyr::mutate(ok_count = paste0(sum(c_across(c(bsb_ok, scup_ok, sf_ok))), "/3")) %>%
       dplyr::ungroup()%>%
-      dplyr::select(-bsb_ref, -scup_ref, -sf_ref, -keep_release, -number_weight, -draw, -bsb, -scup, -sf, -bsb_ok ,-scup_ok, -sf_ok) 
+      dplyr::select(-bsb_ref, -scup_ref, -sf_ref, -keep_release, -number_weight, -draw, -bsb, -scup, -sf, -bsb_ok ,-scup_ok, -sf_ok) %>% 
+      dplyr::group_by(state,filename) %>%
+      dplyr::summarise(bsb_pct_diff  = median(bsb_pct_diff ), sf_pct_diff  = median(sf_pct_diff ), scup_pct_diff  = median(scup_pct_diff ))
       
       
   })
  
   output$summary_regs_table <- DT::renderDT({
-    Regs_out <- regs_data %>% 
+    Regs_out <- regs() %>% 
       tidyr::separate(input, into = c("species", "season", "measure"), sep = "_") %>% 
       dplyr::mutate(season = stringr::str_remove(season, "^seas")) %>% 
       tidyr::extract(species, into = c("species", "state2", "mode"), regex =  "([^a-z]+)([a-z]+)(.*)") %>% 
@@ -3935,7 +3947,9 @@ server <- function(input, output, session) {
                     state == "MA") %>% 
       dplyr::group_by(filename, category, keep_release, number_weight, draw) %>% 
       dplyr::summarise(Value = sum(as.numeric(value))) %>% 
-      tidyr::pivot_wider(names_from = category, values_from = Value)
+      tidyr::pivot_wider(names_from = category, values_from = Value) %>% 
+      dplyr::group_by(filename, keep_release, number_weight) %>%
+      dplyr::summarise(bsb = median(bsb), sf = median(sf), scup = median(scup))
     
     harv2 <- harv %>% 
       ggplot2::ggplot(ggplot2::aes(x = sf, y = bsb, label = filename)) +
@@ -3953,14 +3967,16 @@ server <- function(input, output, session) {
   })
   
   output$ma_discards_fig <- plotly::renderPlotly({
-    disc<- all_data %>% #outputs() %>% 
+    disc<- outputs() %>% 
       dplyr::filter(keep_release == "release", 
                     number_weight == "weight", 
                     mode == "all modes", 
                     state == "MA") %>% 
       dplyr::group_by(filename, category, keep_release, number_weight, draw) %>% 
       dplyr::summarise(Value = sum(as.numeric(value))) %>% 
-      tidyr::pivot_wider(names_from = category, values_from = Value)
+      tidyr::pivot_wider(names_from = category, values_from = Value) %>% 
+      dplyr::group_by(filename, keep_release, number_weight) %>%
+      dplyr::summarise(bsb = median(bsb), sf = median(sf), scup = median(scup))
     
     disc2 <- disc %>% 
       ggplot2::ggplot(ggplot2::aes(x = sf, y = bsb, label = filename)) +
@@ -4007,7 +4023,7 @@ server <- function(input, output, session) {
   
   output$ma_trips_fig<- plotly::renderPlotly({
     
-    trips <-  all_data %>% #outputs() %>%
+    trips <-  outputs() %>%
       dplyr::filter(category %in% c("predicted trips")) %>%
       dplyr::group_by( filename, category, draw) %>%
       dplyr::summarise(Value = sum(as.numeric(value))) %>%
@@ -4033,7 +4049,7 @@ server <- function(input, output, session) {
   })
   
   output$ma_regs_table <- DT::renderDT({
-    Regs_out <- regs_data %>% 
+    Regs_out <- regs() %>% 
       dplyr::filter(state == "MA") %>% 
       tidyr::separate(input, into = c("species", "season", "measure"), sep = "_") %>% 
       dplyr::mutate(season = stringr::str_remove(season, "^seas")) %>% 
