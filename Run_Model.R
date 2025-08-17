@@ -28,3 +28,67 @@ if(any(grepl("ri", saved_regs$input))){
   
   source(here::here("recDST/model_run_RI.R"))
 }
+
+## Connecticut
+if(any(grepl("ct", saved_regs$input))){
+  
+  save_regs <- saved_regs %>%
+    dplyr::filter(grepl("ct", saved_regs$input))
+  
+  source(here::here("recDST/model_run_CT.R"))
+}
+
+## New York
+if(any(grepl("ny", saved_regs$input))){
+  
+  save_regs <- saved_regs %>%
+    dplyr::filter(grepl("ny", saved_regs$input))
+  
+  source(here::here("recDST/model_run_NY.R"))
+}
+
+## New Jersey
+if(any(grepl("nj", saved_regs$input))){
+  
+  save_regs <- saved_regs %>%
+    dplyr::filter(grepl("nj", saved_regs$input))
+  
+  source(here::here("recDST/model_run_NJ.R"))
+}
+
+## Deleware
+if(any(grepl("de", saved_regs$input))){
+  
+  save_regs <- saved_regs %>%
+    dplyr::filter(grepl("de", saved_regs$input))
+  
+  source(here::here("recDST/model_run_DE.R"))
+}
+
+## Maryland
+if(any(grepl("md", saved_regs$input))){
+  
+  save_regs <- saved_regs %>%
+    dplyr::filter(grepl("md", saved_regs$input))
+  
+  source(here::here("recDST/model_run_MD.R"))
+}
+
+## Virginia
+if(any(grepl("va", saved_regs$input))){
+  
+  save_regs <- saved_regs %>%
+    dplyr::filter(grepl("va", saved_regs$input))
+  
+  source(here::here("recDST/model_run_VA.R"))
+}
+
+## North Carolina
+if(any(grepl("nc", saved_regs$input))){
+  
+  save_regs <- saved_regs %>%
+    dplyr::filter(grepl("nc", saved_regs$input))
+  
+  source(here::here("recDST/model_run_NC.R"))
+}
+
