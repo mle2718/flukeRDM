@@ -3835,11 +3835,9 @@ server <- function(input, output, session) {
   
   
   ################ Summary page outputs #################
-  ############ MA
   
   
-  
-  
+
   
   outputs <- function(){
     flist <- list.files(path = here::here("output/"), pattern = "\\.csv$", full.names = TRUE)
@@ -3851,6 +3849,17 @@ server <- function(input, output, session) {
     
   }
   
+  perc_changes <- function(){
+    perc_changes <- outputs() %>% 
+      dplyr::filter(stringr::str_detect(filename, "SQ")) %>% 
+      dplyr::group_by(state,filename, category, mode, keep_release, number_weight) %>%
+      dplyr::summarise(value = median(value)) %>% 
+      dplyr::mutate(pca_reqs = dplyr::case_when(state == "MA" & category == "sf" ~ .1, TRUE ~ .1), 
+                    pca_reqs = dplyr::case_when(state == "MA" & category == "bsb" ~ .1, TRUE ~ pca_reqs), 
+                    pca_reqs = dplyr::case_when(state == "MA" & category == "scup" ~ .1, TRUE ~ pca_reqs))
+  }
+  
+  
   regs<- function(){
     flist <- list.files(path = here::here("saved_regs/"), pattern = "\\.csv$", full.names = TRUE)
     
@@ -3858,31 +3867,41 @@ server <- function(input, output, session) {
       purrr::map_dfr(readr::read_csv)
   }
   
-  ### Summary
+  ## Summary
   output$summary_rhl_fig<- plotly::renderPlotly({
-    harv<- outputs() %>% 
-      dplyr::filter(keep_release == "keep", 
-                    number_weight == "weight", 
-                    mode == "all modes") %>% 
-      dplyr::group_by(state,filename, category, keep_release, number_weight, draw) %>% 
-      dplyr::summarise(Value = sum(as.numeric(value))) %>% 
-      tidyr::pivot_wider(names_from = category, values_from = Value) %>% 
-      dplyr::group_by(state,filename, keep_release, number_weight) %>%
-      dplyr::summarise(bsb = median(bsb), sf = median(sf), scup = median(scup))
     
-    harv2 <- harv %>% 
-      ggplot2::ggplot(ggplot2::aes(x = bsb, y = sf, label = filename)) +
+
+    ref_pct <- outputs() %>% #all_data %>%
+      dplyr::filter(number_weight == "weight" &
+                      keep_release == "keep" & mode == "all modes" & model == "SQ") %>%
+      dplyr::mutate(ref_value = value) %>% 
+      dplyr::select(filename, category, state, draw, ref_value)
+
+    harv <- outputs() %>% #all_data %>% 
+      dplyr::filter(number_weight == "weight" &
+                      keep_release == "keep" & mode == "all modes") %>%
+      dplyr::left_join(ref_pct, by = join_by(category,  state, draw)) %>% 
+      dplyr::mutate(pct_diff = (value - ref_value) / ref_value * 100) %>% 
+      dplyr::group_by(state,filename.x, category, keep_release, number_weight) %>%
+      dplyr::summarise(median_pct_diff = median(pct_diff)) %>% 
+      tidyr::pivot_wider(names_from = category, values_from = median_pct_diff)
+
+
+    harv2 <- harv %>%
+      ggplot2::ggplot(ggplot2::aes(x = bsb, y = sf, label = filename.x, color = scup)) +
       ggplot2::geom_point(color = "steelblue", size = 3) +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
+      #ggplot2::geom_hline(data = pca_sf, ggplot2::aes(yintercept = pca_reqs), color = "black")+
+      #ggplot2::geom_vline(data = pca_bsb, ggplot2::aes(xintercept = pca_reqs), color = "black", linetype = "dashed")+
       ggplot2::facet_wrap(~ state) +
       ggplot2::labs(
         title = "SF vs BSB Harvest Limits by state",
         x = "Black Sea Bass RHL",
         y = "Summer Flounder RHL"
       ) +
-      ggplot2::theme_minimal()
-    
-    fig<- plotly::ggplotly(harv2) %>% 
+      ggplot2::theme_bw()
+
+    fig<- plotly::ggplotly(harv2) %>%
       plotly::style(textposition = "top center")
     fig
   })
@@ -3940,16 +3959,21 @@ server <- function(input, output, session) {
   
   ### MA
   output$ma_rhl_fig<- plotly::renderPlotly({
-    harv<- outputs() %>% 
-      dplyr::filter(keep_release == "keep", 
-                    number_weight == "weight", 
-                    mode == "all modes", 
-                    state == "MA") %>% 
-      dplyr::group_by(filename, category, keep_release, number_weight, draw) %>% 
-      dplyr::summarise(Value = sum(as.numeric(value))) %>% 
-      tidyr::pivot_wider(names_from = category, values_from = Value) %>% 
-      dplyr::group_by(filename, keep_release, number_weight) %>%
-      dplyr::summarise(bsb = median(bsb), sf = median(sf), scup = median(scup))
+    ref_pct <- outputs() %>% #all_data %>%
+      dplyr::filter(number_weight == "weight" &
+                      keep_release == "keep" & mode == "all modes" & model == "SQ", state == "MA") %>%
+      dplyr::mutate(ref_value = value) %>% 
+      dplyr::select(filename, category, state, draw, ref_value)
+    
+    harv <- outputs() %>% #all_data %>% 
+      dplyr::filter(number_weight == "weight" &
+                      keep_release == "keep" & mode == "all modes" & state == "MA") %>%
+      dplyr::left_join(ref_pct, by = join_by(category,  state, draw)) %>% 
+      dplyr::mutate(pct_diff = (value - ref_value) / ref_value * 100) %>% 
+      dplyr::group_by(state,filename.x, category, keep_release, number_weight) %>%
+      dplyr::summarise(median_pct_diff = median(pct_diff)) %>% 
+      tidyr::pivot_wider(names_from = category, values_from = median_pct_diff)
+    
     
     harv2 <- harv %>% 
       ggplot2::ggplot(ggplot2::aes(x = sf, y = bsb, label = filename)) +
