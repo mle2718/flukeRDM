@@ -12,18 +12,18 @@ ui <- fluidPage(
              plotly::plotlyOutput(outputId = "summary_rhl_fig"),
              shiny::h2("Summary Table"), 
              DT::DTOutput(outputId = "summary_percdiff_table"),
-             shiny::h2("Regulations"),
-             DT::DTOutput(outputId = "summary_regs_table"),
              
              ### Figure and table output by state
              tabsetPanel(
+               tabPanel("Regulations", 
+                        shiny::h2("Regulations"),
+                        DT::DTOutput(outputId = "summary_regs_table")), 
                tabPanel("MA", 
                         shiny::h2("Massachusettes"),
                         plotly::plotlyOutput(outputId = "ma_rhl_fig"),# Harvest
-                        plotly::plotlyOutput(outputId = "ma_discards_fig"),# Disczrds
                         plotly::plotlyOutput(outputId = "ma_CV_fig"),# Angler Satis
-                        plotly::plotlyOutput(outputId = "ma_trips_fig"),# N trips
-                        DT::DTOutput(outputId = "ma_regs_table")# Regulations
+                        plotly::plotlyOutput(outputId = "ma_trips_fig"), # Ntrips
+                        plotly::plotlyOutput(outputId = "ma_discards_fig")) # Disczrds)
                ),
                tabPanel("RI", 
                         shiny::h2("Rhode Island")
@@ -3946,6 +3946,50 @@ server <- function(input, output, session) {
       
   })
   
+  output$summary_regs_fig <- plotly::renderplotly({
+    schedule <- data.frame(
+      task = c("Planning", "Data Collection", "Analysis", "Draft Report", "Final Submission"),
+      start = as.Date(c("2025-09-01", "2025-09-15", "2025-10-01", "2025-10-15", "2025-11-01")),
+      end   = as.Date(c("2025-09-14", "2025-09-30", "2025-10-14", "2025-10-31", "2025-11-15"))
+    )
+    
+    schedule <-  regs_data %>% 
+      dplyr::filter(state == "MA") %>% 
+      tidyr::separate(input, into = c("species", "season", "measure"), sep = "_") %>% 
+      dplyr::mutate(season = stringr::str_remove(season, "^seas")) %>% 
+      tidyr::extract(species, into = c("species", "state2", "mode"), regex =  "([^a-z]+)([a-z]+)(.*)") %>% 
+      dplyr::select(-state2) %>% 
+      dplyr::group_by(run_name, state, species, mode, season) %>% 
+      tidyr::pivot_wider(names_from = measure, values_from = value) %>% 
+      dplyr::filter(!bag == 0) %>% 
+      dplyr::mutate(op = as.Date(op),
+             cl = as.Date(cl),
+             mode = ifelse(mode == "", "ALL", mode),  # replace blank with ALL
+             group = paste(species, mode))
+    
+    # Timeline
+    ggplot(schedule, aes(x = as.Date(op), xend = as.Date(cl),  yend = interaction(run_name, mode), y = interaction(run_name, mode),
+                         group = interaction(mode, run_name),
+                          text = paste("Run Name:", run_name,
+                                       "<br>Mode:", mode,
+                                       "<br>Start:", as.Date(op),
+                                       "<br>End:", as.Date(cl)))) +
+      geom_segment(aes(color = run_name), size = 3, alpha = 0.8,  position = position_dodge(width = 0.5)) +
+      geom_text(aes(x = op + (cl - op)/2, label = paste(bag ,"fish", len,  "in")),
+                color = "black", size = 3, vjust = -0.5) +
+      #geom_point(aes(x = start, color = task), size = 4) +
+      #geom_point(aes(x = end, color = task), size = 4) +
+      scale_x_date(date_breaks = "1 month", date_labels = "%b") +
+      facet_wrap(.~species, scales = "free_y") +
+      labs(title = "Interactive Project Timeline",
+           x = "Timeline", y = "Tasks", color = "Category") +
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    
+    ggplotly(p, tooltip = "text") %>%
+      layout(hovermode = "closest")
+  })
+  
   ### MA
   output$ma_rhl_fig<- plotly::renderPlotly({
     ref_pct <- outputs() %>% #all_data %>%
@@ -3983,37 +4027,26 @@ server <- function(input, output, session) {
     fig
   })
   
-  output$ma_discards_fig <- plotly::renderPlotly({
-    disc<- outputs() %>% 
-      dplyr::filter(keep_release == "release", 
-                    number_weight == "weight", 
-                    mode == "all modes", 
-                    state == "MA") %>% 
-      dplyr::group_by(filename, category, keep_release, number_weight, draw) %>% 
-      dplyr::summarise(Value = sum(as.numeric(value))) %>% 
-      tidyr::pivot_wider(names_from = category, values_from = Value) %>% 
-      dplyr::group_by(filename, keep_release, number_weight) %>%
-      dplyr::summarise(bsb = median(bsb), sf = median(sf), scup = median(scup))
-    
-    disc2 <- disc %>% 
-      ggplot2::ggplot(ggplot2::aes(x = sf, y = bsb, label = filename)) +
-      ggplot2::geom_point(color = "steelblue", size = 3) +
-      ggplot2::geom_text(vjust = -0.5, size = 3) +
-      ggplot2::labs(
-        title = "SF vs BSB Released Fished",
-        x = "Summer Flounder discards",
-        y = "Black Sea Bass discrads"
-      ) +
-      ggplot2::theme_minimal()
-    
-    fig<- plotly::ggplotly(disc2) %>% 
-      plotly::style(textposition = "top center")
-    fig
-  })
+  
   
   output$ma_CV_fig<- plotly::renderPlotly({
     
-    welfare <-  outputs() %>%
+    ref_pct <- all_data %>% #outputs() %>% #all_data %>%
+      dplyr::filter(number_weight == "weight" & state == "MA" &
+                      keep_release == "keep" & mode == "all modes" & model == "SQ") %>%
+      dplyr::mutate(ref_value = value) %>% 
+      dplyr::select(filename, category, state, draw, ref_value)
+    
+    harv <- all_data %>% #outputs() %>% #all_data %>% 
+      dplyr::filter(number_weight == "weight" & state == "MA" &
+                      keep_release == "keep" & mode == "all modes") %>%
+      dplyr::left_join(ref_pct, by = join_by(category,  state, draw)) %>% 
+      dplyr::mutate(pct_diff = (value - ref_value) / ref_value * 100) %>% 
+      dplyr::group_by(state,filename.x, category, keep_release, number_weight) %>%
+      dplyr::summarise(median_pct_diff = median(pct_diff))# %>% 
+      #tidyr::pivot_wider(names_from = category, values_from = median_pct_diff)
+    
+    welfare <-  all_data %>% #outputs() %>%
       dplyr::filter(category %in% c("CV")) %>%
       dplyr::group_by( filename, category, draw) %>%
       dplyr::summarise(Value = sum(as.numeric(value))) %>%
@@ -4065,19 +4098,34 @@ server <- function(input, output, session) {
     fig
   })
   
-  output$ma_regs_table <- DT::renderDT({
-    Regs_out <- regs() %>% 
-      dplyr::filter(state == "MA") %>% 
-      tidyr::separate(input, into = c("species", "season", "measure"), sep = "_") %>% 
-      dplyr::mutate(season = stringr::str_remove(season, "^seas")) %>% 
-      tidyr::extract(species, into = c("species", "state2", "mode"), regex =  "([^a-z]+)([a-z]+)(.*)") %>% 
-      dplyr::select(-state2) %>% 
-      dplyr::group_by(run_name, state, species, mode, season) %>% 
-      tidyr::pivot_wider(names_from = measure, values_from = value) %>% 
-      dplyr::filter(!bag == 0) %>% 
-      dplyr::mutate(season2 = paste0(op, " - ", cl))  
+  output$ma_discards_fig <- plotly::renderPlotly({
+    disc<- outputs() %>% 
+      dplyr::filter(keep_release == "release", 
+                    number_weight == "weight", 
+                    mode == "all modes", 
+                    state == "MA") %>% 
+      dplyr::group_by(filename, category, keep_release, number_weight, draw) %>% 
+      dplyr::summarise(Value = sum(as.numeric(value))) %>% 
+      tidyr::pivot_wider(names_from = category, values_from = Value) %>% 
+      dplyr::group_by(filename, keep_release, number_weight) %>%
+      dplyr::summarise(bsb = median(bsb), sf = median(sf), scup = median(scup))
     
+    disc2 <- disc %>% 
+      ggplot2::ggplot(ggplot2::aes(x = sf, y = bsb, label = filename)) +
+      ggplot2::geom_point(color = "steelblue", size = 3) +
+      ggplot2::geom_text(vjust = -0.5, size = 3) +
+      ggplot2::labs(
+        title = "SF vs BSB Released Fished",
+        x = "Summer Flounder discards",
+        y = "Black Sea Bass discrads"
+      ) +
+      ggplot2::theme_minimal()
+    
+    fig<- plotly::ggplotly(disc2) %>% 
+      plotly::style(textposition = "top center")
+    fig
   })
+  
   
   ####  Storing Inputs for decoupled model ####
   
