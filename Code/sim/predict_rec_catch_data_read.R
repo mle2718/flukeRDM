@@ -10,7 +10,7 @@ input_data_cd="C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025"
 ############# To Run Individual
 # Variables to change 
 dr<-1
-st="MA"
+st="NJ"
 ndraws=50 #number of choice occasions simulte per strata
 
 library(magrittr)

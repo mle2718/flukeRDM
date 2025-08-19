@@ -167,6 +167,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
      size_data_sf, size_data_bsb,size_data_scup, 
      base_outcomes, catch_data)
   
+  trip_data$NJ_dummy<-case_when(s=="NJ"~1, TRUE~0)
   
   # compute utility/choice probabilites/welfare
   # Convert to data.table if not already
@@ -189,6 +190,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   # Compute vA and v0
   trip_data[, `:=`(
     vA = beta_sqrt_sf_keep * sqrt_keep_sf_new +
+      beta_NJ_sf_keep*NJ_dummy +
       beta_sqrt_sf_release * sqrt_rel_sf_new +
       beta_sqrt_bsb_keep * sqrt_keep_bsb_new +
       beta_sqrt_bsb_release * sqrt_rel_bsb_new +
@@ -197,6 +199,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
       beta_cost * cost,
     
     v0 = beta_sqrt_sf_keep * sqrt_keep_sf_base +
+      beta_NJ_sf_keep*NJ_dummy +
       beta_sqrt_sf_release * sqrt_rel_sf_base +
       beta_sqrt_bsb_keep * sqrt_keep_bsb_base +
       beta_sqrt_bsb_release * sqrt_rel_bsb_base +
@@ -205,7 +208,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
       beta_cost * cost
   )]
   
-  # Optionally, remove the temp sqrt columns to save memory
+  # remove the temp sqrt columns to save memory
   trip_data[, c("sqrt_keep_sf_new", "sqrt_rel_sf_new", "sqrt_keep_bsb_new", "sqrt_rel_bsb_new",
                 "sqrt_keep_sf_base", "sqrt_rel_sf_base", "sqrt_keep_bsb_base", "sqrt_rel_bsb_base",
                 "sqrt_cat_scup_new", "sqrt_cat_scup_base") := NULL]
@@ -262,9 +265,9 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     dplyr::select(-matches("beta")) %>% 
     dplyr::select(-"alt", -"opt_out", -"vA" , -"v0",-"exp_v0", -"exp_vA", 
                   -"cost", -"age", -"total_trips_12", -"catch_draw", -"group_index", 
-                  -"log_sum_alt", -"log_sum_base", "tot_keep_sf_base",  "tot_rel_sf_base",  "tot_cat_sf_base", 
-                  "tot_keep_bsb_base",  "tot_rel_bsb_base", "tot_cat_bsb_base",  
-                  "tot_keep_scup_base","tot_rel_scup_base",  "tot_cat_scup_base", "prob0") 
+                  -"log_sum_alt", -"log_sum_base", -"tot_keep_sf_base",  -"tot_rel_sf_base",  -"tot_cat_sf_base", 
+                  -"tot_keep_bsb_base",  -"tot_rel_bsb_base", -"tot_cat_bsb_base",  
+                  -"tot_keep_scup_base",-"tot_rel_scup_base",  -"tot_cat_scup_base", -"prob0", -"NJ_dummy") 
   
   all_vars<-c()
   all_vars <- names(mean_trip_data)[!names(mean_trip_data) %in% c("date_parsed","mode", "tripid")]
