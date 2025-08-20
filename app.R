@@ -15,15 +15,12 @@ ui <- fluidPage(
              
              ### Figure and table output by state
              tabsetPanel(
-               tabPanel("Regulations", 
-                        shiny::h2("Regulations"),
-                        DT::DTOutput(outputId = "summary_regs_table")), 
                tabPanel("MA", 
                         shiny::h2("Massachusettes"),
                         plotly::plotlyOutput(outputId = "ma_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "ma_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "ma_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "ma_discards_fig")) # Disczrds)
+                        plotly::plotlyOutput(outputId = "ma_discards_fig") # Disczrds)
                ),
                tabPanel("RI", 
                         shiny::h2("Rhode Island")
@@ -88,7 +85,11 @@ ui <- fluidPage(
                           # Angler Satis
                           # N trips
                           # Regulations
-               )
+               ), 
+             tabPanel("Regulations", 
+                      shiny::h2("Regulations"),
+                      DT::DTOutput(outputId = "summary_regs_table"), 
+                      plotOutput(outputId = "summary_regs_fig"))
              )),
              
     
@@ -3869,7 +3870,6 @@ server <- function(input, output, session) {
   
   ## Summary
   output$summary_rhl_fig<- plotly::renderPlotly({
-    
 
     ref_pct <- outputs() %>% #all_data %>%
       dplyr::filter(number_weight == "weight" &
@@ -3929,7 +3929,8 @@ server <- function(input, output, session) {
       dplyr::rowwise() %>%
       dplyr::mutate(ok_count = paste0(sum(c_across(c(bsb_ok, scup_ok, sf_ok))), "/3")) %>%
       dplyr::ungroup()%>%
-      dplyr::select( -keep_release, -number_weight,  -bsb_ok ,-scup_ok, -sf_ok) 
+      dplyr::select( -keep_release, -number_weight,  -bsb_ok ,-scup_ok, -sf_ok) %>% 
+      dplyr::mutate(across(starts_with("Val"), ~ round(.x, 1)))
       
   })
  
@@ -3942,19 +3943,19 @@ server <- function(input, output, session) {
       dplyr::group_by(run_name, state, species, mode, season) %>% 
       tidyr::pivot_wider(names_from = measure, values_from = value) %>% 
       dplyr::filter(!bag == 0) %>% 
-      dplyr::mutate(season2 = paste0(op, " - ", cl))  
+      dplyr::mutate(season2 = paste0(op, " - ", cl)) %>% 
+      dplyr::group_by(run_name, state, species, mode) %>%
+      dplyr::summarise(
+        bag = paste(bag, collapse = ","),
+        len = paste(len, collapse = ","),
+        season = paste(season2, collapse = ","),
+        .groups = "drop" ) %>% 
+      dplyr::mutate(mode = if_else(mode == "", "All modes", mode))
       
   })
   
-  output$summary_regs_fig <- plotly::renderplotly({
-    schedule <- data.frame(
-      task = c("Planning", "Data Collection", "Analysis", "Draft Report", "Final Submission"),
-      start = as.Date(c("2025-09-01", "2025-09-15", "2025-10-01", "2025-10-15", "2025-11-01")),
-      end   = as.Date(c("2025-09-14", "2025-09-30", "2025-10-14", "2025-10-31", "2025-11-15"))
-    )
-    
-    schedule <-  regs_data %>% 
-      dplyr::filter(state == "MA") %>% 
+  output$summary_regs_fig <- renderPlot({
+    Regs_out <- regs() %>% 
       tidyr::separate(input, into = c("species", "season", "measure"), sep = "_") %>% 
       dplyr::mutate(season = stringr::str_remove(season, "^seas")) %>% 
       tidyr::extract(species, into = c("species", "state2", "mode"), regex =  "([^a-z]+)([a-z]+)(.*)") %>% 
@@ -3962,32 +3963,23 @@ server <- function(input, output, session) {
       dplyr::group_by(run_name, state, species, mode, season) %>% 
       tidyr::pivot_wider(names_from = measure, values_from = value) %>% 
       dplyr::filter(!bag == 0) %>% 
-      dplyr::mutate(op = as.Date(op),
-             cl = as.Date(cl),
-             mode = ifelse(mode == "", "ALL", mode),  # replace blank with ALL
-             group = paste(species, mode))
-    
-    # Timeline
-    ggplot(schedule, aes(x = as.Date(op), xend = as.Date(cl),  yend = interaction(run_name, mode), y = interaction(run_name, mode),
-                         group = interaction(mode, run_name),
-                          text = paste("Run Name:", run_name,
-                                       "<br>Mode:", mode,
-                                       "<br>Start:", as.Date(op),
-                                       "<br>End:", as.Date(cl)))) +
-      geom_segment(aes(color = run_name), size = 3, alpha = 0.8,  position = position_dodge(width = 0.5)) +
-      geom_text(aes(x = op + (cl - op)/2, label = paste(bag ,"fish", len,  "in")),
-                color = "black", size = 3, vjust = -0.5) +
-      #geom_point(aes(x = start, color = task), size = 4) +
-      #geom_point(aes(x = end, color = task), size = 4) +
-      scale_x_date(date_breaks = "1 month", date_labels = "%b") +
-      facet_wrap(.~species, scales = "free_y") +
-      labs(title = "Interactive Project Timeline",
-           x = "Timeline", y = "Tasks", color = "Category") +
-      theme_minimal() +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1))
-    
-    ggplotly(p, tooltip = "text") %>%
-      layout(hovermode = "closest")
+      dplyr::mutate(season2 = paste0(op, " - ", cl)) %>% 
+      dplyr::mutate(op = as.Date(op),cl = as.Date(cl),
+                    mode = if_else(mode == "", "All modes", mode),  # Replace empty mode
+                    label = paste0("Bag: ", bag, ", Len: ", len)) %>%     # Create label for bars 
+      dplyr::filter(species == "SF")
+  
+    p <- ggplot2::ggplot(Regs_out, ggplot2::aes(x = op, xend = cl, y = interaction(run_name, state,  mode), yend = interaction(run_name, state, mode), color = state)) +
+      ggplot2::geom_segment(size = 6) +
+      ggplot2::geom_text(ggplot2::aes(label = label, x = op + (cl - op)/2), color = "white", size = 3.5) +
+      ggplot2::facet_wrap(~species, ncol = 1)+
+      ggplot2::labs(
+        title = "Fishing Season Schedule by Run, State,  and Mode",
+        x = "Date",
+        y = "Run / State /  Mode") +
+      ggplot2::theme_minimal()
+      
+   p
   })
   
   ### MA
@@ -4031,40 +4023,43 @@ server <- function(input, output, session) {
   
   output$ma_CV_fig<- plotly::renderPlotly({
     
-    ref_pct <- all_data %>% #outputs() %>% #all_data %>%
+    ref_pct <- outputs() %>% #all_data %>%
       dplyr::filter(number_weight == "weight" & state == "MA" &
                       keep_release == "keep" & mode == "all modes" & model == "SQ") %>%
       dplyr::mutate(ref_value = value) %>% 
       dplyr::select(filename, category, state, draw, ref_value)
     
-    harv <- all_data %>% #outputs() %>% #all_data %>% 
+    harv <- outputs() %>% #all_data %>% 
       dplyr::filter(number_weight == "weight" & state == "MA" &
                       keep_release == "keep" & mode == "all modes") %>%
       dplyr::left_join(ref_pct, by = join_by(category,  state, draw)) %>% 
       dplyr::mutate(pct_diff = (value - ref_value) / ref_value * 100) %>% 
       dplyr::group_by(state,filename.x, category, keep_release, number_weight) %>%
-      dplyr::summarise(median_pct_diff = median(pct_diff))# %>% 
+      dplyr::summarise(median_pct_diff = median(pct_diff)) %>%
+      dplyr::rename(filename = filename.x)
       #tidyr::pivot_wider(names_from = category, values_from = median_pct_diff)
     
-    welfare <-  all_data %>% #outputs() %>%
-      dplyr::filter(category %in% c("CV")) %>%
-      dplyr::group_by( filename, category, draw) %>%
-      dplyr::summarise(Value = sum(as.numeric(value))) %>%
-      dplyr::group_by(filename, category) %>%
-      dplyr::summarise(CV = median(Value), 
-                       ci_lower = quantile(Value, 0.05),
-                       ci_upper = quantile(Value, 0.95))
+    welfare <-  outputs() %>%
+      dplyr::filter(category %in% c("CV"), 
+                    state == "MA", 
+                    mode == "all modes") %>%
+      # dplyr::group_by( filename, category, draw) %>%
+      # dplyr::summarise(Value = sum(as.numeric(value))) %>%
+      dplyr::group_by(filename) %>%
+      dplyr::summarise(CV = median(value), 
+                       ci_lower = quantile(value, 0.05),
+                       ci_upper = quantile(value, 0.95)) %>% 
+      left_join(harv)
     
-    p1<- welfare %>% ggplot2::ggplot(ggplot2::aes(x = filename, y = CV))+
+    p1<- welfare %>% ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = CV, label = filename))+
       ggplot2::geom_point() +
-      ggplot2::geom_hline( yintercept =0)+
-      #ggplot2::geom_text(ggplot2::aes(label=run_number, hjust=1, vjust=1))+
-      ggplot2::ggtitle("Angler Satisfaction between possible regulations")+
+      ggplot2::geom_text(vjust = -0.5, size = 3) +
+      ggplot2::ggtitle("Angler Satisfaction")+
       ggplot2::ylab("Angler Satisfaction ($)")+
-      #ggplot2::xlab()+
+      ggplot2::xlab("Percent difference of Harvest from SQ")+
       ggplot2::theme(legend.position = "none")+
-      ggplot2::geom_errorbar(ggplot2::aes(x = filename, ymin = ci_lower, ymax = ci_upper),
-                    inherit.aes = FALSE, width = 0.1, color = "black")
+      ggplot2::facet_wrap(.~category)+
+      ggplot2::theme_bw()
     
       fig<- plotly::ggplotly(p1) %>% 
       plotly::style(textposition = "top center")
@@ -4073,25 +4068,41 @@ server <- function(input, output, session) {
   
   output$ma_trips_fig<- plotly::renderPlotly({
     
-    trips <-  outputs() %>%
-      dplyr::filter(category %in% c("predicted trips")) %>%
-      dplyr::group_by( filename, category, draw) %>%
-      dplyr::summarise(Value = sum(as.numeric(value))) %>%
-      dplyr::group_by(filename, category) %>%
-      dplyr::summarise(trips = median(Value), 
-                       ci_lower = quantile(Value, 0.05),
-                       ci_upper = quantile(Value, 0.95))
+    ref_pct <- outputs() %>% #all_data %>%
+      dplyr::filter(number_weight == "weight" & state == "MA" &
+                      keep_release == "keep" & mode == "all modes" & model == "SQ") %>%
+      dplyr::mutate(ref_value = value) %>% 
+      dplyr::select(filename, category, state, draw, ref_value)
     
-    p1<- trips %>% ggplot2::ggplot(ggplot2::aes(x = filename, y = trips))+
+    harv <- outputs() %>% #all_data %>% 
+      dplyr::filter(number_weight == "weight" & state == "MA" &
+                      keep_release == "keep" & mode == "all modes") %>%
+      dplyr::left_join(ref_pct, by = join_by(category,  state, draw)) %>% 
+      dplyr::mutate(pct_diff = (value - ref_value) / ref_value * 100) %>% 
+      dplyr::group_by(state,filename.x, category, keep_release, number_weight) %>%
+      dplyr::summarise(median_pct_diff = median(pct_diff)) %>%
+      dplyr::rename(filename = filename.x)
+    #tidyr::pivot_wider(names_from = category, values_from = median_pct_diff)
+    
+    trips <-  outputs() %>%
+      dplyr::filter(category %in% c("predicted trips"), 
+                    state == "MA", 
+                    mode == "all modes") %>%
+      # dplyr::group_by( filename, category, draw) %>%
+      # dplyr::summarise(Value = sum(as.numeric(value))) %>%
+      dplyr::group_by(filename) %>%
+      dplyr::summarise(trips = median(value)) %>% 
+      left_join(harv)
+    
+    p1<- trips %>% ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = trips, label = filename))+
       ggplot2::geom_point() +
-      ggplot2::geom_hline( yintercept =0)+
-      #ggplot2::geom_text(ggplot2::aes(label=run_number, hjust=1, vjust=1))+
-      ggplot2::ggtitle("Predicted number of angler trips between possible regulations")+
-      ggplot2::ylab("Number of angler trips")+
-      #ggplot2::xlab()+
+      ggplot2::geom_text(vjust = -0.5, size = 3) +
+      ggplot2::ggtitle("Number of trips")+
+      ggplot2::ylab("Predicted trips (N)")+
+      ggplot2::xlab("Percent difference of Harvest from SQ")+
       ggplot2::theme(legend.position = "none")+
-      ggplot2::geom_errorbar(ggplot2::aes(x = filename, ymin = ci_lower, ymax = ci_upper),
-                             inherit.aes = FALSE, width = 0.1, color = "black")
+      ggplot2::facet_wrap(.~category)+
+      ggplot2::theme_bw()
     
     fig<- plotly::ggplotly(p1) %>% 
       plotly::style(textposition = "top center")
@@ -4099,29 +4110,40 @@ server <- function(input, output, session) {
   })
   
   output$ma_discards_fig <- plotly::renderPlotly({
-    disc<- outputs() %>% 
-      dplyr::filter(keep_release == "release", 
-                    number_weight == "weight", 
-                    mode == "all modes", 
-                    state == "MA") %>% 
-      dplyr::group_by(filename, category, keep_release, number_weight, draw) %>% 
-      dplyr::summarise(Value = sum(as.numeric(value))) %>% 
-      tidyr::pivot_wider(names_from = category, values_from = Value) %>% 
-      dplyr::group_by(filename, keep_release, number_weight) %>%
-      dplyr::summarise(bsb = median(bsb), sf = median(sf), scup = median(scup))
+    ref_pct <- outputs() %>% #all_data %>%
+      dplyr::filter(number_weight == "weight" & state == "MA" &
+                      keep_release == "keep" & mode == "all modes" & model == "SQ") %>%
+      dplyr::mutate(ref_value = value) %>% 
+      dplyr::select(filename, category, state, draw, ref_value)
     
-    disc2 <- disc %>% 
-      ggplot2::ggplot(ggplot2::aes(x = sf, y = bsb, label = filename)) +
-      ggplot2::geom_point(color = "steelblue", size = 3) +
+    harv <- outputs() %>% #all_data %>% 
+      dplyr::filter(number_weight == "weight" & state == "MA" &
+                      keep_release == "keep" & mode == "all modes") %>%
+      dplyr::left_join(ref_pct, by = join_by(category,  state, draw)) %>% 
+      dplyr::mutate(pct_diff = (value - ref_value) / ref_value * 100) %>% 
+      dplyr::group_by(state,filename.x, category, number_weight) %>%
+      dplyr::summarise(median_keep_pct_diff = median(pct_diff)) %>% 
+      dplyr::rename(filename = filename.x)
+    #tidyr::pivot_wider(names_from = category, values_from = median_pct_diff)
+    
+    disc <- outputs() %>% #all_data %>% 
+      dplyr::filter(number_weight == "weight" & state == "MA" &
+                      keep_release == "release" & mode == "all modes") %>%
+      dplyr::group_by(state,filename, category, number_weight) %>%
+      dplyr::summarise(median_rel_weight = median(value)) %>% 
+      left_join(harv)
+    
+    p1<- disc %>% ggplot2::ggplot(ggplot2::aes(x = median_keep_pct_diff, y = median_rel_weight, label = filename))+
+      ggplot2::geom_point() +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
-      ggplot2::labs(
-        title = "SF vs BSB Released Fished",
-        x = "Summer Flounder discards",
-        y = "Black Sea Bass discrads"
-      ) +
-      ggplot2::theme_minimal()
+      ggplot2::ggtitle("Discards")+
+      ggplot2::ylab("Discards (lbs)")+
+      ggplot2::xlab("Percent difference of Harvest from SQ")+
+      ggplot2::theme(legend.position = "none")+
+      ggplot2::facet_wrap(.~category)+
+      ggplot2::theme_bw()
     
-    fig<- plotly::ggplotly(disc2) %>% 
+    fig<- plotly::ggplotly(p1) %>% 
       plotly::style(textposition = "top center")
     fig
   })

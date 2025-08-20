@@ -4,7 +4,7 @@
 
 library(magrittr)
 library(data.table)
-args = "kb2"
+args = "SQ"
 
 args <- commandArgs(trailingOnly = TRUE)
 
