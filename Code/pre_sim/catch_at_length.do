@@ -752,9 +752,16 @@ sort region species length_cm
 tostring draw, gen(draw2)
 
 gen domain=region+"_"+species +"_"+draw2
+
+replace catch=round(catch)
+
 egen sumcatch=sum(catch), by(domain)
+format sumcatch %12.0gc
+sort draw region species length
 gen observed_prob = catch/sumcatch
 drop sumcatch 
+
+keep if draw<=110
 
 * estimate gamma parameters for each catch-at-length distribution
 * note: I restrict the range of fitted values to within the min/max length of observed catch
@@ -766,7 +773,12 @@ tempfile observed_prob
 save `observed_prob', replace
 restore
 
+*bysort domain: egen min_catch=min(catch) if catch!=0
+*gen sim_catch=catch/min_catch
+
 gen sim_catch=5000*observed_prob
+sort draw species region length
+replace sim_catch=round(sim_catch)
 
 tempfile new
 save `new', replace
@@ -778,11 +790,10 @@ u `new', clear
 
 keep if domain=="`r'"
 keep length sim_catch
-su length if sim_catch!=0
+su length if sim_catch!=0 & sim_catch!=.
 local minL=`r(min)'
 local maxL=`r(max)'
 
-replace sim_catch=round(sim_catch)
 expand sim_catch
 drop if sim_catch==0
 gammafit length
@@ -838,7 +849,7 @@ drop _merge
 
 * Graphs of the fitted observed/fitted probabilities
 /*
-levelsof domain, local(domz)
+levelsof domain if draw=="1" & region=="NO", local(domz)
 foreach d of local domz{
 	
 levelsof species if domain=="`d'", local(spec)  
@@ -869,6 +880,7 @@ graph export "$figure_cd/catch_at_length_calib.png", as(png) replace
 save "$input_data_cd/baseline_catch_at_length.dta", replace 
 
 u "$input_data_cd/baseline_catch_at_length.dta", clear 
+
 * Prepare the data for export to simulation
 keep length fitted species region draw
 drop if fitted==0
