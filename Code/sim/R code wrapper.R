@@ -13,6 +13,9 @@ if (any(!installed)) {
 }
 lapply(packages, library, character.only = TRUE)
 
+library(plyr)
+library(dplyr)
+
 conflicts_prefer(dplyr::mutate)
 conflicts_prefer(here::here)
 

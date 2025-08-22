@@ -1,6 +1,7 @@
 ##############################
 ### RI Rec model run  ########
 ##############################
+
 Run_Name <- args[1]
 
 saved_regs<- read.csv(here::here(paste0("saved_regs/regs_", Run_Name, ".csv")))
@@ -40,16 +41,16 @@ scup_size_data <- size_data %>%
   dplyr::filter(!is.na(fitted_prob)) %>% 
   dplyr::select(state,  fitted_prob, length, draw)
 
-
 l_w_conversion <- readr::read_csv(file.path(data_path, "L_W_Conversion.csv"), show_col_types = FALSE)  %>% 
   dplyr::filter(state=="RI")
 
+#### directed trips ####
 directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trips_calibration_RI.feather"))) %>% 
   tibble::tibble() %>%
   dplyr::select(mode, date, draw, bsb_bag, bsb_min, fluke_bag,fluke_min, scup_bag, scup_min,
                 bsb_bag_y2, bsb_min_y2, fluke_bag_y2,fluke_min_y2, scup_bag_y2, scup_min_y2) %>% 
   dplyr::mutate(date_adj = lubridate::dmy(date), 
-                date_adj = lubridate::yday(date_adj))
+                date_adj = lubridate::yday(date_adj)) 
 
 if (exists("SFri_seas1_op")) {
   directed_trips<- directed_trips %>%
@@ -142,11 +143,16 @@ for(x in 1:3){
   #               period2 = paste0(month24, "-", day, "-", mode))
   
   catch_data <- feather::read_feather(file.path(data_path, paste0("projected_catch_draws_RI", "_", x,".feather"))) %>% 
-    dplyr::left_join(directed_trips, by=c("mode", "date", "draw")) 
+    dplyr::left_join(directed_trips2, by=c("mode", "date", "draw")) 
   
   catch_data<-catch_data %>% 
     dplyr::select(-cost, -total_trips_12, -age, -bsb_keep_sim, -bsb_rel_sim, -day_i, -my_dom_id_string, 
                   -scup_keep_sim, -scup_rel_sim, -sf_keep_sim, -sf_rel_sim, -wave)
+  
+  calendar_adjustments <- readr::read_csv(
+    file.path(here::here(paste0("Data/proj_year_calendar_adjustments_RI.csv"))), show_col_types = FALSE) %>%
+    dplyr::filter(state == "RI", draw==x) %>% 
+    dplyr::select(-dtrip, -dtrip_y2, -state, -draw)
   
   
   base_outcomes0 <- list()
@@ -182,8 +188,54 @@ for(x in 1:3){
   
   
   # Pull in calibration comparison information about trip-level harvest/discard re-allocations 
-  calib_comparison<-feather::read_feather(file.path(data_path, "calibration_comparison.feather")) %>% 
-    dplyr::filter(state=="RI" & draw==x )   
+  calib_comparison<-readRDS(file.path(data_path,"calibrated_model_stats.rds")) %>%
+    dplyr::filter(state=="RI" & draw==x )  
+  
+  calib_comparison<-calib_comparison %>% 
+    dplyr::rename(n_legal_rel_bsb=n_legal_bsb_rel, 
+                  n_legal_rel_scup=n_legal_scup_rel, 
+                  n_legal_rel_sf=n_legal_sf_rel, 
+                  n_sub_kept_bsb=n_sub_bsb_kept,
+                  n_sub_kept_sf=n_sub_sf_kept,
+                  n_sub_kept_scup=n_sub_scup_kept,
+                  prop_legal_rel_bsb=prop_legal_bsb_rel,
+                  prop_legal_rel_sf=prop_legal_sf_rel,
+                  prop_legal_rel_scup=prop_legal_scup_rel,
+                  prop_sub_kept_bsb=prop_sub_bsb_kept,
+                  prop_sub_kept_sf=prop_sub_sf_kept,
+                  prop_sub_kept_scup=prop_sub_scup_kept,
+                  convergence_sf=sf_convergence,
+                  convergence_bsb=bsb_convergence,
+                  convergence_scup=scup_convergence) 
+  
+  ##########
+  # List of species suffixes
+  species_suffixes <- c("sf", "bsb", "scup")
+  
+  # Get all variable names
+  all_vars <- names(calib_comparison)
+  
+  # Identify columns that are species-specific (contain _sf, _bsb, or _scup)
+  species_specific_vars <- all_vars[
+    stringr::str_detect(all_vars, paste0("(_", species_suffixes, ")$", collapse = "|"))
+  ]
+  
+  id_vars <- setdiff(all_vars, species_specific_vars)
+  
+  calib_comparison<-calib_comparison %>% 
+    dplyr::select(mode, all_of(species_specific_vars))
+  
+  # Extract base variable names (without _sf, _bsb, _scup)
+  base_names <- unique(stringr::str_replace(species_specific_vars, "_(sf|bsb|scup)$", ""))
+  
+  # Pivot the data longer on the species-specific columns
+  calib_comparison <- calib_comparison %>%
+    tidyr::pivot_longer(
+      cols = all_of(species_specific_vars),
+      names_to = c(".value", "species"),
+      names_pattern = "(.*)_(sf|bsb|scup)"
+    ) %>% 
+    dplyr::distinct()
   
   sf_size_data2 <- sf_size_data %>% 
     dplyr::filter(draw == x) %>%  #Change to X for model for sf and scup
@@ -200,13 +252,16 @@ for(x in 1:3){
   
   
   ## Run the predict catch function
+  source(here::here("Code/sim/predict_rec_catch_functions.R"))
   source(here::here("Code/sim/predict_rec_catch.R"))
   
   test<- predict_rec_catch(st = "RI", dr = x,
-                           directed_trips, catch_data, 
-                           sf_size_data, bsb_size_data, scup_size_data, 
+                           directed_trips = directed_trips2, catch_data, 
+                           sf_size_data = sf_size_data2,
+                           bsb_size_data = bsb_size_data2, 
+                           scup_size_data = scup_size_data2, 
                            l_w_conversion, calib_comparison, n_choice_occasions, 
-                           base_outcomes)
+                           calendar_adjustments, base_outcomes)
   
   test <- test %>% 
     dplyr::mutate(draw = c(x),

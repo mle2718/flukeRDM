@@ -170,12 +170,11 @@ do "$input_code_cd\catch_at_length.do"
 // 7)  Estimate projected catch-per-trips at the month and mode level
 		 *will use MRIP catch data from the last two full years. 
 		 *For 2026 mgt. cycle: 2025 waves 1-4, 2024 waves 1-6, 2023 waves 5 & 6
+		 
+do "$input_code_cd\catch_per_trip_projection_part1.do"
 
-
-
-// 5) Generate total harvest and catch estimates based on the directed trips/catch draws - will use this to calibrate the model
-do "$input_code_cd\simulated_catch_totals.do"
-
+// 8) Generate projection-year catch-at-length, incorporating the stock assessment data
+do "$input_code_cd\projected_catch_at_length.do"
 
 
 // 6) Estimate recreational selectivities at length/projected catch-at-length distribution
