@@ -26,6 +26,10 @@ RUN install2.r -e -s \
     future \
     furrr \
     rlang \
+    httr \
+    jsonlite \
+    openssl \
+    uuid \
     plotly \
     DT \
     && chown -R shiny:shiny /srv/rdmtool
