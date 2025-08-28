@@ -47,8 +47,8 @@ spec:
                     key: accountName
             resources:
               requests:
-                cpu: "4"
-                memory: "32Gi"
+                cpu: "1"
+                memory: "2Gi"
               limits:
                 cpu: "8"
                 memory: "64Gi"
