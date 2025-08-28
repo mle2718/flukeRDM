@@ -73,6 +73,7 @@ spec:
       metadata:
         queueName: ${QUEUE_NAME}
         queueLength: "1"          # scale one job per message
+        accountName: ${STORAGE_ACCOUNT_NAME}
       authenticationRef:
         name: r-model-queue-trigger-auth
 ---
