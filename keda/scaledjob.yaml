@@ -28,7 +28,7 @@ spec:
         containers:
           - name: runner
             image: ${RUNNER_IMAGE}
-            imagePullPolicy: IfNotPresent
+            imagePullPolicy: Always
             env:
               - name: QUEUE_NAME
                 valueFrom:
