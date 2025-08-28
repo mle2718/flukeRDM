@@ -85,8 +85,16 @@ ui <- fluidPage(
                ), 
              tabPanel("Regulations", 
                       shiny::h2("Regulations"),
+                      selectInput( "file_choice",
+                        "Choose a file to download:",
+                        choices = NULL,  # Will be populated in server
+                        selected = NULL ),
+                      downloadButton( "download_file",
+                        "Download Selected File",
+                        class = "btn-primary"),
                       DT::DTOutput(outputId = "summary_regs_table"), 
                       plotOutput(outputId = "summary_regs_fig",  height = "70vh"))
+                      
              )),
              
     
@@ -5541,7 +5549,103 @@ server <- function(input, output, session) {
     output$message <- renderText("Regulations saved - we will run these soon be sure to change run name before clicking again.")
   })
   
+  # Get list of files from the folder
+  available_files <- reactive({
+    folder_path <- here::here("output/")
+    if (dir.exists(folder_path)) {
+      files <- list.files(folder_path, full.names = FALSE)
+      if (length(files) > 0) {
+        return(files)
+      }
+    }
+    return(character(0))
+  })
   
+  file_mapping <- reactive({
+    files <- available_files()
+    if (length(files) > 0) {
+      # Remove file extensions for display names
+      display_names <- files %>% 
+        stringr::str_remove("^output_") %>%         # remove prefix
+        stringr::str_remove("_[0-9]+")  %>% 
+        stringr::str_remove("_[0-9]+") %>% 
+        stringr::str_remove(".csv") 
+      # Create named vector: display_name = full_filename
+      names(files) <- display_names
+      return(files)
+    }
+    return(character(0))
+  })
+  
+  # Update dropdown choices when app starts
+  observe({
+    file_map <- file_mapping()
+    if (length(file_map) > 0) {
+      updateSelectInput(
+        session,
+        "file_choice",
+        choices = file_map,
+        selected = file_map[1]
+      )
+    } else {
+      updateSelectInput(
+        session,
+        "file_choice",
+        choices = "No files available",
+        selected = NULL
+      )
+    }
+  })
+  
+  # Display file information
+  output$file_info <- renderText({
+    if (is.null(input$file_choice) || input$file_choice == "No files available") {
+      return("No file selected or no files available.")
+    }
+    
+    file_path <- file.path("sample_files", input$file_choice)
+    
+    if (file.exists(file_path)) {
+      file_info <- file.info(file_path)
+      # Get the display name (without extension) for the selected file
+      display_name <- tools::file_path_sans_ext(input$file_choice)
+      paste(
+        "Display name:", display_name,
+        "\nFull filename:", input$file_choice,
+        "\nFile size:", round(file_info$size / 1024, 2), "KB",
+        "\nLast modified:", format(file_info$mtime, "%Y-%m-%d %H:%M:%S"),
+        sep = "\n"
+      )
+    } else {
+      "File not found."
+    }
+  })
+  
+  # Handle file download
+  output$download_file <- downloadHandler(
+    filename = function() {
+      # Return the selected filename (full filename with extension)
+      if (!is.null(input$file_choice) && input$file_choice != "No files available") {
+        return(input$file_choice)
+      } else {
+        return("file.txt")  # Fallback filename
+      }
+    },
+    content = function(file) {
+      # Copy the selected file to the download location
+      if (!is.null(input$file_choice) && input$file_choice != "No files available") {
+        file_path <- file.path("sample_files", input$file_choice)
+        if (file.exists(file_path)) {
+          file.copy(file_path, file)
+        } else {
+          # If file doesn't exist, create an error file
+          writeLines("Error: File not found.", file)
+        }
+      } else {
+        writeLines("Error: No file selected.", file)
+      }
+    }
+  )
   
   
   
