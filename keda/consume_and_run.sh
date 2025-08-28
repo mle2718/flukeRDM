@@ -62,9 +62,14 @@ if command -v az >/dev/null 2>&1; then
 fi
 
 set +e
+
+# NEW: Show exactly what will run (and from where)
+echo "Executing: Rscript \"$WORKDIR/Run_Model.R\" \"$RUN_NAME\" (cwd: $(pwd)); stderr is merged into stdout"
+
 # Send both stdout and stderr to the console (merged)
 Rscript "$WORKDIR/Run_Model.R" "$RUN_NAME" 2>&1
 RC=$?
+
 set -e
 
 if [[ $RC -eq 0 ]]; then
