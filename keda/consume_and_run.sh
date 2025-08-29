@@ -7,9 +7,6 @@ set -euo pipefail
 : "${STORAGE_QUEUE_CONNECTION_STRING:?Missing STORAGE_QUEUE_CONNECTION_STRING}"
 : "${QUEUE_NAME:?Missing QUEUE_NAME}"
 WORKDIR=/srv/rdmtool
-STATUS_DIR=${STATUS_DIR:-/srv/rdmtool/output/status}
-LOG_DIR=${LOG_DIR:-/srv/rdmtool/output/logs}
-mkdir -p "$STATUS_DIR" "$LOG_DIR"
 
 # Dependencies: curl, jq, base64, Rscript
 command -v jq >/dev/null 2>&1 || { echo "jq not found"; exit 1; }
@@ -21,7 +18,7 @@ ACCOUNT_NAME=${STORAGE_ACCOUNT_NAME:-$(echo "$STORAGE_QUEUE_CONNECTION_STRING" |
 iso_utc() { date -u '+%Y-%m-%dT%H:%M:%SZ'; }
 
 get_message() {
-  # Single dequeue attempt; message will become invisible briefly (default server behavior) but we delete immediately.
+  # Single dequeue attempt; message will become invisible briefly but we delete immediately.
   if command -v az >/dev/null 2>&1; then
     az storage message get --queue-name "$QUEUE_NAME" --connection-string "$STORAGE_QUEUE_CONNECTION_STRING" -o json 2>/dev/null || true
   else
@@ -55,10 +52,7 @@ fi
 
 [[ -z "$DELETE_ID" ]] && { echo "No message id obtained; exiting."; exit 0; }
 
-STATUS_FILE="$STATUS_DIR/${RUN_NAME}.status"
-LOG_FILE="$LOG_DIR/${RUN_NAME}.log"
-
-echo "STARTING $(iso_utc) submission=$SUBMISSION_ID" | tee "$STATUS_FILE"
+echo "STARTING $(iso_utc) submission=$SUBMISSION_ID run=$RUN_NAME"
 
 # Delete immediately to ignore visibility timeout / retries as requested
 if command -v az >/dev/null 2>&1; then
@@ -68,13 +62,20 @@ if command -v az >/dev/null 2>&1; then
 fi
 
 set +e
-Rscript "$WORKDIR/Run_Model.R" "$RUN_NAME" >"$LOG_FILE" 2>&1
+
+# NEW: Show exactly what will run (and from where)
+echo "Executing: Rscript \"$WORKDIR/Run_Model.R\" \"$RUN_NAME\" (cwd: $(pwd)); stderr is merged into stdout"
+
+# Send both stdout and stderr to the console (merged)
+Rscript "$WORKDIR/Run_Model.R" "$RUN_NAME" 2>&1
 RC=$?
+
 set -e
+
 if [[ $RC -eq 0 ]]; then
-  echo "COMPLETED $(iso_utc) submission=$SUBMISSION_ID" | tee "$STATUS_FILE"
+  echo "COMPLETED $(iso_utc) submission=$SUBMISSION_ID run=$RUN_NAME"
 else
-  echo "FAILED $(iso_utc) code=$RC submission=$SUBMISSION_ID" | tee "$STATUS_FILE"
+  echo "FAILED $(iso_utc) code=$RC submission=$SUBMISSION_ID run=$RUN_NAME"
 fi
 
 echo "Done."

@@ -28,7 +28,7 @@ spec:
         containers:
           - name: runner
             image: ${RUNNER_IMAGE}
-            imagePullPolicy: IfNotPresent
+            imagePullPolicy: Always
             env:
               - name: QUEUE_NAME
                 valueFrom:
@@ -47,8 +47,8 @@ spec:
                     key: accountName
             resources:
               requests:
-                cpu: "4"
-                memory: "32Gi"
+                cpu: "1"
+                memory: "2Gi"
               limits:
                 cpu: "8"
                 memory: "64Gi"
@@ -73,6 +73,7 @@ spec:
       metadata:
         queueName: ${QUEUE_NAME}
         queueLength: "1"          # scale one job per message
+        accountName: ${STORAGE_ACCOUNT_NAME}
       authenticationRef:
         name: r-model-queue-trigger-auth
 ---

@@ -8,7 +8,32 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
 # Install needed R packages (adjust list to match Run_Model.R requirements)
-RUN R -q -e 'install.packages(c("tidyverse","data.table","readr","jsonlite","httr","fst","arrow","azurestor"), repos="https://cloud.r-project.org")'
+RUN install2.r -e -s \
+    shiny \
+    shinyjs \
+    shinyWidgets \
+    magrittr \
+    readr \
+    here \
+    dplyr \
+    tidyr \
+    stringr \
+    lubridate \
+    tibble \
+    data.table \
+    knitr \
+    openxlsx \
+    plyr \
+    markdown \
+    future \
+    furrr \
+    rlang \
+    httr \
+    jsonlite \
+    openssl \
+    uuid \
+    plotly \
+    DT
 
 WORKDIR /srv/rdmtool
 
