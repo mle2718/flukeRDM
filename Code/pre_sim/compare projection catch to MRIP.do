@@ -9,11 +9,13 @@ clear
 tempfile master
 save `master', emptyok
 
-local statez "MA RI CT NY NJ DE MD VA NC"
-foreach s of local statez{
-forv i=1/$ndraws{
+*local statez "MA RI CT NY NJ DE MD VA NC"
+local statez "MA RI CT"
 
-import excel using "$input_data_cd\calib_catch_draws_`s'_`i'.xlsx", clear firstrow
+foreach s of local statez{
+forv i=1/2{
+
+import excel using "$input_data_cd\proj_catch_draws_`s'_`i'.xlsx", clear firstrow
 gen sf_cat_sim  = sf_keep_sim + sf_rel_sim
 gen bsb_cat_sim = bsb_keep_sim + bsb_rel_sim
 gen scup_cat_sim = scup_keep_sim + scup_rel_sim
@@ -25,11 +27,11 @@ save `master', replace
 }
 }
 use `master', clear
-save "$input_data_cd\simulated_means_copula.dta", replace 
+save "$input_data_cd\simulated_projected_means_copula.dta", replace 
 
 
 
-u "$input_data_cd\simulated_means_copula.dta", clear 
+u "$input_data_cd\simulated_projected_means_copula.dta", clear 
 ds draw my_dom_id, not
 local vars `r(varlist)'
 foreach v of local vars{
@@ -60,7 +62,7 @@ tempfile sim
 save `sim', replace
 
 *Pull in the MRIP means/SEs dataset
-import excel using "$input_data_cd\baseline_mrip_catch_processed.xlsx", clear first 
+import excel using "$input_data_cd\projected_mrip_catch_processed.xlsx", clear first 
 keep my_dom_id_string-missing_sesf_rel
 drop missing*
 duplicates drop
@@ -143,32 +145,32 @@ qui twoway (rcap mrip_ul mrip_ll my_dom_id_mrip if domain=="`d'", color(blue)  )
   
 u `new', clear 
 sort state wave mode 
-grc1leg  bsb_keep_MA sf_keep_MA  scup_keep_MA bsb_rel_MA sf_rel_MA   scup_rel_MA , cols(3) title("Mean catch-per-trip, MRIP vs. copula estimates MA", size(small))
-graph export "$figure_cd/mean_catch_MRIP_copula_MA.png", as(png) replace
+grc1leg  bsb_keep_MA sf_keep_MA  scup_keep_MA bsb_rel_MA sf_rel_MA   scup_rel_MA , cols(3) title("Mean projected catch-per-trip, MRIP vs. copula estimates MA", size(small))
+graph export "$figure_cd/mean_proj_catch_MRIP_copula_MA.png", as(png) replace
 
-grc1leg  bsb_keep_RI sf_keep_RI scup_keep_RI  bsb_rel_RI sf_rel_RI scup_rel_RI    , cols(3)	title("Mean catch-per-trip, MRIP vs. copula estimates RI", size(small))	
-graph export "$figure_cd/mean_catch_MRIP_copula_RI.png", as(png) replace
+grc1leg  bsb_keep_RI sf_keep_RI scup_keep_RI  bsb_rel_RI sf_rel_RI scup_rel_RI    , cols(3)	title("Mean projected catch-per-trip, MRIP vs. copula estimates RI", size(small))	
+graph export "$figure_cd/mean_proj_catch_MRIP_copula_RI.png", as(png) replace
 		
-grc1leg  bsb_keep_CT sf_keep_CT scup_keep_CT  bsb_rel_CT sf_rel_CT  scup_rel_CT  , cols(3) title("Mean catch-per-trip, MRIP vs. copula estimates CT", size(small))		
-graph export "$figure_cd/mean_catch_MRIP_copula_CT.png", as(png) replace
+grc1leg  bsb_keep_CT sf_keep_CT scup_keep_CT  bsb_rel_CT sf_rel_CT  scup_rel_CT  , cols(3) title("Mean projected catch-per-trip, MRIP vs. copula estimates CT", size(small))		
+graph export "$figure_cd/mean_proj_catch_MRIP_copula_CT.png", as(png) replace
 		
-grc1leg  bsb_keep_NY sf_keep_NY scup_keep_NY  bsb_rel_NY sf_rel_NY  scup_rel_NY  , cols(3) title("Mean catch-per-trip, MRIP vs. copula estimates NY", size(small))	
-graph export "$figure_cd/mean_catch_MRIP_copula_NY.png", as(png) replace
+grc1leg  bsb_keep_NY sf_keep_NY scup_keep_NY  bsb_rel_NY sf_rel_NY  scup_rel_NY  , cols(3) title("Mean projected catch-per-trip, MRIP vs. copula estimates NY", size(small))	
+graph export "$figure_cd/mean_proj_catch_MRIP_copula_NY.png", as(png) replace
 
-grc1leg  bsb_keep_NJ sf_keep_NJ scup_keep_NJ  bsb_rel_NJ sf_rel_NJ  scup_rel_NJ  , cols(3) title("Mean catch-per-trip, MRIP vs. copula estimates NJ", size(small))
-graph export "$figure_cd/mean_catch_MRIP_copula_NJ.png", as(png) replace
+grc1leg  bsb_keep_NJ sf_keep_NJ scup_keep_NJ  bsb_rel_NJ sf_rel_NJ  scup_rel_NJ  , cols(3) title("Mean projected catch-per-trip, MRIP vs. copula estimates NJ", size(small))
+graph export "$figure_cd/mean_proj_catch_MRIP_copula_NJ.png", as(png) replace
 
-grc1leg  bsb_keep_DE sf_keep_DE scup_keep_DE  bsb_rel_DE sf_rel_DE  scup_rel_DE  , cols(3) title("Mean catch-per-trip, MRIP vs. copula estimates DE", size(small))
-graph export "$figure_cd/mean_catch_MRIP_copula_DEA.png", as(png) replace
+grc1leg  bsb_keep_DE sf_keep_DE scup_keep_DE  bsb_rel_DE sf_rel_DE  scup_rel_DE  , cols(3) title("Mean projected catch-per-trip, MRIP vs. copula estimates DE", size(small))
+graph export "$figure_cd/mean_proj_catch_MRIP_copula_DEA.png", as(png) replace
 
-grc1leg  bsb_keep_MD sf_keep_MD scup_keep_MD  bsb_rel_MD sf_rel_MD  scup_rel_MD  , cols(3) title("Mean catch-per-trip, MRIP vs. copula estimates MD", size(small))	
-graph export "$figure_cd/mean_catch_MRIP_copula_MD.png", as(png) replace
+grc1leg  bsb_keep_MD sf_keep_MD scup_keep_MD  bsb_rel_MD sf_rel_MD  scup_rel_MD  , cols(3) title("Mean projected catch-per-trip, MRIP vs. copula estimates MD", size(small))	
+graph export "$figure_cd/mean_proj_catch_MRIP_copula_MD.png", as(png) replace
 
-grc1leg  bsb_keep_VA sf_keep_VA scup_keep_VA  bsb_rel_VA sf_rel_VA  scup_rel_VA  , cols(3) title("Mean catch-per-trip, MRIP vs. copula estimates VA", size(small))	
-graph export "$figure_cd/mean_catch_MRIP_copula_VA.png", as(png) replace
+grc1leg  bsb_keep_VA sf_keep_VA scup_keep_VA  bsb_rel_VA sf_rel_VA  scup_rel_VA  , cols(3) title("Mean projected catch-per-trip, MRIP vs. copula estimates VA", size(small))	
+graph export "$figure_cd/mean_proj_catch_MRIP_copula_VA.png", as(png) replace
 
-grc1leg  bsb_keep_NC  bsb_rel_NC scup_keep_NC, cols(3) title("Mean catch-per-trip, MRIP vs. copula estimates NC", size(small))
-graph export "$figure_cd/mean_catch_MRIP_copula_NC.png", as(png) replace
+grc1leg  bsb_keep_NC  sf_keep_NC scup_keep_NC bsb_rel_NC sf_rel_NC scup_rel_NC , cols(3) title("Mean projected catch-per-trip, MRIP vs. copula estimates NC", size(small))
+graph export "$figure_cd/mean_proj_catch_MRIP_copula_NC.png", as(png) replace
 
 
 
@@ -191,7 +193,7 @@ forv i=1/$ndraws{
 *local i=1
 *local s="RI"
 
-use "$input_data_cd\calib_catch_draws_`s'_`i'.dta", clear 
+use "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.dta", clear 
 
 drop if dtrip==0
 
@@ -205,7 +207,7 @@ drop my_dom_id_string4
 tempfile catch
 save `catch', replace 
 
-import delimited using  "$input_data_cd\directed_trips_calibration_`s'.csv", clear 
+import delimited using  "$iterative_input_data_cd\directed_trips_calibration_`s'.csv", clear 
 drop if dtrip==0
 
 keep if draw==`i'
@@ -238,11 +240,11 @@ save `master', replace
 }
 use `master', clear
 
-save "$input_data_cd\simulated_catch_totals3.dta", replace 
+save "$input_data_cd\simulated_catch_totals_proj3.dta", replace 
 
 
 *B3 compare means @ state, mode, wave level
-u "$input_data_cd\simulated_catch_totals3.dta", clear 
+u "$input_data_cd\simulated_catch_totals_proj3.dta", clear 
 rename dtrip tot_dtrip_sim
 
 ds draw mode state wave, not

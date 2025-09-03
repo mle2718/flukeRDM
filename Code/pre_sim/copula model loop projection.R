@@ -18,19 +18,27 @@ library(ggplot2)
 library(writexl)
 library(plyr)
 library(dplyr)
+library(conflicted)
 
+
+conflicts_prefer(here::here)
 conflicts_prefer(dplyr::filter)
-
+conflicts_prefer(dplyr::select)
+conflicts_prefer(dplyr::mutate)
+conflicts_prefer(dplyr::rename)
+conflicts_prefer(dplyr::summarize)
+conflicts_prefer(dplyr::summarise)
+conflicts_prefer(dplyr::count)
 #s<-"DE"
 
 state_datasets <- list()
-statez<-c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
-statez<-c("CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+#statez<-c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+statez<-c("MA", "RI", "CT")
 
 for(s in statez) {
   
   # Load data
-  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/baseline_mrip_catch_processed.xlsx") %>% 
+  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/projected_mrip_catch_processed.xlsx") %>% 
     filter(state==s)
   
   
@@ -45,7 +53,7 @@ for(s in statez) {
   # I used copula model to simulate 1), whereas 2) and 3) are distributed NB
   
   n_sim <- 5000   # number of samples per draw
-  n_draws <- 150  # number of simulated datasets
+  n_draws <- 2  # number of simulated datasets
   
   
   ############ SUMMER FLOUNDER ############
@@ -77,7 +85,7 @@ for(s in statez) {
       
       df <- df_full1 %>% filter(my_dom_id_string == dom)
       
-
+      
       # Define survey design
       svy_design <- svydesign(ids=~psu_id,strata=~strat_id,
                               weights=~wp_int,nest=TRUE,data=df)
@@ -156,7 +164,7 @@ for(s in statez) {
       df$w_int_rounded <- round(df$wp_int)
       df_expanded <- uncount(df, weights = w_int_rounded) 
       df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), n_sim)) 
-
+      
       
       # Create pseudo-observations (rank-based empirical CDFs)
       df_expanded <- df_expanded %>%
@@ -171,16 +179,16 @@ for(s in statez) {
       
       u_mat <- cbind(df_expanded$u_keep, df_expanded$u_rel)
       
-
+      
       
       tau_hat <- cor(u_mat[,1], u_mat[,2], method = "kendall")
-
+      
       # Assess dependence:
       # tau>=0.3: use Gumbel copula
       # tau<=-.3: normal copula, which allows for negative dependence. 
       # -.3>=tau<=.3: frank copula, for moderate, neutral dependence
       
-
+      
       if (tau_hat >= 0.3) {
         cop <- gumbelCopula(dim = 2)
         cop_name <- "Gumbel"
@@ -201,7 +209,7 @@ for(s in statez) {
       i <- 1
       while (i <= n_draws) {
         
-       sim_u <- rCopula(n_sim, copula_fit@copula)
+        sim_u <- rCopula(n_sim, copula_fit@copula)
         
         # Sample mu_keep and mu_rel with uncertainty
         sampled_mu_keep <-  rnorm(1, mu_keep, sqrt(var_keep))
@@ -300,7 +308,7 @@ for(s in statez) {
   rm(list = setdiff(ls(), keep))
   
   
-
+  
   
   ################
   
@@ -782,7 +790,7 @@ for(s in statez) {
       group_by(my_dom_id_string, sim_id) %>%
       mutate(id = row_number()) %>%
       ungroup()
-
+    
   }
   
   # List the objects you want to keep
@@ -818,7 +826,7 @@ for(s in statez) {
   
   
   ############ BLACK SEA BASS ############  
-  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/baseline_mrip_catch_processed.xlsx") %>% 
+  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/projected_mrip_catch_processed.xlsx") %>% 
     filter(state==s)
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0
@@ -844,7 +852,7 @@ for(s in statez) {
     
     for (dom in unique(df_full1$my_dom_id_string)) {
       df <- df_full1 %>% filter(my_dom_id_string == dom)
-
+      
       # Define survey design
       svy_design <- svydesign(ids=~psu_id,strata=~strat_id,
                               weights=~wp_int,nest=TRUE,data=df)
@@ -1054,7 +1062,7 @@ for(s in statez) {
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
-
+  
   ################
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)==0
@@ -1532,11 +1540,11 @@ for(s in statez) {
     }
     
     final_result5 <- bind_rows(all_results5) %>% 
-    group_by(my_dom_id_string, sim_id) %>%
+      group_by(my_dom_id_string, sim_id) %>%
       mutate(id = row_number()) %>%
       ungroup()
     
-    }
+  }
   
   # List the objects you want to keep
   keep <- c("final_result1", "final_result2","final_result3", "final_result4","final_result5", "df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s",  "combined_results_SF")
@@ -1570,7 +1578,7 @@ for(s in statez) {
   
   
   ############ SCUP ############  
-  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/baseline_mrip_catch_processed.xlsx") %>% 
+  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/projected_mrip_catch_processed.xlsx") %>% 
     filter(state==s)
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0
@@ -1675,9 +1683,9 @@ for(s in statez) {
       df$w_int_rounded <- round(df$wp_int)
       df_expanded <- uncount(df, weights = w_int_rounded) 
       df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), n_sim)) 
-    
       
-            # Create pseudo-observations (rank-based empirical CDFs)
+      
+      # Create pseudo-observations (rank-based empirical CDFs)
       df_expanded <- df_expanded %>%
         mutate(
           rank_keep = rank(scup_keep, ties.method = "average"),
@@ -1716,7 +1724,7 @@ for(s in statez) {
       sim_datasets <- list()
       i <- 1
       while (i <= n_draws) {
-
+        
         sim_u <- rCopula(n_sim, copula_fit@copula)
         
         # Sample mu_keep and mu_rel with uncertainty
@@ -2073,7 +2081,7 @@ for(s in statez) {
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
-
+  
   ### MEAN(DISCARDS-PER-TRIP)==0, MEAN(HARVEST-PER-TRIP)==0
   if (nrow(df_full4) > 0) {
     
@@ -2116,10 +2124,10 @@ for(s in statez) {
   # List the objects you want to keep
   keep <- c("final_result1", "final_result2","final_result3", "final_result4","df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
   
-
+  
   # Remove everything else
   rm(list = setdiff(ls(), keep))
-
+  
   
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0 BUT positive values of harvest/discards never occur simultaneously
@@ -2276,7 +2284,7 @@ for(s in statez) {
           i <- i + 1  # Only increment if no NaNs
         }
         
-
+        
       }
       
       # Combine all simulations
@@ -2293,7 +2301,7 @@ for(s in statez) {
     }
     
     final_result5 <- bind_rows(all_results5) %>%
-    group_by(my_dom_id_string, sim_id) %>%
+      group_by(my_dom_id_string, sim_id) %>%
       mutate(id = row_number()) %>%
       ungroup()    
   }
@@ -2346,7 +2354,7 @@ for(s in statez) {
     safe_name <- gsub("[^A-Za-z0-9_]", "_", name)
     
     # Write to Excel
-    write_xlsx(split_datasets[[name]], paste0("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/calib_catch_draws_", s, "_", safe_name, ".xlsx"))
+    write_xlsx(split_datasets[[name]], paste0("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/proj_catch_draws_", s, "_", safe_name, ".xlsx"))
   }
   
   rm(catch_draws, combined_results_BSB, combined_results_SF, combined_results_SCUP, split_datasets)

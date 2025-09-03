@@ -29,7 +29,6 @@ save `catch2024', replace
 
 *A2) 
 import delimited using "$input_data_cd/baseline_catch_at_length.csv", clear  
-keep if draw<=109
 sort draw state species length
 
 merge m:1 species state draw using `catch2024'
@@ -60,7 +59,7 @@ gen species="sf"
 gen region="all"
 duplicates drop 
 drop year
-sample 110, count
+sample $ndraws, count
 gen draw=_n
 tempfile sf
 save `sf', replace 
@@ -70,7 +69,7 @@ gen species="scup"
 gen region="all"
 duplicates drop 
 drop year
-sample 110, count
+sample $ndraws, count
 gen draw=_n
 tempfile scup
 save `scup', replace 
@@ -79,7 +78,7 @@ import delimited using "$input_data_cd/length_data/fit_NAA_NORTH_2024.csv", clea
 gen species="bsb"
 gen region="north"
 duplicates drop 
-sample 110, count
+sample $ndraws, count
 replace draw=_n
 forv i=0(1)7{
 	local v = `i'+1
@@ -94,7 +93,7 @@ import delimited using "$input_data_cd/length_data/fit_NAA_SOUTH_2024.csv", clea
 gen species="bsb"
 gen region="south"
 duplicates drop 
-sample 110, count
+sample $ndraws, count
 replace draw=_n
 
 forv i=0(1)7{
@@ -208,7 +207,7 @@ gen species="sf" if svspp==103
 replace species="bsb" if svspp==141 
 replace species="scup" if svspp==143 
 
-keep if inlist(year, /*2025,*/ 2024, 2023, 2022) 
+keep if $NEFSC_svy_yrs
 replace age=7 if age>=7
 
 collapse (sum) countage, by(species age length)
@@ -324,7 +323,7 @@ gen prop_raw=naa/sum_raw
 drop sum*		
 
 *C4) 
-expand 110
+expand $ndraws
 bysort length age species state: gen draw=_n
 
 tempfile age_length
@@ -343,8 +342,6 @@ collapse (sum) nal, by(draw species state length)
 order draw state species length nal
 sort draw state species length nal
 
-drop if draw>109 //REMOVE this once I re-run the final scripts. 
-
 tempfile nal
 save `nal', replace 
 
@@ -357,7 +354,6 @@ save `nal', replace
 
 *Merge back to catch-at-lengths
 merge 1:1 species state draw length using `cal'
-drop if draw>109 //REMOVE this once I re-run the final scripts. 
 
 tostring draw, gen(draw2)
 gen domain2=state+"_"+species+"_"+draw2
@@ -461,7 +457,7 @@ gen species="sf"
 gen region="all"
 duplicates drop 
 drop year
-sample 110, count
+sample $ndraws, count
 gen draw=_n
 tempfile sf
 save `sf', replace 
@@ -471,7 +467,7 @@ gen species="scup"
 gen region="all"
 duplicates drop 
 drop year
-sample 110, count
+sample $ndraws, count
 gen draw=_n
 tempfile scup
 save `scup', replace 
@@ -480,7 +476,7 @@ import delimited using "$input_data_cd/length_data/fit_proj_NAA_NORTH_2026.csv",
 gen species="bsb"
 gen region="north"
 duplicates drop 
-sample 110, count
+sample $ndraws, count
 replace draw=_n
 forv i=0(1)7{
 	local v = `i'+1
@@ -495,7 +491,7 @@ import delimited using "$input_data_cd/length_data/fit_proj_NAA_SOUTH_2026.csv",
 gen species="bsb"
 gen region="south"
 duplicates drop 
-sample 110, count
+sample $ndraws, count
 replace draw=_n
 
 forv i=0(1)7{
@@ -587,6 +583,6 @@ egen sum_cal=sum(cal_2026), by(draw state species)
 gen fitted_prob=cal_2026/sum_cal
 drop sum
 
-export delimited using "$input_data_cd/projected_catch_at_length.csv", replace 
+export delimited using "$iterative_input_data_cd/projected_catch_at_length.csv", replace 
 
 

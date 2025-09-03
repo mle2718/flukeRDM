@@ -3,15 +3,8 @@
 #and MRIP estimates of harvest, and re-runs the calibration model but this time adjusts per-trip
 #outcomes until simulated harvest in numbers of fish is within 5% or 500 fish of the MRIP estimate. 
 
-input_data_cd=here("Data")
-test_data_cd=here("Data", "Test_data")
-code_cd=here("Code", "sim")
-#output_data_cd=here("lou_files","cod_haddock","output_data")
-iterative_input_data_cd="C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data"
-input_data_cd="C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025"
-
-#Set number of original draws. We use 150 for the final run. Choose a lot fewer for test runs
-n_simulations<-5
+#Set number of original draws. We use 125 for the final run. Choose a lot fewer for test runs
+n_simulations<-125
 
 n_draws<-50 #Number of simulated trips per day
 
@@ -34,11 +27,11 @@ baseline_output0<-feather::read_feather(file.path(iterative_input_data_cd, "cali
 
 states <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
 mode_draw <- c("sh", "pr", "fh")
-draws <- 1:3
-# 
-#   i<-1
-#   s<-"CT"
-#   md<-"fh"
+draws <- 1:n_simulations
+
+# i<-1
+# s<-"MA"
+# md<-"pr"
 #  
 # Create an empty list to collect results
 calibrated <- list()

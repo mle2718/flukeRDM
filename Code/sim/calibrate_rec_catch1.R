@@ -23,7 +23,7 @@ prop_legal_bsb_rel<-0
 
 
 # import necessary data
-dtripz<-feather::read_feather(file.path(input_data_cd, paste0("directed_trips_calibration_", s, ".feather"))) %>% 
+dtripz<-feather::read_feather(file.path(iterative_input_data_cd, paste0("directed_trips_calibration_", s, ".feather"))) %>% 
   tibble::tibble() %>%
   dplyr::filter(draw == i) %>%
   dplyr::select(mode, dtrip, date, bsb_bag, bsb_min, fluke_bag,fluke_min, scup_bag, scup_min) %>% 
@@ -38,22 +38,21 @@ angler_dems<-catch_data %>%
   dplyr::filter(mode==md)
 
 catch_data<-catch_data %>% 
-  dplyr::select(-cost, -total_trips_12, -age, -bsb_keep_sim, -bsb_rel_sim, -day_i, -my_dom_id_string, 
-                -scup_keep_sim, -scup_rel_sim, -sf_keep_sim, -sf_rel_sim, -wave)
+  dplyr::select(-cost, -total_trips_12, -age)
 
 angler_dems<-dplyr::distinct(angler_dems)
 
-sf_size_data <- read_csv(file.path(input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+sf_size_data <- read_csv(file.path(iterative_input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
   dplyr::filter(state == s, species=="sf", draw==i) %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
   dplyr::select(state, fitted_prob, length)
 
-bsb_size_data <- read_csv(file.path(input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+bsb_size_data <- read_csv(file.path(iterative_input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
   dplyr::filter(state == s, species=="bsb" , draw==i) %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
   dplyr::select(state, fitted_prob, length)
 
-scup_size_data <- read_csv(file.path(input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+scup_size_data <- read_csv(file.path(iterative_input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
   dplyr::filter(state == s, species=="scup", draw==i) %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
   dplyr::select(state,  fitted_prob, length)
@@ -790,7 +789,7 @@ mean_trip_data <- mean_trip_data %>%
   .[]
 
 
-dtrips<-feather::read_feather(file.path(input_data_cd, paste0("directed_trips_calibration_", s, ".feather"))) %>% 
+dtrips<-feather::read_feather(file.path(iterative_input_data_cd, paste0("directed_trips_calibration_", s, ".feather"))) %>% 
   tibble::tibble() %>%
   dplyr::filter(draw == i) %>%
   dplyr::select(mode, date, dtrip) %>% 
@@ -854,7 +853,7 @@ aggregate_trip_data<-aggregate_trip_data %>%
                 bsb_rel=tot_rel_bsb_new, 
                 scup_rel=tot_rel_scup_new)
 
-#saveRDS(aggregate_trip_data, file = paste0(output_data_cd, "calibration_data_", s,"_", i, ".rds")) 
+#write_feather(aggregate_trip_data, file = paste0(iterative_input_data_cd, "calibration_output_", s,"_", md,"_", i, ".feather")) 
 
 
 list_names = c("bsb_catch","bsb_keep","bsb_rel", 
