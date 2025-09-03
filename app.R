@@ -5343,7 +5343,7 @@ server <- function(input, output, session) {
       return("No file selected or no files available.")
     }
     
-    file_path <- file.path("sample_files", input$file_choice)
+    file_path <- file.path("output", input$file_choice)
     
     if (file.exists(file_path)) {
       file_info <- file.info(file_path)
@@ -5374,7 +5374,7 @@ server <- function(input, output, session) {
     content = function(file) {
       # Copy the selected file to the download location
       if (!is.null(input$file_choice) && input$file_choice != "No files available") {
-        file_path <- file.path("sample_files", input$file_choice)
+        file_path <- file.path("output", input$file_choice)
         if (file.exists(file_path)) {
           file.copy(file_path, file)
         } else {
