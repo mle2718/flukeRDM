@@ -3894,16 +3894,13 @@ server <- function(input, output, session) {
 
     harv2 <- harv %>%
       ggplot2::ggplot(ggplot2::aes(x = bsb, y = sf, label = filename.x, color = scup)) +
-      ggplot2::geom_point(color = "steelblue", size = 3) +
-      ggplot2::geom_text(vjust = -0.5, size = 3) +
+      ggplot2::geom_point( size = 3) +
+      ggplot2::geom_text(color = "black", vjust = -0.5, size = 3) +
       #ggplot2::geom_hline(data = pca_sf, ggplot2::aes(yintercept = pca_reqs), color = "black")+
       #ggplot2::geom_vline(data = pca_bsb, ggplot2::aes(xintercept = pca_reqs), color = "black", linetype = "dashed")+
       ggplot2::facet_wrap(~ state) +
-      ggplot2::labs(
-        title = "SF vs BSB Harvest Limits by state",
-        x = "Black Sea Bass RHL",
-        y = "Summer Flounder RHL"
-      ) +
+      ggplot2::labs(title = "SF vs BSB Harvest Limits by state",x = "Black Sea Bass RHL",y = "Summer Flounder RHL") +
+      ggplot2::scale_color_gradient2( low = "blue", mid = "gray", high = "red",  midpoint = 0, limits = c(-10, 10)) + 
       ggplot2::theme_bw()
 
     fig<- plotly::ggplotly(harv2) %>%
@@ -3912,11 +3909,6 @@ server <- function(input, output, session) {
   })
 
   output$summary_percdiff_table <- DT::renderDT({
-    ref_pct <- outputs() %>% #all_data %>%
-      dplyr::filter(number_weight == "weight" &
-                      keep_release == "keep" & mode == "all modes" & model == "SQ") %>%
-      dplyr::mutate(ref_value = value) %>%
-      dplyr::select(filename, category, state, draw, ref_value)
 
     harv <- outputs() %>% #all_data %>%
       dplyr::filter(number_weight == "weight" &
@@ -3928,7 +3920,6 @@ server <- function(input, output, session) {
       tidyr::pivot_wider(names_from = category, values_from = median_pct_diff)
 
     tab<- harv %>% 
-      #dplyr::left_join(ref_pct, by = "state") %>%
       dplyr::mutate(bsb_ok  = abs(bsb)  <= bsb_percent_change,
                     scup_ok = abs(scup) <= scup_percent_change,
                     sf_ok   = abs(sf)   <= sf_percent_change) %>%
@@ -3936,12 +3927,19 @@ server <- function(input, output, session) {
       dplyr::mutate(ok_count = paste0(sum(c_across(c(bsb_ok, scup_ok, sf_ok))), "/3")) %>%
       dplyr::ungroup()%>%
       dplyr::select( -keep_release, -number_weight,  -bsb_ok ,-scup_ok, -sf_ok) %>%
-      dplyr::mutate(across(starts_with("Val"), ~ round(.x, 1)))
+      mutate(
+        bsb  = sprintf("%.2f", bsb),
+        scup = sprintf("%.2f", scup),
+        sf   = sprintf("%.2f", sf)
+      ) %>% 
+      dplyr::rename(State = state, `Run Name` = filename.x,
+                    BSB = bsb, Scup = scup, SF = sf, `Below RHL` = ok_count)
 
+    tab
   })
 
   output$summary_regs_table <- DT::renderDT({
-    Regs_out <- regs() %>%
+    Regs_out <-regs() %>%
       tidyr::separate(input, into = c("species", "season", "measure"), sep = "_") %>%
       dplyr::mutate(season = stringr::str_remove(season, "^seas")) %>%
       tidyr::extract(species, into = c("species", "state2", "mode"), regex =  "([^a-z]+)([a-z]+)(.*)") %>%
@@ -4184,11 +4182,11 @@ server <- function(input, output, session) {
     
     # Static plot
     p1 <- disc %>%
-      ggplot2::ggplot(ggplot2::aes(x = median_keep_pct_diff, y = median_rel_weight, label = filename)) +
+      ggplot2::ggplot(ggplot2::aes(x = median_keep_pct_diff, y = (median_rel_weight/1000000), label = filename)) +
       ggplot2::geom_point() +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::ggtitle(paste("Discards in", state_name)) +
-      ggplot2::ylab("Discards (lbs)") +
+      ggplot2::ylab("Discards (million lbs)") +
       ggplot2::xlab("Percent difference of Harvest from SQ") +
       ggplot2::theme(legend.position = "none") +
       ggplot2::facet_wrap(. ~ category) +
