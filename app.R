@@ -87,8 +87,7 @@ ui <- fluidPage(
                       downloadButton( "download_file",
                         "Download Selected File",
                         class = "btn-primary"),
-                      DT::DTOutput(outputId = "summary_regs_table"), 
-                      plotOutput(outputId = "summary_regs_fig",  height = "70vh"))
+                      DT::DTOutput(outputId = "summary_regs_table"))
                       
              )),
              
@@ -3952,36 +3951,6 @@ server <- function(input, output, session) {
       dplyr::mutate(mode = if_else(mode == "", "All modes", mode)) %>% 
       dplyr::mutate(season = gsub("2025-", "", season))
 
-  })
-
-  output$summary_regs_fig <- renderPlot({
-    Regs_out <- regs() %>%
-      tidyr::separate(input, into = c("species", "season", "measure"), sep = "_") %>%
-      dplyr::mutate(season = stringr::str_remove(season, "^seas")) %>%
-      tidyr::extract(species, into = c("species", "state2", "mode"), regex =  "([^a-z]+)([a-z]+)(.*)") %>%
-      dplyr::select(-state2) %>%
-      dplyr::group_by(run_name, state, species, mode, season) %>%
-      tidyr::pivot_wider(names_from = measure, values_from = value) %>%
-      dplyr::filter(!bag == 0) %>%
-      dplyr::mutate(season2 = paste0(op, " - ", cl)) %>%
-      dplyr::mutate(op = as.Date(op),cl = as.Date(cl),
-                    mode = if_else(mode == "", "All modes", mode),  # Replace empty mode
-                    label = paste0("Bag: ", bag, ", Len: ", len)) %>%     # Create label for bars
-      #dplyr::filter(species == "SF")
-      dplyr::filter(state == "MA") %>% 
-      dplyr::filter()
-
-    p <- ggplot2::ggplot(Regs_out, ggplot2::aes(x = op, xend = cl, y = interaction(run_name, state,  mode), yend = interaction(run_name, state, mode), color = run_name)) +
-      ggplot2::geom_segment(size = 6) +
-      ggplot2::geom_text(ggplot2::aes(label = label, x = op + (cl - op)/2), color = "white", size = 3.5) +
-      ggplot2::facet_wrap(~species, ncol = 1, scales = "free")+
-      ggplot2::labs(
-        title = "Fishing Season Schedule by Run, State,  and Mode",
-        x = "Date",
-        y = "Run / State /  Mode") +
-      ggplot2::theme_minimal()
-
-   p
   })
 
   
