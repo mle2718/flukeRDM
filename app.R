@@ -4125,11 +4125,11 @@ server <- function(input, output, session) {
     
     # Static plot
     p1 <- trips %>%
-      ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = trips, label = filename)) +
+      ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = (trips/1000000), label = filename)) +
       ggplot2::geom_point() +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::ggtitle(paste("Number of Trips in", state_name)) +
-      ggplot2::ylab("Predicted trips (N)") +
+      ggplot2::ylab("Predicted trips (N) millions") +
       ggplot2::xlab("Percent difference of Harvest from SQ") +
       ggplot2::theme(legend.position = "none") +
       ggplot2::facet_wrap(. ~ category) +
