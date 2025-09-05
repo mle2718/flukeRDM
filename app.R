@@ -3956,7 +3956,8 @@ server <- function(input, output, session) {
         len = paste(len, collapse = ","),
         season = paste(season2, collapse = ","),
         .groups = "drop" ) %>%
-      dplyr::mutate(mode = if_else(mode == "", "All modes", mode))
+      dplyr::mutate(mode = if_else(mode == "", "All modes", mode)) %>% 
+      dplyr::mutate(season = gsub("2025-", "", season))
 
   })
 
