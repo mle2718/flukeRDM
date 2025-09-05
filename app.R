@@ -44,44 +44,39 @@ ui <- fluidPage(
                         plotly::plotlyOutput(outputId = "ny_discards_fig") # Disczrds)
                ),
                tabPanel("NJ", 
-                        shiny::h2("New Jersey")
-                        # Harvest
-                        # Disczrds
-                        # Angler Satis
-                        # N trips
-                        # Regulations
+                        shiny::h2("New Jersey"),
+                        plotly::plotlyOutput(outputId = "nj_rhl_fig"),# Harvest
+                        plotly::plotlyOutput(outputId = "nj_CV_fig"),# Angler Satis
+                        plotly::plotlyOutput(outputId = "nj_trips_fig"), # Ntrips
+                        plotly::plotlyOutput(outputId = "nj_discards_fig") # Disczrds)
                ),
                tabPanel("DE", 
-                        shiny::h2("Delaware")
-                        # Harvest
-                        # Disczrds
-                        # Angler Satis
-                        # N trips
-                        # Regulations
+                        shiny::h2("Delaware"),
+                        plotly::plotlyOutput(outputId = "de_rhl_fig"),# Harvest
+                        plotly::plotlyOutput(outputId = "de_CV_fig"),# Angler Satis
+                        plotly::plotlyOutput(outputId = "de_trips_fig"), # Ntrips
+                        plotly::plotlyOutput(outputId = "de_discards_fig") # Disczrds)
                ),
                tabPanel("MD", 
-                        shiny::h2("Marlyand")
-                          # Harvest
-                          # Disczrds
-                          # Angler Satis
-                          # N trips
-                          # Regulations
+                        shiny::h2("Marlyand"),
+                        plotly::plotlyOutput(outputId = "md_rhl_fig"),# Harvest
+                        plotly::plotlyOutput(outputId = "md_CV_fig"),# Angler Satis
+                        plotly::plotlyOutput(outputId = "md_trips_fig"), # Ntrips
+                        plotly::plotlyOutput(outputId = "md_discards_fig") # Disczrds)
                ),
                tabPanel("VA", 
-                        shiny::h2("Virginia")
-                          # Harvest
-                          # Disczrds
-                          # Angler Satis
-                          # N trips
-                          # Regulations
+                        shiny::h2("Virginia"),
+                        plotly::plotlyOutput(outputId = "va_rhl_fig"),# Harvest
+                        plotly::plotlyOutput(outputId = "va_CV_fig"),# Angler Satis
+                        plotly::plotlyOutput(outputId = "va_trips_fig"), # Ntrips
+                        plotly::plotlyOutput(outputId = "va_discards_fig") # Disczrds)
                ),
                tabPanel("NC", 
-                        shiny::h2("North Carolina")
-                          # Harvest
-                          # Disczrds
-                          # Angler Satis
-                          # N trips
-                          # Regulations
+                        shiny::h2("North Carolina"),
+                        plotly::plotlyOutput(outputId = "nc_rhl_fig"),# Harvest
+                        plotly::plotlyOutput(outputId = "nc_CV_fig"),# Angler Satis
+                        plotly::plotlyOutput(outputId = "nc_trips_fig"), # Ntrips
+                        plotly::plotlyOutput(outputId = "nc_discards_fig") # Disczrds)
                ), 
              tabPanel("Regulations", 
                       shiny::h2("Regulations"),
