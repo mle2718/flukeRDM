@@ -4069,11 +4069,11 @@ server <- function(input, output, session) {
                        ci_upper = quantile(value, 0.95)) %>%
       left_join(harv)
     
-    p1<- welfare %>% ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = CV, label = filename))+
+    p1<- welfare %>% ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = (CV/1000000), label = filename))+
       ggplot2::geom_point() +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::ggtitle("Angler Satisfaction")+
-      ggplot2::ylab("Angler Satisfaction ($)")+
+      ggplot2::ylab("Angler Satisfaction ($M)")+
       ggplot2::xlab("Percent difference of Harvest from SQ")+
       ggplot2::theme(legend.position = "none")+
       ggplot2::facet_wrap(.~category)+
