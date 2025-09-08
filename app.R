@@ -3904,6 +3904,12 @@ server <- function(input, output, session) {
 
   output$summary_percdiff_table <- DT::renderDT({
 
+    ref_pct <- outputs() %>% #all_data %>%
+      dplyr::filter(number_weight == "weight" &
+                      keep_release == "keep" & mode == "all modes" & model == "SQ") %>%
+      dplyr::mutate(ref_value = value) %>%
+      dplyr::select(filename, category, state, draw, ref_value)
+    
     harv <- outputs() %>% #all_data %>%
       dplyr::filter(number_weight == "weight" &
                       keep_release == "keep" & mode == "all modes") %>%
