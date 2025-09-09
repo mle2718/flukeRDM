@@ -44,44 +44,39 @@ ui <- fluidPage(
                         plotly::plotlyOutput(outputId = "ny_discards_fig") # Disczrds)
                ),
                tabPanel("NJ", 
-                        shiny::h2("New Jersey")
-                        # Harvest
-                        # Disczrds
-                        # Angler Satis
-                        # N trips
-                        # Regulations
+                        shiny::h2("New Jersey"),
+                        plotly::plotlyOutput(outputId = "nj_rhl_fig"),# Harvest
+                        plotly::plotlyOutput(outputId = "nj_CV_fig"),# Angler Satis
+                        plotly::plotlyOutput(outputId = "nj_trips_fig"), # Ntrips
+                        plotly::plotlyOutput(outputId = "nj_discards_fig") # Disczrds)
                ),
                tabPanel("DE", 
-                        shiny::h2("Delaware")
-                        # Harvest
-                        # Disczrds
-                        # Angler Satis
-                        # N trips
-                        # Regulations
+                        shiny::h2("Delaware"),
+                        plotly::plotlyOutput(outputId = "de_rhl_fig"),# Harvest
+                        plotly::plotlyOutput(outputId = "de_CV_fig"),# Angler Satis
+                        plotly::plotlyOutput(outputId = "de_trips_fig"), # Ntrips
+                        plotly::plotlyOutput(outputId = "de_discards_fig") # Disczrds)
                ),
                tabPanel("MD", 
-                        shiny::h2("Marlyand")
-                          # Harvest
-                          # Disczrds
-                          # Angler Satis
-                          # N trips
-                          # Regulations
+                        shiny::h2("Marlyand"),
+                        plotly::plotlyOutput(outputId = "md_rhl_fig"),# Harvest
+                        plotly::plotlyOutput(outputId = "md_CV_fig"),# Angler Satis
+                        plotly::plotlyOutput(outputId = "md_trips_fig"), # Ntrips
+                        plotly::plotlyOutput(outputId = "md_discards_fig") # Disczrds)
                ),
                tabPanel("VA", 
-                        shiny::h2("Virginia")
-                          # Harvest
-                          # Disczrds
-                          # Angler Satis
-                          # N trips
-                          # Regulations
+                        shiny::h2("Virginia"),
+                        plotly::plotlyOutput(outputId = "va_rhl_fig"),# Harvest
+                        plotly::plotlyOutput(outputId = "va_CV_fig"),# Angler Satis
+                        plotly::plotlyOutput(outputId = "va_trips_fig"), # Ntrips
+                        plotly::plotlyOutput(outputId = "va_discards_fig") # Disczrds)
                ),
                tabPanel("NC", 
-                        shiny::h2("North Carolina")
-                          # Harvest
-                          # Disczrds
-                          # Angler Satis
-                          # N trips
-                          # Regulations
+                        shiny::h2("North Carolina"),
+                        plotly::plotlyOutput(outputId = "nc_rhl_fig"),# Harvest
+                        plotly::plotlyOutput(outputId = "nc_CV_fig"),# Angler Satis
+                        plotly::plotlyOutput(outputId = "nc_trips_fig"), # Ntrips
+                        plotly::plotlyOutput(outputId = "nc_discards_fig") # Disczrds)
                ), 
              tabPanel("Regulations", 
                       shiny::h2("Regulations"),
@@ -92,8 +87,7 @@ ui <- fluidPage(
                       downloadButton( "download_file",
                         "Download Selected File",
                         class = "btn-primary"),
-                      DT::DTOutput(outputId = "summary_regs_table"), 
-                      plotOutput(outputId = "summary_regs_fig",  height = "70vh"))
+                      DT::DTOutput(outputId = "summary_regs_table"))
                       
              )),
              
@@ -232,7 +226,7 @@ server <- function(input, output, session) {
         style = "background-color: #FBB4AE;",
         column(4,
                titlePanel("Summer Flounder - MA"),
-               sliderInput(inputId = "SFmaFH_seas1", label ="For Hire Open Season 1", 
+               sliderInput(inputId = "SFmaFH_seas1", label ="For Hire Season 1", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-24","%m-%d"),as.Date("09-23","%m-%d")), 
@@ -244,7 +238,7 @@ server <- function(input, output, session) {
                  column(5, 
                         sliderInput(inputId = "SFmaFH_1_len", label = "Min Length",
                                     min = 5, max = 25, value = 17.5, step = .5))),
-               sliderInput(inputId = "SFmaPR_seas1", label ="Private Open Season 1", 
+               sliderInput(inputId = "SFmaPR_seas1", label ="Private Season 1", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-24","%m-%d"),as.Date("09-23","%m-%d")), 
@@ -256,7 +250,7 @@ server <- function(input, output, session) {
                  column(5, 
                         sliderInput(inputId = "SFmaPR_1_len", label = "Min Length",
                                     min = 5, max = 25, value = 17.5, step = .5))),
-               sliderInput(inputId = "SFmaSH_seas1", label ="Shore Open Season 1", 
+               sliderInput(inputId = "SFmaSH_seas1", label ="Shore  Season 1", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-24","%m-%d"),as.Date("09-23","%m-%d")), 
@@ -271,7 +265,7 @@ server <- function(input, output, session) {
                
                actionButton("SFMAaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SFmaSeason2",
-                                    sliderInput(inputId = "SFmaFH_seas2", label ="For Hire Open Season 2", 
+                                    sliderInput(inputId = "SFmaFH_seas2", label ="For Hire  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -283,7 +277,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFmaFH_2_len", label ="Min Length",
                                                          min = 3, max = 25, value = 10, step = .5))), 
-                                    sliderInput(inputId = "SFmaPR_seas2", label ="Private Open Season 2", 
+                                    sliderInput(inputId = "SFmaPR_seas2", label ="Private  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -295,7 +289,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFmaPR_2_len", label ="Min Length",
                                                          min = 3, max = 25, value = 10, step = .5))), 
-                                    sliderInput(inputId = "SFmaSH_seas2", label ="Shore Open Season 2", 
+                                    sliderInput(inputId = "SFmaSH_seas2", label ="Shore  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -318,7 +312,7 @@ server <- function(input, output, session) {
                
                actionButton("BSBMAaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "BSBmaSeason2",
-                                    sliderInput(inputId = "BSBmaFH_seas2", label ="For Hire Open Season 2",
+                                    sliderInput(inputId = "BSBmaFH_seas2", label ="For Hire  Season 2",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -330,7 +324,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBmaFH_2_len", label ="Min Length",
                                                          min = 5, max = 25, value = 16.5, step = .5))),
-                                    sliderInput(inputId = "BSBmaPR_seas2", label ="Private Open Season 2",
+                                    sliderInput(inputId = "BSBmaPR_seas2", label ="Private  Season 2",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -342,7 +336,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBmaPR_2_len", label ="Min Length",
                                                          min = 5, max = 25, value = 16.5, step = .5))),
-                                    sliderInput(inputId = "BSBmaSH_seas2", label ="Shore Open Season 2",
+                                    sliderInput(inputId = "BSBmaSH_seas2", label ="Shore  Season 2",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -360,7 +354,7 @@ server <- function(input, output, session) {
         
         column(4, #### SCUP 
                titlePanel("Scup - MA"),
-               sliderInput(inputId = "SCUPmaFH_seas1", label ="For Hire Open Season 1", 
+               sliderInput(inputId = "SCUPmaFH_seas1", label ="For Hire  Season 1", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("06-30","%m-%d")), 
@@ -373,7 +367,7 @@ server <- function(input, output, session) {
                         sliderInput(inputId = "SCUPmaFH_1_len", label = "Min Length",
                                     min = 5, max = 25, value = 11, step = .5))),
                
-               sliderInput(inputId = "SCUPmaFH_seas2", label ="For Hire Open Season 2", 
+               sliderInput(inputId = "SCUPmaFH_seas2", label ="For Hire  Season 2", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("07-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -387,7 +381,7 @@ server <- function(input, output, session) {
                                     min = 5, max = 25, value = 11, step = .5))), 
                
                
-               sliderInput(inputId = "SCUPmaPR_seas1", label ="Private Open Season 1", 
+               sliderInput(inputId = "SCUPmaPR_seas1", label ="Private  Season 1", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -399,7 +393,7 @@ server <- function(input, output, session) {
                  column(5, 
                         sliderInput(inputId = "SCUPmaPR_1_len", label = "Min Length",
                                     min = 5, max = 25, value = 11, step = .5))),
-               sliderInput(inputId = "SCUPmaSH_seas1", label ="Shore Open Season 1", 
+               sliderInput(inputId = "SCUPmaSH_seas1", label ="Shore  Season 1", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -414,7 +408,7 @@ server <- function(input, output, session) {
                
                actionButton("SCUPMAaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SCUPmaSeason2",
-                                    sliderInput(inputId = "SCUPmaFH_seas3", label ="For Hire Open Season 3", 
+                                    sliderInput(inputId = "SCUPmaFH_seas3", label ="For Hire  Season 3", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -426,7 +420,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPmaFH_3_len", label ="Min Length",
                                                          min = 3, max = 25, value = 10, step = .5))), 
-                                    sliderInput(inputId = "SCUPmaPR_seas2", label ="Private Open Season 2", 
+                                    sliderInput(inputId = "SCUPmaPR_seas2", label ="Private  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -438,7 +432,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPmaPR_2_len", label ="Min Length",
                                                          min = 3, max = 25, value = 10, step = .5))), 
-                                    sliderInput(inputId = "SCUPmaSH_seas2", label ="Shore Open Season 2", 
+                                    sliderInput(inputId = "SCUPmaSH_seas2", label ="Shore  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -459,7 +453,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$SF_MA_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "SFma_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "SFma_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-21","%m-%d"),as.Date("09-29","%m-%d")), 
@@ -471,7 +465,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFma_1_len", label ="Min Length",
                                                            min = 5, max = 25, value = 16.5, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFmaFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "SFmaFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-21","%m-%d"),as.Date("09-29","%m-%d")), 
@@ -483,7 +477,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFmaFH_1_len", label ="Min Length",
                                                           min = 5, max = 25, value = 16.5, step = .5))) ,
-                                     sliderInput(inputId = "SFmaPR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "SFmaPR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-21","%m-%d"),as.Date("09-29","%m-%d")), 
@@ -495,7 +489,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFmaPR_1_len", label ="Min Length",
                                                           min = 5, max = 25, value = 16.5, step = .5))) ,
-                                     sliderInput(inputId = "SFmaSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "SFmaSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-21","%m-%d"),as.Date("09-29","%m-%d")), 
@@ -518,7 +512,7 @@ server <- function(input, output, session) {
     # UI component. i.e. when all modes combined is selected only one
     switch(input$BSB_MA_input_type,
            
-           "All Modes Combined" = div(sliderInput(inputId = "BSBma_seas1", label ="Open Season 1", 
+           "All Modes Combined" = div(sliderInput(inputId = "BSBma_seas1", label =" Season 1", 
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-18","%m-%d"),as.Date("09-03","%m-%d")), 
@@ -532,7 +526,7 @@ server <- function(input, output, session) {
                                                            min = 3, max = 25, value = 16.5, step = .5)))),
            
            
-           "Seperated By Mode" = div(sliderInput(inputId = "BSBmaFH_seas1", label =" For Hire Open Season 1", 
+           "Seperated By Mode" = div(sliderInput(inputId = "BSBmaFH_seas1", label =" For Hire  Season 1", 
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-18","%m-%d"),as.Date("09-03","%m-%d")), 
@@ -544,7 +538,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBmaFH_1_len", label ="Min Length",
                                                           min = 3, max = 25, value = 16.5, step = .5))),
-                                     sliderInput(inputId = "BSBmaPR_seas1", label ="Private/Rental Open Season 1",
+                                     sliderInput(inputId = "BSBmaPR_seas1", label ="Private/Rental  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-18","%m-%d"),as.Date("09-03","%m-%d")), 
@@ -556,7 +550,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBmaPR_1_len", label ="Min Length",
                                                           min = 3, max = 25, value = 16.5, step = .5))),
-                                     sliderInput(inputId = "BSBmaSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "BSBmaSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-18","%m-%d"),as.Date("09-03","%m-%d")), 
@@ -586,7 +580,7 @@ server <- function(input, output, session) {
                
                actionButton("SFRIaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SFriSeason2",
-                                    sliderInput(inputId = "SFriFH_seas2", label ="For Hire Open Season 2",
+                                    sliderInput(inputId = "SFriFH_seas2", label ="For Hire  Season 2",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -598,7 +592,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFriFH_2_len", label ="Min Length",
                                                          min = 14, max = 21, value = 18, step = .5))), 
-                                    sliderInput(inputId = "SFriPR_seas2", label ="Private Open Season 2",
+                                    sliderInput(inputId = "SFriPR_seas2", label ="Private  Season 2",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -610,7 +604,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFriPR_2_len", label ="Min Length",
                                                          min = 14, max = 21, value = 18, step = .5))), 
-                                    sliderInput(inputId = "SFriSH_seas2", label ="Shore Open Season 2",
+                                    sliderInput(inputId = "SFriSH_seas2", label ="Shore  Season 2",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -626,7 +620,7 @@ server <- function(input, output, session) {
         column(4, 
                titlePanel("Black Sea Bass - RI"),
                
-               sliderInput(inputId = "BSBriFH_seas1", label ="For Hire Open Season 1",
+               sliderInput(inputId = "BSBriFH_seas1", label ="For Hire  Season 1",
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("06-18","%m-%d"),as.Date("08-31","%m-%d")), 
@@ -638,7 +632,7 @@ server <- function(input, output, session) {
                  column(6,
                         sliderInput(inputId = "BSBriFH_1_len", label ="Min Length",
                                     min = 11, max =18, value = 16, step = .5))),
-               sliderInput(inputId = "BSBriFH_seas2", label ="For Hire Open Season 2",
+               sliderInput(inputId = "BSBriFH_seas2", label ="For Hire  Season 2",
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -651,7 +645,7 @@ server <- function(input, output, session) {
                         sliderInput(inputId = "BSBriFH_2_len", label ="Min Length",
                                     min = 11, max = 18, value = 16, step = .5))),
                
-               sliderInput(inputId = "BSBriPR_seas1", label ="Private Open Season 1",
+               sliderInput(inputId = "BSBriPR_seas1", label ="Private  Season 1",
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("05-22","%m-%d"),as.Date("08-26","%m-%d")), 
@@ -664,7 +658,7 @@ server <- function(input, output, session) {
                         sliderInput(inputId = "BSBriPR_1_len", label ="Min Length",
                                     min = 11, max = 18, value = 16.5, step = .5))),
                
-               sliderInput(inputId = "BSBriPR_seas2", label ="Private Open Season 2",
+               sliderInput(inputId = "BSBriPR_seas2", label ="Private  Season 2",
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("08-27","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -677,7 +671,7 @@ server <- function(input, output, session) {
                         sliderInput(inputId = "BSBriPR_2_len", label ="Min Length",
                                     min = 11, max = 18, value = 16.5, step = .5))),
                
-               sliderInput(inputId = "BSBriSH_seas1", label ="Shore Open Season 1",
+               sliderInput(inputId = "BSBriSH_seas1", label ="Shore  Season 1",
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("05-22","%m-%d"),as.Date("08-26","%m-%d")), 
@@ -690,7 +684,7 @@ server <- function(input, output, session) {
                         sliderInput(inputId = "BSBriSH_1_len", label ="Min Length",
                                     min = 11, max = 18, value = 16.5, step = .5))),
                
-               sliderInput(inputId = "BSBriSH_seas2", label ="Shore Open Season 2",
+               sliderInput(inputId = "BSBriSH_seas2", label ="Shore  Season 2",
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("08-27","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -705,7 +699,7 @@ server <- function(input, output, session) {
                
                actionButton("BSBRIaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "BSBriSeason2",
-                                    sliderInput(inputId = "BSBriFH_seas3", label ="For Hire Open Season 3",
+                                    sliderInput(inputId = "BSBriFH_seas3", label ="For Hire  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -717,7 +711,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBriFH_3_len", label ="Min Length",
                                                          min = 11, max = 18, value = 16, step = .5))),
-                                    sliderInput(inputId = "BSBriPR_seas3", label ="Private Open Season 3",
+                                    sliderInput(inputId = "BSBriPR_seas3", label ="Private  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -729,7 +723,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBriPR_3_len", label ="Min Length",
                                                          min = 11, max = 18, value = 16.5, step = .5))),
-                                    sliderInput(inputId = "BSBriSH_seas3", label ="Shore Open Season 3",
+                                    sliderInput(inputId = "BSBriSH_seas3", label ="Shore  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -747,7 +741,7 @@ server <- function(input, output, session) {
         
         column(4, #### SCUP 
                titlePanel("Scup - RI"),
-               sliderInput(inputId = "SCUPriFH_seas1", label ="For Hire Open Season 1", 
+               sliderInput(inputId = "SCUPriFH_seas1", label ="For Hire  Season 1", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("08-31","%m-%d")), 
@@ -760,7 +754,7 @@ server <- function(input, output, session) {
                         sliderInput(inputId = "SCUPriFH_1_len", label = "Min Length",
                                     min = 8, max = 12, value = 11, step = .5))),
                
-               sliderInput(inputId = "SCUPriFH_seas2", label ="For Hire Open Season 2", 
+               sliderInput(inputId = "SCUPriFH_seas2", label ="For Hire  Season 2", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("09-01","%m-%d"),as.Date("10-31","%m-%d")), 
@@ -772,7 +766,7 @@ server <- function(input, output, session) {
                  column(5, 
                         sliderInput(inputId = "SCUPriFH_2_len", label = "Min Length",
                                     min = 8, max = 12, value = 11, step = .5))), 
-               sliderInput(inputId = "SCUPriFH_seas3", label ="For Hire Open Season 3", 
+               sliderInput(inputId = "SCUPriFH_seas3", label ="For Hire  Season 3", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("11-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -785,7 +779,7 @@ server <- function(input, output, session) {
                         sliderInput(inputId = "SCUPriFH_3_len", label = "Min Length",
                                     min = 8, max = 12, value = 11, step = .5))), 
                
-               sliderInput(inputId = "SCUPriPR_seas1", label ="Private Open Season 1", 
+               sliderInput(inputId = "SCUPriPR_seas1", label ="Private  Season 1", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -797,7 +791,7 @@ server <- function(input, output, session) {
                  column(5, 
                         sliderInput(inputId = "SCUPriPR_1_len", label = "Min Length",
                                     min = 8, max = 12, value = 11, step = .5))),
-               sliderInput(inputId = "SCUPriSH_seas1", label ="Shore Open Season 1", 
+               sliderInput(inputId = "SCUPriSH_seas1", label ="Shore  Season 1", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -812,7 +806,7 @@ server <- function(input, output, session) {
                
                actionButton("SCUPRIaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SCUPriSeason2",
-                                    sliderInput(inputId = "SCUPriFH_seas4", label ="For Hire Open Season 4", 
+                                    sliderInput(inputId = "SCUPriFH_seas4", label ="For Hire  Season 4", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -824,7 +818,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPriFH_4_len", label ="Min Length",
                                                          min = 8, max = 12, value = 10, step = .5))), 
-                                    sliderInput(inputId = "SCUPriPR_seas2", label ="Private Open Season 2", 
+                                    sliderInput(inputId = "SCUPriPR_seas2", label ="Private  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -836,7 +830,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPriPR_2_len", label ="Min Length",
                                                          min = 8, max = 12, value = 10, step = .5))), 
-                                    sliderInput(inputId = "SCUPriSH_seas2", label ="Shore Open Season 2", 
+                                    sliderInput(inputId = "SCUPriSH_seas2", label ="Shore  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -859,7 +853,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$SF_RI_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "SFri_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "SFri_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("04-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -871,7 +865,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFri_1_len", label ="Min Length",
                                                            min = 14, max = 21, value = 19, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFriFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "SFriFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("04-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -883,7 +877,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFriFH_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 19, step = .5))) ,
-                                     sliderInput(inputId = "SFriPR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "SFriPR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("04-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -895,7 +889,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFriPR_1_len", label ="Min Length",
                                                           min = 5, max = 25, value = 19, step = .5))) ,
-                                     sliderInput(inputId = "SFriSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "SFriSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("04-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -923,7 +917,7 @@ server <- function(input, output, session) {
                
                actionButton("SFCTaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SFctSeason3",
-                                    sliderInput(inputId = "SFctFH_seas3", label ="For Hire Open Season 3",
+                                    sliderInput(inputId = "SFctFH_seas3", label ="For Hire  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -935,7 +929,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFctFH_3_len", label ="Min Length",
                                                          min = 14, max = 21, value = 18.5, step = .5))), 
-                                    sliderInput(inputId = "SFctPR_seas3", label ="Private Open Season 3",
+                                    sliderInput(inputId = "SFctPR_seas3", label ="Private  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -947,7 +941,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFctPR_3_len", label ="Min Length",
                                                          min = 14, max = 21, value = 18.5, step = .5))), 
-                                    sliderInput(inputId = "SFctSH_seas3", label ="Shore Open Season 3",
+                                    sliderInput(inputId = "SFctSH_seas3", label ="Shore  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -963,7 +957,7 @@ server <- function(input, output, session) {
         column(4, 
                titlePanel("Black Sea Bass - CT"),
                
-               sliderInput(inputId = "BSBctFH_seas1", label ="For Hire Open Season 1",
+               sliderInput(inputId = "BSBctFH_seas1", label ="For Hire  Season 1",
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("05-18","%m-%d"),as.Date("08-31","%m-%d")), 
@@ -975,7 +969,7 @@ server <- function(input, output, session) {
                  column(6,
                         sliderInput(inputId = "BSBctFH_1_len", label ="Min Length",
                                     min = 11, max = 18, value = 16, step = .5))),
-               sliderInput(inputId = "BSBctFH_seas2", label ="For Hire Open Season 2",
+               sliderInput(inputId = "BSBctFH_seas2", label ="For Hire  Season 2",
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -988,7 +982,7 @@ server <- function(input, output, session) {
                         sliderInput(inputId = "BSBctFH_2_len", label ="Min Length",
                                     min = 11, max = 18, value = 16, step = .5))),
                
-               sliderInput(inputId = "BSBctPR_seas1", label ="Private Open Season 1",
+               sliderInput(inputId = "BSBctPR_seas1", label ="Private  Season 1",
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("05-18","%m-%d"),as.Date("06-23","%m-%d")), 
@@ -1001,7 +995,7 @@ server <- function(input, output, session) {
                         sliderInput(inputId = "BSBctPR_1_len", label ="Min Length",
                                     min = 11, max = 18, value = 16, step = .5))),
                
-               sliderInput(inputId = "BSBctPR_seas2", label ="Private Open Season 2",
+               sliderInput(inputId = "BSBctPR_seas2", label ="Private  Season 2",
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("07-08","%m-%d"),as.Date("11-28","%m-%d")), 
@@ -1014,7 +1008,7 @@ server <- function(input, output, session) {
                         sliderInput(inputId = "BSBctPR_2_len", label ="Min Length",
                                     min = 11, max = 18, value = 16, step = .5))),
                
-               sliderInput(inputId = "BSBctSH_seas1", label ="Shore Open Season 1",
+               sliderInput(inputId = "BSBctSH_seas1", label ="Shore  Season 1",
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("05-18","%m-%d"),as.Date("06-23","%m-%d")), 
@@ -1027,7 +1021,7 @@ server <- function(input, output, session) {
                         sliderInput(inputId = "BSBctSH_1_len", label ="Min Length",
                                     min = 11, max = 18, value = 16, step = .5))),
                
-               sliderInput(inputId = "BSBctSH_seas2", label ="Shore Open Season 2",
+               sliderInput(inputId = "BSBctSH_seas2", label ="Shore  Season 2",
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("07-08","%m-%d"),as.Date("11-28","%m-%d")), 
@@ -1042,7 +1036,7 @@ server <- function(input, output, session) {
                
                actionButton("BSBCTaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "BSBctSeason2",
-                                    sliderInput(inputId = "BSBctFH_seas3", label ="For Hire Open Season 3",
+                                    sliderInput(inputId = "BSBctFH_seas3", label ="For Hire  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1054,7 +1048,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBctFH_3_len", label ="Min Length",
                                                          min = 11, max = 18, value = 16, step = .5))),
-                                    sliderInput(inputId = "BSBctPR_seas3", label ="Private Open Season 3",
+                                    sliderInput(inputId = "BSBctPR_seas3", label ="Private  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1066,7 +1060,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBctPR_3_len", label ="Min Length",
                                                          min = 11, max = 18, value = 16, step = .5))),
-                                    sliderInput(inputId = "BSBctSH_seas3", label ="Shore Open Season 3",
+                                    sliderInput(inputId = "BSBctSH_seas3", label ="Shore  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1084,7 +1078,7 @@ server <- function(input, output, session) {
         
         column(4, #### SCUP 
                titlePanel("Scup - CT"),
-               sliderInput(inputId = "SCUPctFH_seas1", label ="For Hire Open Season 1",
+               sliderInput(inputId = "SCUPctFH_seas1", label ="For Hire  Season 1",
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("08-31","%m-%d")), 
@@ -1097,7 +1091,7 @@ server <- function(input, output, session) {
                         sliderInput(inputId = "SCUPctFH_1_len", label = "Min Length",
                                     min = 8, max = 12, value = 11, step = .5))),
                
-               sliderInput(inputId = "SCUPctFH_seas2", label ="For Hire Open Season 2", 
+               sliderInput(inputId = "SCUPctFH_seas2", label ="For Hire  Season 2", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("09-01","%m-%d"),as.Date("10-31","%m-%d")), 
@@ -1109,7 +1103,7 @@ server <- function(input, output, session) {
                  column(5, 
                         sliderInput(inputId = "SCUPctFH_2_len", label = "Min Length",
                                     min = 8, max = 12, value = 11, step = .5))), 
-               sliderInput(inputId = "SCUPctFH_seas3", label ="For Hire Open Season 3", 
+               sliderInput(inputId = "SCUPctFH_seas3", label ="For Hire  Season 3", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("11-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1122,7 +1116,7 @@ server <- function(input, output, session) {
                         sliderInput(inputId = "SCUPctFH_3_len", label = "Min Length",
                                     min = 8, max = 12, value = 11, step = .5))), 
                
-               sliderInput(inputId = "SCUPctPR_seas1", label ="Private Open Season 1", 
+               sliderInput(inputId = "SCUPctPR_seas1", label ="Private  Season 1", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1134,7 +1128,7 @@ server <- function(input, output, session) {
                  column(5, 
                         sliderInput(inputId = "SCUPctPR_1_len", label = "Min Length",
                                     min = 8, max = 12, value = 11, step = .5))),
-               sliderInput(inputId = "SCUPctSH_seas1", label ="Shore Open Season 1", 
+               sliderInput(inputId = "SCUPctSH_seas1", label ="Shore  Season 1", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1149,7 +1143,7 @@ server <- function(input, output, session) {
                
                actionButton("SCUPCTaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SCUPctSeason2",
-                                    sliderInput(inputId = "SCUPctFH_seas4", label ="For Hire Open Season 4", 
+                                    sliderInput(inputId = "SCUPctFH_seas4", label ="For Hire  Season 4", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1161,7 +1155,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPctFH_4_len", label ="Min Length",
                                                          min = 8, max = 12, value = 10, step = .5))), 
-                                    sliderInput(inputId = "SCUPctPR_seas2", label ="Private Open Season 2", 
+                                    sliderInput(inputId = "SCUPctPR_seas2", label ="Private  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1173,7 +1167,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPctPR_2_len", label ="Min Length",
                                                          min = 8, max = 12, value = 10, step = .5))), 
-                                    sliderInput(inputId = "SCUPctSH_seas2", label ="Shore Open Season 2", 
+                                    sliderInput(inputId = "SCUPctSH_seas2", label ="Shore  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1196,7 +1190,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$SF_CT_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "SFct_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "SFct_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
@@ -1208,7 +1202,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFct_1_len", label ="Min Length",
                                                            min = 14, max = 21, value = 19, step = .5))), 
-                                      sliderInput(inputId = "SFct_seas2", label ="Open Season 2",
+                                      sliderInput(inputId = "SFct_seas2", label =" Season 2",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("08-02","%m-%d"),as.Date("10-15","%m-%d")), 
@@ -1220,7 +1214,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFct_2_len", label ="Min Length",
                                                            min = 14, max = 21, value = 19.5, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFctFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "SFctFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
@@ -1232,7 +1226,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFctFH_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 19, step = .5))) ,
-                                     sliderInput(inputId = "SFctPR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "SFctPR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
@@ -1244,7 +1238,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFctPR_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 19, step = .5))) ,
-                                     sliderInput(inputId = "SFctSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "SFctSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
@@ -1256,7 +1250,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFctSH_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 19, step = .5))), 
-                                     sliderInput(inputId = "SFctFH_seas2", label ="For Hire Open Season 2",
+                                     sliderInput(inputId = "SFctFH_seas2", label ="For Hire  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-02","%m-%d"),as.Date("10-15","%m-%d")), 
@@ -1268,7 +1262,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFctFH_2_len", label ="Min Length",
                                                           min = 14, max = 21, value = 19.5, step = .5))) ,
-                                     sliderInput(inputId = "SFctPR_seas2", label ="Private Open Season 2",
+                                     sliderInput(inputId = "SFctPR_seas2", label ="Private  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-02","%m-%d"),as.Date("10-15","%m-%d")), 
@@ -1280,7 +1274,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFctPR_2_len", label ="Min Length",
                                                           min = 14, max = 21, value = 19.5, step = .5))) ,
-                                     sliderInput(inputId = "SFctSH_seas2", label ="Shore Open Season 2",
+                                     sliderInput(inputId = "SFctSH_seas2", label ="Shore  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-02","%m-%d"),as.Date("10-15","%m-%d")), 
@@ -1311,7 +1305,7 @@ server <- function(input, output, session) {
                
                actionButton("SFNYaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SFnySeason3",
-                                    sliderInput(inputId = "SFnyFH_seas3", label ="For Hire Open Season 3",
+                                    sliderInput(inputId = "SFnyFH_seas3", label ="For Hire  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1323,7 +1317,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFnyFH_3_len", label ="Min Length",
                                                          min = 14, max = 21, value = 18.5, step = .5))), 
-                                    sliderInput(inputId = "SFnyPR_seas3", label ="Private Open Season 3",
+                                    sliderInput(inputId = "SFnyPR_seas3", label ="Private  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1335,7 +1329,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFnyPR_3_len", label ="Min Length",
                                                          min = 14, max = 21, value = 18.5, step = .5))), 
-                                    sliderInput(inputId = "SFnySH_seas3", label ="Shore Open Season 3",
+                                    sliderInput(inputId = "SFnySH_seas3", label ="Shore  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1358,7 +1352,7 @@ server <- function(input, output, session) {
                
                actionButton("BSBNYaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "BSBnySeason3",
-                                    sliderInput(inputId = "BSBnyFH_seas3", label ="For Hire Open Season 3",
+                                    sliderInput(inputId = "BSBnyFH_seas3", label ="For Hire  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1370,7 +1364,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBnyFH_3_len", label ="Min Length",
                                                          min = 11, max = 18, value = 16.5, step = .5))),
-                                    sliderInput(inputId = "BSBnyPR_seas3", label ="Private Open Season 3",
+                                    sliderInput(inputId = "BSBnyPR_seas3", label ="Private  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1382,7 +1376,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBnyPR_3_len", label ="Min Length",
                                                          min = 11, max = 18, value = 16.5, step = .5))),
-                                    sliderInput(inputId = "BSBnySH_seas3", label ="Shore Open Season 3",
+                                    sliderInput(inputId = "BSBnySH_seas3", label ="Shore  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1400,7 +1394,7 @@ server <- function(input, output, session) {
         
         column(4, #### SCUP 
                titlePanel("Scup - NY"),
-               sliderInput(inputId = "SCUPnyFH_seas1", label ="For Hire Open Season 1", 
+               sliderInput(inputId = "SCUPnyFH_seas1", label ="For Hire  Season 1", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("08-31","%m-%d")), 
@@ -1413,7 +1407,7 @@ server <- function(input, output, session) {
                         sliderInput(inputId = "SCUPnyFH_1_len", label = "Min Length",
                                     min = 8, max = 12, value = 11, step = .5))),
                
-               sliderInput(inputId = "SCUPnyFH_seas2", label ="For Hire Open Season 2", 
+               sliderInput(inputId = "SCUPnyFH_seas2", label ="For Hire  Season 2", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("09-01","%m-%d"),as.Date("10-31","%m-%d")), 
@@ -1425,7 +1419,7 @@ server <- function(input, output, session) {
                  column(5, 
                         sliderInput(inputId = "SCUPnyFH_2_len", label = "Min Length",
                                     min = 8, max = 12, value = 11, step = .5))), 
-               sliderInput(inputId = "SCUPnyFH_seas3", label ="For Hire Open Season 3", 
+               sliderInput(inputId = "SCUPnyFH_seas3", label ="For Hire  Season 3", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("11-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1438,7 +1432,7 @@ server <- function(input, output, session) {
                         sliderInput(inputId = "SCUPnyFH_3_len", label = "Min Length",
                                     min = 8, max = 12, value = 11, step = .5))), 
                
-               sliderInput(inputId = "SCUPnyPR_seas1", label ="Private Open Season 1", 
+               sliderInput(inputId = "SCUPnyPR_seas1", label ="Private  Season 1", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1450,7 +1444,7 @@ server <- function(input, output, session) {
                  column(5, 
                         sliderInput(inputId = "SCUPnyPR_1_len", label = "Min Length",
                                     min = 8, max = 12, value = 11, step = .5))),
-               sliderInput(inputId = "SCUPnySH_seas1", label ="Shore Open Season 1", 
+               sliderInput(inputId = "SCUPnySH_seas1", label ="Shore  Season 1", 
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1465,7 +1459,7 @@ server <- function(input, output, session) {
                
                actionButton("SCUPNYaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SCUPnySeason2",
-                                    sliderInput(inputId = "SCUPnyFH_seas4", label ="For Hire Open Season 4", 
+                                    sliderInput(inputId = "SCUPnyFH_seas4", label ="For Hire  Season 4", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1477,7 +1471,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPnyFH_4_len", label ="Min Length",
                                                          min = 8, max = 12, value = 10, step = .5))), 
-                                    sliderInput(inputId = "SCUPnyPR_seas2", label ="Private Open Season 2", 
+                                    sliderInput(inputId = "SCUPnyPR_seas2", label ="Private  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1489,7 +1483,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPnyPR_2_len", label ="Min Length",
                                                          min = 8, max = 12, value = 10, step = .5))), 
-                                    sliderInput(inputId = "SCUPnySH_seas2", label ="Shore Open Season 2", 
+                                    sliderInput(inputId = "SCUPnySH_seas2", label ="Shore  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1509,7 +1503,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$SF_NY_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "SFny_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "SFny_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
@@ -1521,7 +1515,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFny_1_len", label ="Min Length",
                                                            min = 14, max = 21, value = 19, step = .5))), 
-                                      sliderInput(inputId = "SFny_seas2", label ="Open Season 2",
+                                      sliderInput(inputId = "SFny_seas2", label =" Season 2",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("08-02","%m-%d"),as.Date("10-15","%m-%d")), 
@@ -1533,7 +1527,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFny_2_len", label ="Min Length",
                                                            min = 14, max = 21, value = 19.5, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFnyFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "SFnyFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
@@ -1545,7 +1539,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFnyFH_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 19, step = .5))) ,
-                                     sliderInput(inputId = "SFnyPR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "SFnyPR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
@@ -1557,7 +1551,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFnyPR_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 19, step = .5))) ,
-                                     sliderInput(inputId = "SFnySH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "SFnySH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
@@ -1569,7 +1563,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFnySH_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 19, step = .5))), 
-                                     sliderInput(inputId = "SFnyFH_seas2", label ="For Hire Open Season 2",
+                                     sliderInput(inputId = "SFnyFH_seas2", label ="For Hire  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-02","%m-%d"),as.Date("10-15","%m-%d")), 
@@ -1581,7 +1575,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFnyFH_2_len", label ="Min Length",
                                                           min = 14, max = 21, value = 19.5, step = .5))) ,
-                                     sliderInput(inputId = "SFnyPR_seas2", label ="Private Open Season 2",
+                                     sliderInput(inputId = "SFnyPR_seas2", label ="Private  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-02","%m-%d"),as.Date("10-15","%m-%d")), 
@@ -1593,7 +1587,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFnyPR_2_len", label ="Min Length",
                                                           min = 14, max = 21, value = 19.5, step = .5))) ,
-                                     sliderInput(inputId = "SFnySH_seas2", label ="Shore Open Season 2",
+                                     sliderInput(inputId = "SFnySH_seas2", label ="Shore  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-02","%m-%d"),as.Date("10-15","%m-%d")), 
@@ -1613,7 +1607,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$BSB_NY_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "BSBny_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "BSBny_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("06-23","%m-%d"),as.Date("8-31","%m-%d")), 
@@ -1626,7 +1620,7 @@ server <- function(input, output, session) {
                                                sliderInput(inputId = "BSBny_1_len", label ="Min Length",
                                                            min = 11, max = 18, value = 16.5, step = .5))), 
                                       
-                                      sliderInput(inputId = "BSBny_seas2", label ="Open Season 2",
+                                      sliderInput(inputId = "BSBny_seas2", label =" Season 2",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1638,7 +1632,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "BSBny_2_len", label ="Min Length",
                                                            min = 11, max = 18, value = 16.5, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "BSBnyFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "BSBnyFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-23","%m-%d"),as.Date("08-31","%m-%d")), 
@@ -1650,7 +1644,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBnyFH_1_len", label ="Min Length",
                                                           min = 11, max = 18, value = 16.5, step = .5))) ,
-                                     sliderInput(inputId = "BSBnyPR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "BSBnyPR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-23","%m-%d"),as.Date("08-31","%m-%d")), 
@@ -1662,7 +1656,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBnyPR_1_len", label ="Min Length",
                                                           min = 11, max = 18, value = 16.5, step = .5))) ,
-                                     sliderInput(inputId = "BSBnySH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "BSBnySH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-23","%m-%d"),as.Date("08-31","%m-%d")), 
@@ -1676,7 +1670,7 @@ server <- function(input, output, session) {
                                                           min = 11, max = 18, value = 16.5, step = .5))), 
                                      
                                      
-                                     sliderInput(inputId = "BSBnyFH_seas2", label ="For Hire Open Season 2",
+                                     sliderInput(inputId = "BSBnyFH_seas2", label ="For Hire  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1688,7 +1682,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBnyFH_2_len", label ="Min Length",
                                                           min = 11, max = 18, value = 16.5, step = .5))) ,
-                                     sliderInput(inputId = "BSBnyPR_seas2", label ="Private Open Season 2",
+                                     sliderInput(inputId = "BSBnyPR_seas2", label ="Private  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1700,7 +1694,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBnyPR_2_len", label ="Min Length",
                                                           min = 11, max = 18, value = 16.5, step = .5))) ,
-                                     sliderInput(inputId = "BSBnySH_seas2", label ="Shore Open Season 2",
+                                     sliderInput(inputId = "BSBnySH_seas2", label ="Shore  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1729,7 +1723,7 @@ server <- function(input, output, session) {
                
                actionButton("SFNJaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SFnjSeason2",
-                                    sliderInput(inputId = "SFnjFH_seas2", label ="For Hire Open Season 2", 
+                                    sliderInput(inputId = "SFnjFH_seas2", label ="For Hire  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1741,7 +1735,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFnjFH_2_len", label ="Min Length",
                                                          min = 14, max = 21, value = 18, step = .5))),
-                                    sliderInput(inputId = "SFnjPR_seas2", label ="Private/Rental Open Season 2",  
+                                    sliderInput(inputId = "SFnjPR_seas2", label ="Private/Rental  Season 2",  
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1753,7 +1747,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFnjPR_2_len", label ="Min Length",
                                                          min = 14, max = 21, value =  18, step = .5))),
-                                    sliderInput(inputId = "SFnjSH_seas2", label ="Shore Open Season 2",  
+                                    sliderInput(inputId = "SFnjSH_seas2", label ="Shore  Season 2",  
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1776,7 +1770,7 @@ server <- function(input, output, session) {
                actionButton("BSBNJaddSeason", "Add Season"), 
                #Season 5
                shinyjs::hidden( div(ID = "BSBnjSeason5",
-                                    sliderInput(inputId = "BSBnjFH_seas5", label =" For Hire Open Season 5", 
+                                    sliderInput(inputId = "BSBnjFH_seas5", label =" For Hire  Season 5", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1788,7 +1782,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBnjFH_5_len", label ="Min Length",
                                                          min = 11, max = 18, value = 12.5, step = .5))),
-                                    sliderInput(inputId = "BSBnjPR_seas5", label ="Private/Rental Open Season 5",
+                                    sliderInput(inputId = "BSBnjPR_seas5", label ="Private/Rental  Season 5",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1800,7 +1794,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBnjPR_5_len", label ="Min Length",
                                                          min = 11, max = 18, value = 12.5, step = .5))),
-                                    sliderInput(inputId = "BSBnjSH_seas5", label ="Shore Open Season 5",
+                                    sliderInput(inputId = "BSBnjSH_seas5", label ="Shore  Season 5",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1825,7 +1819,7 @@ server <- function(input, output, session) {
                
                actionButton("SCUPNJaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SCUPnjSeason2",
-                                    sliderInput(inputId = "SCUPnjFH_seas2", label ="For Hire Open Season 2",
+                                    sliderInput(inputId = "SCUPnjFH_seas2", label ="For Hire  Season 2",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1837,7 +1831,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPnjFH_2_len", label ="Min Length",
                                                          min = 8, max = 12, value = 10, step = .5))), 
-                                    sliderInput(inputId = "SCUPnjPR_seas2", label ="Private Open Season 2",
+                                    sliderInput(inputId = "SCUPnjPR_seas2", label ="Private  Season 2",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1849,7 +1843,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPnjPR_2_len", label ="Min Length",
                                                          min = 8, max = 12, value = 10, step = .5))), 
-                                    sliderInput(inputId = "SCUPnjSH_seas2", label ="Shore Open Season 2",
+                                    sliderInput(inputId = "SCUPnjSH_seas2", label ="Shore  Season 2",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1871,7 +1865,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$SF_NJ_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "SFnj_seas1", label ="Open Season 1", 
+           "All Modes Combined" = div(sliderInput(inputId = "SFnj_seas1", label =" Season 1", 
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value =c(as.Date("05-04","%m-%d"),as.Date("09-25","%m-%d")), 
@@ -1883,7 +1877,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFnj_1_len", label ="Min Length",
                                                            min = 14, max = 21, value = 18, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFnjFH_seas1", label ="For Hire Open Season 1", 
+           "Seperated By Mode" = div(sliderInput(inputId = "SFnjFH_seas1", label ="For Hire  Season 1", 
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value =c(as.Date("05-04","%m-%d"),as.Date("09-25","%m-%d")), 
@@ -1895,7 +1889,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFnjFH_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 18, step = .5)), 
-                                       sliderInput(inputId = "SFnjPR_seas1", label ="Private/Rental Open Season 1",  
+                                       sliderInput(inputId = "SFnjPR_seas1", label ="Private/Rental  Season 1",  
                                                    min = as.Date("01-01","%m-%d"),
                                                    max = as.Date("12-31","%m-%d"),
                                                    value=c(as.Date("05-04","%m-%d"),as.Date("09-25","%m-%d")), 
@@ -1907,7 +1901,7 @@ server <- function(input, output, session) {
                                          column(6,
                                                 sliderInput(inputId = "SFnjPR_1_len", label ="Min Length",
                                                             min = 14, max = 21, value = 18, step = .5))),
-                                       sliderInput(inputId = "SFnjSH_seas1", label ="Shore Open Season 1",  
+                                       sliderInput(inputId = "SFnjSH_seas1", label ="Shore  Season 1",  
                                                    min = as.Date("01-01","%m-%d"),
                                                    max = as.Date("12-31","%m-%d"),
                                                    value=c(as.Date("05-04","%m-%d"),as.Date("09-25","%m-%d")), 
@@ -1928,7 +1922,7 @@ server <- function(input, output, session) {
     
     switch(input$BSB_NJ_input_type,
            
-           "All Modes Combined" = div(sliderInput(inputId = "BSBnj_seas1", label ="Open Season 1", 
+           "All Modes Combined" = div(sliderInput(inputId = "BSBnj_seas1", label =" Season 1", 
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-17","%m-%d"),as.Date("06-19","%m-%d")), 
@@ -1942,7 +1936,7 @@ server <- function(input, output, session) {
                                                            min = 11, max = 18, value = 12.5, step = .5))),
                                       
                                       #Season 2
-                                      sliderInput(inputId = "BSBnj_seas2", label ="Open Season 2", 
+                                      sliderInput(inputId = "BSBnj_seas2", label =" Season 2", 
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("07-01","%m-%d"),as.Date("08-31","%m-%d")), 
@@ -1956,7 +1950,7 @@ server <- function(input, output, session) {
                                                            min = 11, max = 18, value = 12.5, step = .5))),
                                       
                                       #Season 3
-                                      sliderInput(inputId = "BSBnj_seas3", label ="Open Season 3", 
+                                      sliderInput(inputId = "BSBnj_seas3", label =" Season 3", 
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("10-01","%m-%d"),as.Date("10-31","%m-%d")), 
@@ -1970,7 +1964,7 @@ server <- function(input, output, session) {
                                                            min = 11, max = 18, value = 12.5, step = .5))),
                                       
                                       #Season 4
-                                      sliderInput(inputId = "BSBnj_seas4", label ="Open Season 4", 
+                                      sliderInput(inputId = "BSBnj_seas4", label =" Season 4", 
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("11-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -1983,7 +1977,7 @@ server <- function(input, output, session) {
                                                sliderInput(inputId = "BSBnj_4_len", label ="Min Length",
                                                            min = 11, max = 18, value = 12.5, step = .5)))),
            
-           "Seperated By Mode" = div(sliderInput(inputId = "BSBnjFH_seas1", label =" For Hire Open Season 1", 
+           "Seperated By Mode" = div(sliderInput(inputId = "BSBnjFH_seas1", label =" For Hire  Season 1", 
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-17","%m-%d"),as.Date("06-19","%m-%d")), 
@@ -1995,7 +1989,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBnjFH_1_len", label ="Min Length",
                                                           min = 11, max = 18, value = 12.5, step = .5))),
-                                     sliderInput(inputId = "BSBnjPR_seas1", label ="Private/Rental Open Season 1",
+                                     sliderInput(inputId = "BSBnjPR_seas1", label ="Private/Rental  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-17","%m-%d"),as.Date("06-19","%m-%d")), 
@@ -2007,7 +2001,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBnjPR_1_len", label ="Min Length",
                                                           min = 11, max = 18, value = 12.5, step = .5))),
-                                     sliderInput(inputId = "BSBnjSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "BSBnjSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-17","%m-%d"),as.Date("06-19","%m-%d")), 
@@ -2020,7 +2014,7 @@ server <- function(input, output, session) {
                                               sliderInput(inputId = "BSBnjSH_1_len", label ="Min Length",
                                                           min = 11, max = 18, value = 12.5, step = .5))),
                                      #Season 2
-                                     sliderInput(inputId = "BSBnjFH_seas2", label =" For Hire Open Season 2", 
+                                     sliderInput(inputId = "BSBnjFH_seas2", label =" For Hire  Season 2", 
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("07-01","%m-%d"),as.Date("08-31","%m-%d")), 
@@ -2032,7 +2026,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBnjFH_2_len", label ="Min Length",
                                                           min = 11, max = 18, value = 12.5, step = .5))),
-                                     sliderInput(inputId = "BSBnjPR_seas2", label ="Private/Rental Open Season 2",
+                                     sliderInput(inputId = "BSBnjPR_seas2", label ="Private/Rental  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("07-01","%m-%d"),as.Date("08-31","%m-%d")), 
@@ -2044,7 +2038,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBnjPR_2_len", label ="Min Length",
                                                           min = 11, max = 18, value = 12.5, step = .5))),
-                                     sliderInput(inputId = "BSBnjSH_seas2", label ="Shore Open Season 2",
+                                     sliderInput(inputId = "BSBnjSH_seas2", label ="Shore  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("07-01","%m-%d"),as.Date("08-31","%m-%d")), 
@@ -2057,7 +2051,7 @@ server <- function(input, output, session) {
                                               sliderInput(inputId = "BSBnjSH_2_len", label ="Min Length",
                                                           min = 11, max = 18, value = 12.5, step = .5))),
                                      #Season 3
-                                     sliderInput(inputId = "BSBnjFH_seas3", label =" For Hire Open Season 3", 
+                                     sliderInput(inputId = "BSBnjFH_seas3", label =" For Hire  Season 3", 
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-07","%m-%d"),as.Date("10-26","%m-%d")), 
@@ -2069,7 +2063,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBnjFH_3_len", label ="Min Length",
                                                           min = 11, max = 18, value = 12.5, step = .5))),
-                                     sliderInput(inputId = "BSBnjPR_seas3", label ="Private/Rental Open Season 3",
+                                     sliderInput(inputId = "BSBnjPR_seas3", label ="Private/Rental  Season 3",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-07","%m-%d"),as.Date("10-26","%m-%d")), 
@@ -2081,7 +2075,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBnjPR_3_len", label ="Min Length",
                                                           min = 11, max = 18, value = 12.5, step = .5))),
-                                     sliderInput(inputId = "BSBnjSH_seas3", label ="Shore Open Season 3",
+                                     sliderInput(inputId = "BSBnjSH_seas3", label ="Shore  Season 3",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-07","%m-%d"),as.Date("10-26","%m-%d")), 
@@ -2094,7 +2088,7 @@ server <- function(input, output, session) {
                                               sliderInput(inputId = "BSBnjSH_3_len", label ="Min Length",
                                                           min = 11, max = 18, value = 12.5, step = .5))),
                                      #Season 4
-                                     sliderInput(inputId = "BSBnjFH_seas4", label =" For Hire Open Season 4", 
+                                     sliderInput(inputId = "BSBnjFH_seas4", label =" For Hire  Season 4", 
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("11-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2106,7 +2100,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBnjFH_4_len", label ="Min Length",
                                                           min = 11, max = 18, value = 12.5, step = .5))),
-                                     sliderInput(inputId = "BSBnjPR_seas4", label ="Private/Rental Open Season 4",
+                                     sliderInput(inputId = "BSBnjPR_seas4", label ="Private/Rental  Season 4",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("11-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2118,7 +2112,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBnjPR_4_len", label ="Min Length",
                                                           min = 11, max = 18, value = 12.5, step = .5))),
-                                     sliderInput(inputId = "BSBnjSH_seas4", label ="Shore Open Season 4",
+                                     sliderInput(inputId = "BSBnjSH_seas4", label ="Shore  Season 4",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("11-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2138,7 +2132,7 @@ server <- function(input, output, session) {
     
     switch(input$SCUP_NJ_input_type,
            
-           "All Modes Combined" = div(sliderInput(inputId = "SCUPnj_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "SCUPnj_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("08-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2150,7 +2144,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SCUPnj_1_len", label ="Min Length",
                                                            min = 8, max = 12, value = 10, step = .5)))),
-           "Seperated By Mode" = div(sliderInput(inputId = "SCUPnjFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "SCUPnjFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2162,7 +2156,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SCUPnjFH_1_len", label ="Min Length",
                                                           min = 8, max = 12, value = 10, step = .5))), 
-                                     sliderInput(inputId = "SCUPnjPR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "SCUPnjPR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2174,7 +2168,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SCUPnjPR_1_len", label ="Min Length",
                                                           min = 8, max = 12, value = 10, step = .5))), 
-                                     sliderInput(inputId = "SCUPnjSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "SCUPnjSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2223,7 +2217,7 @@ server <- function(input, output, session) {
                
                actionButton("SFDEaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SFdeSeason3",
-                                    sliderInput(inputId = "SFdeFH_seas3", label ="For Hire Open Season 3",
+                                    sliderInput(inputId = "SFdeFH_seas3", label ="For Hire  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2235,7 +2229,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFdeFH_3_len", label ="Min Length",
                                                          min = 14, max = 21, value = 16, step = .5))), 
-                                    sliderInput(inputId = "SFdePR_seas3", label ="Private Open Season 3",
+                                    sliderInput(inputId = "SFdePR_seas3", label ="Private  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2247,7 +2241,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFdePR_3_len", label ="Min Length",
                                                          min = 14, max = 21, value = 16, step = .5))), 
-                                    sliderInput(inputId = "SFdeSH_seas3", label ="Shore Open Season 3",
+                                    sliderInput(inputId = "SFdeSH_seas3", label ="Shore  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2270,7 +2264,7 @@ server <- function(input, output, session) {
                
                actionButton("BSBDEaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "BSBdeSeason3",
-                                    sliderInput(inputId = "BSBdeFH_seas3", label ="For Hire Open Season 3",
+                                    sliderInput(inputId = "BSBdeFH_seas3", label ="For Hire  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2282,7 +2276,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBdeFH_3_len", label ="Min Length",
                                                          min = 11, max = 18, value = 13, step = .5))),
-                                    sliderInput(inputId = "BSBdePR_seas3", label ="Private Open Season 3",
+                                    sliderInput(inputId = "BSBdePR_seas3", label ="Private  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2294,7 +2288,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBdePR_3_len", label ="Min Length",
                                                          min = 11, max = 18, value = 13, step = .5))),
-                                    sliderInput(inputId = "BSBdeSH_seas3", label ="Shore Open Season 3",
+                                    sliderInput(inputId = "BSBdeSH_seas3", label ="Shore  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2319,7 +2313,7 @@ server <- function(input, output, session) {
                
                actionButton("SCUPDEaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SCUPdeSeason2",
-                                    sliderInput(inputId = "SCUPdeFH_seas2", label ="For Hire Open Season 2", 
+                                    sliderInput(inputId = "SCUPdeFH_seas2", label ="For Hire  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2331,7 +2325,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPdeFH_2_len", label ="Min Length",
                                                          min = 8, max = 12, value = 9, step = .5))), 
-                                    sliderInput(inputId = "SCUPdePR_seas2", label ="Private Open Season 2", 
+                                    sliderInput(inputId = "SCUPdePR_seas2", label ="Private  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2343,7 +2337,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPdePR_2_len", label ="Min Length",
                                                          min = 8, max = 12, value = 9, step = .5))), 
-                                    sliderInput(inputId = "SCUPdeSH_seas2", label ="Shore Open Season 2", 
+                                    sliderInput(inputId = "SCUPdeSH_seas2", label ="Shore  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2366,7 +2360,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$SF_DE_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "SFde_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "SFde_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
@@ -2378,7 +2372,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFde_1_len", label ="Min Length",
                                                            min = 14, max = 21, value = 16, step = .5))), 
-                                      sliderInput(inputId = "SFde_seas2", label ="Open Season 2",
+                                      sliderInput(inputId = "SFde_seas2", label =" Season 2",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2390,7 +2384,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFde_2_len", label ="Min Length",
                                                            min = 14, max = 21, value = 17.5, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFdeFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "SFdeFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
@@ -2402,7 +2396,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFdeFH_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 16, step = .5))) ,
-                                     sliderInput(inputId = "SFdePR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "SFdePR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
@@ -2414,7 +2408,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFdePR_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 16, step = .5))) ,
-                                     sliderInput(inputId = "SFdeSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "SFdeSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
@@ -2427,7 +2421,7 @@ server <- function(input, output, session) {
                                               sliderInput(inputId = "SFdeSH_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 16, step = .5))), 
                                      
-                                     sliderInput(inputId = "SFdeFH_seas2", label ="For Hire Open Season 2",
+                                     sliderInput(inputId = "SFdeFH_seas2", label ="For Hire  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2439,7 +2433,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFdeFH_2_len", label ="Min Length",
                                                           min = 14, max = 21, value = 17.5, step = .5))) ,
-                                     sliderInput(inputId = "SFdePR_seas2", label ="Private Open Season 2",
+                                     sliderInput(inputId = "SFdePR_seas2", label ="Private  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2451,7 +2445,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFdePR_2_len", label ="Min Length",
                                                           min = 14, max = 21, value = 17.5, step = .5))) ,
-                                     sliderInput(inputId = "SFdeSH_seas2", label ="Shore Open Season 2",
+                                     sliderInput(inputId = "SFdeSH_seas2", label ="Shore  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2471,7 +2465,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$BSB_DE_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "BSBde_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "BSBde_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -2484,7 +2478,7 @@ server <- function(input, output, session) {
                                                sliderInput(inputId = "BSBde_1_len", label ="Min Length",
                                                            min = 11, max = 18, value = 13, step = .5))), 
                                       
-                                      sliderInput(inputId = "BSBde_seas2", label ="Open Season 2",
+                                      sliderInput(inputId = "BSBde_seas2", label =" Season 2",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2496,7 +2490,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "BSBde_2_len", label ="Min Length",
                                                            min = 11, max = 18, value = 13, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "BSBdeFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "BSBdeFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -2508,7 +2502,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBdeFH_1_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
-                                     sliderInput(inputId = "BSBdePR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "BSBdePR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -2520,7 +2514,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBdePR_1_len", label ="Min Length",
                                                           min = 11, max = 18, value = 15, step = .5))) ,
-                                     sliderInput(inputId = "BSBdeSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "BSBdeSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -2534,7 +2528,7 @@ server <- function(input, output, session) {
                                                           min = 11, max = 18, value = 13, step = .5))), 
                                      
                                      
-                                     sliderInput(inputId = "BSBdeFH_seas2", label ="For Hire Open Season 2",
+                                     sliderInput(inputId = "BSBdeFH_seas2", label ="For Hire  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2546,7 +2540,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBdeFH_2_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
-                                     sliderInput(inputId = "BSBdePR_seas2", label ="Private Open Season 2",
+                                     sliderInput(inputId = "BSBdePR_seas2", label ="Private  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2558,7 +2552,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBdePR_2_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
-                                     sliderInput(inputId = "BSBdeSH_seas2", label ="Shore Open Season 2",
+                                     sliderInput(inputId = "BSBdeSH_seas2", label ="Shore  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2577,7 +2571,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$SCUP_DE_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "SCUPde_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "SCUPde_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2589,7 +2583,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SCUPde_1_len", label ="Min Length",
                                                            min = 8, max = 12, value = 9, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SCUPdeFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "SCUPdeFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2601,7 +2595,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SCUPdeFH_1_len", label ="Min Length",
                                                           min = 8, max = 12, value = 9, step = .5))) ,
-                                     sliderInput(inputId = "SCUPdePR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "SCUPdePR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2613,7 +2607,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SCUPdePR_1_len", label ="Min Length",
                                                           min = 8, max = 12, value = 9, step = .5))) ,
-                                     sliderInput(inputId = "SCUPdeSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "SCUPdeSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2643,7 +2637,7 @@ server <- function(input, output, session) {
                
                actionButton("SFMDaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SFmdSeason3",
-                                    sliderInput(inputId = "SFmdFH_seas3", label ="For Hire Open Season 3",
+                                    sliderInput(inputId = "SFmdFH_seas3", label ="For Hire  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2655,7 +2649,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFmdFH_3_len", label ="Min Length",
                                                          min = 14, max = 21, value = 16, step = .5))), 
-                                    sliderInput(inputId = "SFmdPR_seas3", label ="Private Open Season 3",
+                                    sliderInput(inputId = "SFmdPR_seas3", label ="Private  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2667,7 +2661,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFmdPR_3_len", label ="Min Length",
                                                          min = 14, max = 21, value = 16, step = .5))), 
-                                    sliderInput(inputId = "SFmdSH_seas3", label ="Shore Open Season 3",
+                                    sliderInput(inputId = "SFmdSH_seas3", label ="Shore  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2690,7 +2684,7 @@ server <- function(input, output, session) {
                
                actionButton("BSBMDaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "BSBmdSeason3",
-                                    sliderInput(inputId = "BSBmdFH_seas3", label ="For Hire Open Season 3",
+                                    sliderInput(inputId = "BSBmdFH_seas3", label ="For Hire  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2702,7 +2696,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBmdFH_3_len", label ="Min Length",
                                                          min = 11, max = 18, value = 13, step = .5))),
-                                    sliderInput(inputId = "BSBmdPR_seas3", label ="Private Open Season 3",
+                                    sliderInput(inputId = "BSBmdPR_seas3", label ="Private  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2714,7 +2708,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBmdPR_3_len", label ="Min Length",
                                                          min = 11, max = 18, value = 13, step = .5))),
-                                    sliderInput(inputId = "BSBmdSH_seas3", label ="Shore Open Season 3",
+                                    sliderInput(inputId = "BSBmdSH_seas3", label ="Shore  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2739,7 +2733,7 @@ server <- function(input, output, session) {
                
                actionButton("SCUPMDaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SCUPmdSeason2",
-                                    sliderInput(inputId = "SCUPmdFH_seas2", label ="For Hire Open Season 2", 
+                                    sliderInput(inputId = "SCUPmdFH_seas2", label ="For Hire  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2751,7 +2745,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPmdFH_2_len", label ="Min Length",
                                                          min = 8, max = 12, value = 9, step = .5))), 
-                                    sliderInput(inputId = "SCUPmdPR_seas2", label ="Private Open Season 2", 
+                                    sliderInput(inputId = "SCUPmdPR_seas2", label ="Private  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2763,7 +2757,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPmdPR_2_len", label ="Min Length",
                                                          min = 8, max = 12, value = 9, step = .5))), 
-                                    sliderInput(inputId = "SCUPmdSH_seas2", label ="Shore Open Season 2", 
+                                    sliderInput(inputId = "SCUPmdSH_seas2", label ="Shore  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2786,7 +2780,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$SF_MD_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "SFmd_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "SFmd_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
@@ -2798,7 +2792,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFmd_1_len", label ="Min Length",
                                                            min = 14, max = 21, value = 16, step = .5))), 
-                                      sliderInput(inputId = "SFmd_seas2", label ="Open Season 2",
+                                      sliderInput(inputId = "SFmd_seas2", label =" Season 2",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2810,7 +2804,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFmd_2_len", label ="Min Length",
                                                            min = 14, max = 21, value = 17.5, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFmdFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "SFmdFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
@@ -2822,7 +2816,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFmdFH_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 16, step = .5))) ,
-                                     sliderInput(inputId = "SFmdPR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "SFmdPR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
@@ -2834,7 +2828,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFmdPR_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 16, step = .5))) ,
-                                     sliderInput(inputId = "SFmdSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "SFmdSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
@@ -2846,7 +2840,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFmdSH_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 16, step = .5))), 
-                                     sliderInput(inputId = "SFmdFH_seas2", label ="For Hire Open Season 2",
+                                     sliderInput(inputId = "SFmdFH_seas2", label ="For Hire  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2858,7 +2852,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFmdFH_2_len", label ="Min Length",
                                                           min = 14, max = 21, value = 17.5, step = .5))) ,
-                                     sliderInput(inputId = "SFmdPR_seas2", label ="Private Open Season 2",
+                                     sliderInput(inputId = "SFmdPR_seas2", label ="Private  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2870,7 +2864,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFmdPR_2_len", label ="Min Length",
                                                           min = 14, max = 21, value = 17.5, step = .5))) ,
-                                     sliderInput(inputId = "SFmdSH_seas2", label ="Shore Open Season 2",
+                                     sliderInput(inputId = "SFmdSH_seas2", label ="Shore  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2891,7 +2885,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$BSB_MD_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "BSBmd_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "BSBmd_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -2904,7 +2898,7 @@ server <- function(input, output, session) {
                                                sliderInput(inputId = "BSBmd_1_len", label ="Min Length",
                                                            min = 11, max = 18, value = 13, step = .5))), 
                                       
-                                      sliderInput(inputId = "BSBmd_seas2", label ="Open Season 2",
+                                      sliderInput(inputId = "BSBmd_seas2", label =" Season 2",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2916,7 +2910,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "BSBmd_2_len", label ="Min Length",
                                                            min = 11, max = 18, value = 13, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "BSBmdFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "BSBmdFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -2928,7 +2922,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBmdFH_1_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
-                                     sliderInput(inputId = "BSBmdPR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "BSBmdPR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -2940,7 +2934,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBmdPR_1_len", label ="Min Length",
                                                           min = 11, max = 18, value = 15, step = .5))) ,
-                                     sliderInput(inputId = "BSBmdSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "BSBmdSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -2954,7 +2948,7 @@ server <- function(input, output, session) {
                                                           min = 11, max = 18, value = 13, step = .5))), 
                                      
                                      
-                                     sliderInput(inputId = "BSBmdFH_seas2", label ="For Hire Open Season 2",
+                                     sliderInput(inputId = "BSBmdFH_seas2", label ="For Hire  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2966,7 +2960,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBmdFH_2_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
-                                     sliderInput(inputId = "BSBmdPR_seas2", label ="Private Open Season 2",
+                                     sliderInput(inputId = "BSBmdPR_seas2", label ="Private  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2978,7 +2972,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBmdPR_2_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
-                                     sliderInput(inputId = "BSBmdSH_seas2", label ="Shore Open Season 2",
+                                     sliderInput(inputId = "BSBmdSH_seas2", label ="Shore  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2997,7 +2991,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$SCUP_MD_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "SCUPmd_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "SCUPmd_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3009,7 +3003,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SCUPmd_1_len", label ="Min Length",
                                                            min = 8, max = 12, value = 9, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SCUPmdFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "SCUPmdFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3021,7 +3015,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SCUPmdFH_1_len", label ="Min Length",
                                                           min = 8, max = 12, value = 9, step = .5))) ,
-                                     sliderInput(inputId = "SCUPmdPR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "SCUPmdPR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3033,7 +3027,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SCUPmdPR_1_len", label ="Min Length",
                                                           min = 8, max = 12, value = 9, step = .5))) ,
-                                     sliderInput(inputId = "SCUPmdSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "SCUPmdSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3063,7 +3057,7 @@ server <- function(input, output, session) {
                
                actionButton("SFVAaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SFvaSeason3",
-                                    sliderInput(inputId = "SFvaFH_seas3", label ="For Hire Open Season 3",
+                                    sliderInput(inputId = "SFvaFH_seas3", label ="For Hire  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3075,7 +3069,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFvaFH_3_len", label ="Min Length",
                                                          min = 14, max = 21, value = 16, step = .5))), 
-                                    sliderInput(inputId = "SFvaPR_seas3", label ="Private Open Season 3",
+                                    sliderInput(inputId = "SFvaPR_seas3", label ="Private  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3087,7 +3081,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFvaPR_3_len", label ="Min Length",
                                                          min = 14, max = 21, value = 16, step = .5))), 
-                                    sliderInput(inputId = "SFvaSH_seas3", label ="Shore Open Season 3",
+                                    sliderInput(inputId = "SFvaSH_seas3", label ="Shore  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3110,7 +3104,7 @@ server <- function(input, output, session) {
                
                actionButton("BSBVAaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "BSBvaSeason3",
-                                    sliderInput(inputId = "BSBvaFH_seas3", label ="For Hire Open Season 3",
+                                    sliderInput(inputId = "BSBvaFH_seas3", label ="For Hire  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3122,7 +3116,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBvaFH_3_len", label ="Min Length",
                                                          min = 11, max = 18, value = 13, step = .5))),
-                                    sliderInput(inputId = "BSBvaPR_seas3", label ="Private Open Season 3",
+                                    sliderInput(inputId = "BSBvaPR_seas3", label ="Private  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3134,7 +3128,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBvaPR_3_len", label ="Min Length",
                                                          min = 11, max = 18, value = 13, step = .5))),
-                                    sliderInput(inputId = "BSBvaSH_seas3", label ="Shore Open Season 3",
+                                    sliderInput(inputId = "BSBvaSH_seas3", label ="Shore  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3159,7 +3153,7 @@ server <- function(input, output, session) {
                
                actionButton("SCUPVAaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SCUPvaSeason2",
-                                    sliderInput(inputId = "SCUPvaFH_seas2", label ="For Hire Open Season 2", 
+                                    sliderInput(inputId = "SCUPvaFH_seas2", label ="For Hire  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3171,7 +3165,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPvaFH_2_len", label ="Min Length",
                                                          min = 8, max = 12, value = 9, step = .5))), 
-                                    sliderInput(inputId = "SCUPvaPR_seas2", label ="Private Open Season 2", 
+                                    sliderInput(inputId = "SCUPvaPR_seas2", label ="Private  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3183,7 +3177,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPvaPR_2_len", label ="Min Length",
                                                          min = 8, max = 12, value = 9, step = .5))), 
-                                    sliderInput(inputId = "SCUPvaSH_seas2", label ="Shore Open Season 2", 
+                                    sliderInput(inputId = "SCUPvaSH_seas2", label ="Shore  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3206,7 +3200,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$SF_VA_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "SFva_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "SFva_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
@@ -3218,7 +3212,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFva_1_len", label ="Min Length",
                                                            min = 14, max = 21, value = 16, step = .5))), 
-                                      sliderInput(inputId = "SFva_seas2", label ="Open Season 2",
+                                      sliderInput(inputId = "SFva_seas2", label =" Season 2",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3230,7 +3224,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFva_2_len", label ="Min Length",
                                                            min = 14, max = 21, value = 17.5, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFvaFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "SFvaFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
@@ -3242,7 +3236,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFvaFH_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 16, step = .5))) ,
-                                     sliderInput(inputId = "SFvaPR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "SFvaPR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
@@ -3254,7 +3248,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFvaPR_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 16, step = .5))) ,
-                                     sliderInput(inputId = "SFvaSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "SFvaSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
@@ -3266,7 +3260,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFvaSH_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 16, step = .5))),
-                                     sliderInput(inputId = "SFvaFH_seas2", label ="For Hire Open Season 2",
+                                     sliderInput(inputId = "SFvaFH_seas2", label ="For Hire  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3278,7 +3272,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFvaFH_2_len", label ="Min Length",
                                                           min = 14, max = 21, value = 17.5, step = .5))) ,
-                                     sliderInput(inputId = "SFvaPR_seas2", label ="Private Open Season 2",
+                                     sliderInput(inputId = "SFvaPR_seas2", label ="Private  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3290,7 +3284,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFvaPR_2_len", label ="Min Length",
                                                           min = 14, max = 21, value = 17.5, step = .5))) ,
-                                     sliderInput(inputId = "SFvaSH_seas2", label ="Shore Open Season 2",
+                                     sliderInput(inputId = "SFvaSH_seas2", label ="Shore  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3310,7 +3304,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$BSB_VA_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "BSBva_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "BSBva_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-15","%m-%d"),as.Date("07-06","%m-%d")), 
@@ -3323,7 +3317,7 @@ server <- function(input, output, session) {
                                                sliderInput(inputId = "BSBva_1_len", label ="Min Length",
                                                            min = 11, max = 18, value = 13, step = .5))), 
                                       
-                                      sliderInput(inputId = "BSBva_seas2", label ="Open Season 2",
+                                      sliderInput(inputId = "BSBva_seas2", label =" Season 2",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("08-09","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3335,7 +3329,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "BSBva_2_len", label ="Min Length",
                                                            min = 11, max = 18, value = 13, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "BSBvaFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "BSBvaFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("07-06","%m-%d")), 
@@ -3347,7 +3341,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBvaFH_1_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
-                                     sliderInput(inputId = "BSBvaPR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "BSBvaPR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("07-06","%m-%d")), 
@@ -3359,7 +3353,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBvaPR_1_len", label ="Min Length",
                                                           min = 11, max = 18, value = 15, step = .5))) ,
-                                     sliderInput(inputId = "BSBvaSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "BSBvaSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("07-06","%m-%d")), 
@@ -3373,7 +3367,7 @@ server <- function(input, output, session) {
                                                           min = 11, max = 18, value = 13, step = .5))), 
                                      
                                      
-                                     sliderInput(inputId = "BSBvaFH_seas2", label ="For Hire Open Season 2",
+                                     sliderInput(inputId = "BSBvaFH_seas2", label ="For Hire  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-09","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3385,7 +3379,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBvaFH_2_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
-                                     sliderInput(inputId = "BSBvaPR_seas2", label ="Private Open Season 2",
+                                     sliderInput(inputId = "BSBvaPR_seas2", label ="Private  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-09","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3397,7 +3391,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBvaPR_2_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
-                                     sliderInput(inputId = "BSBvaSH_seas2", label ="Shore Open Season 2",
+                                     sliderInput(inputId = "BSBvaSH_seas2", label ="Shore  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-09","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3416,7 +3410,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$SCUP_VA_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "SCUPva_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "SCUPva_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3428,7 +3422,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SCUPva_1_len", label ="Min Length",
                                                            min = 8, max = 12, value = 9, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SCUPvaFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "SCUPvaFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3440,7 +3434,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SCUPvaFH_1_len", label ="Min Length",
                                                           min = 8, max = 12, value = 9, step = .5))) ,
-                                     sliderInput(inputId = "SCUPvaPR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "SCUPvaPR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3452,7 +3446,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SCUPvaPR_1_len", label ="Min Length",
                                                           min = 8, max = 12, value = 9, step = .5))) ,
-                                     sliderInput(inputId = "SCUPvaSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "SCUPvaSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3481,7 +3475,7 @@ server <- function(input, output, session) {
                
                actionButton("SFNCaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SFncSeason2",
-                                    sliderInput(inputId = "SFncFH_seas2", label ="For Hire Open Season 2",
+                                    sliderInput(inputId = "SFncFH_seas2", label ="For Hire  Season 2",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3493,7 +3487,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFncFH_2_len", label ="Min Length",
                                                          min = 14, max = 21, value = 15, step = .5))), 
-                                    sliderInput(inputId = "SFncPR_seas2", label ="Private Open Season 2",
+                                    sliderInput(inputId = "SFncPR_seas2", label ="Private  Season 2",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3505,7 +3499,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SFncPR_2_len", label ="Min Length",
                                                          min = 14, max = 21, value = 15, step = .5))), 
-                                    sliderInput(inputId = "SFncSH_seas2", label ="Shore Open Season 2",
+                                    sliderInput(inputId = "SFncSH_seas2", label ="Shore  Season 2",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3528,7 +3522,7 @@ server <- function(input, output, session) {
                
                actionButton("BSBNCaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "BSBncSeason3",
-                                    sliderInput(inputId = "BSBncFH_seas3", label ="For Hire Open Season 3",
+                                    sliderInput(inputId = "BSBncFH_seas3", label ="For Hire  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3540,7 +3534,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBncFH_3_len", label ="Min Length",
                                                          min = 11, max = 18, value = 13, step = .5))),
-                                    sliderInput(inputId = "BSBncPR_seas3", label ="Private Open Season 3",
+                                    sliderInput(inputId = "BSBncPR_seas3", label ="Private  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3552,7 +3546,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "BSBncPR_3_len", label ="Min Length",
                                                          min = 11, max = 18, value = 13, step = .5))),
-                                    sliderInput(inputId = "BSBncSH_seas3", label ="Shore Open Season 3",
+                                    sliderInput(inputId = "BSBncSH_seas3", label ="Shore  Season 3",
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3577,7 +3571,7 @@ server <- function(input, output, session) {
                
                actionButton("SCUPNCaddSeason", "Add Season"), 
                shinyjs::hidden( div(ID = "SCUPncSeason2",
-                                    sliderInput(inputId = "SCUPncFH_seas2", label ="For Hire Open Season 2", 
+                                    sliderInput(inputId = "SCUPncFH_seas2", label ="For Hire  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3589,7 +3583,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPncFH_2_len", label ="Min Length",
                                                          min = 8, max = 12, value = 9, step = .5))), 
-                                    sliderInput(inputId = "SCUPncPR_seas2", label ="Private Open Season 2", 
+                                    sliderInput(inputId = "SCUPncPR_seas2", label ="Private  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3601,7 +3595,7 @@ server <- function(input, output, session) {
                                       column(6,
                                              sliderInput(inputId = "SCUPncPR_2_len", label ="Min Length",
                                                          min = 8, max = 12, value = 9, step = .5))), 
-                                    sliderInput(inputId = "SCUPncSH_seas2", label ="Shore Open Season 2", 
+                                    sliderInput(inputId = "SCUPncSH_seas2", label ="Shore  Season 2", 
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3624,7 +3618,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$SF_NC_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "SFnc_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "SFnc_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("08-16","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -3636,7 +3630,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFnc_1_len", label ="Min Length",
                                                            min = 14, max = 21, value = 15, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFncFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "SFncFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-16","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -3648,7 +3642,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFncFH_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 15, step = .5))) ,
-                                     sliderInput(inputId = "SFncPR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "SFncPR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-16","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -3660,7 +3654,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SFncPR_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 15, step = .5))) ,
-                                     sliderInput(inputId = "SFncSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "SFncSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-16","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -3680,7 +3674,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$BSB_NC_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "BSBnc_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "BSBnc_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -3693,7 +3687,7 @@ server <- function(input, output, session) {
                                                sliderInput(inputId = "BSBnc_1_len", label ="Min Length",
                                                            min = 11, max = 18, value = 13, step = .5))), 
                                       
-                                      sliderInput(inputId = "BSBnc_seas2", label ="Open Season 2",
+                                      sliderInput(inputId = "BSBnc_seas2", label =" Season 2",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3705,7 +3699,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "BSBnc_2_len", label ="Min Length",
                                                            min = 11, max = 18, value = 13, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "BSBncFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "BSBncFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -3717,7 +3711,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBncFH_1_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
-                                     sliderInput(inputId = "BSBncPR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "BSBncPR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -3729,7 +3723,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBncPR_1_len", label ="Min Length",
                                                           min = 11, max = 18, value = 15, step = .5))) ,
-                                     sliderInput(inputId = "BSBncSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "BSBncSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -3743,7 +3737,7 @@ server <- function(input, output, session) {
                                                           min = 11, max = 18, value = 13, step = .5))), 
                                      
                                      
-                                     sliderInput(inputId = "BSBncFH_seas2", label ="For Hire Open Season 2",
+                                     sliderInput(inputId = "BSBncFH_seas2", label ="For Hire  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3755,7 +3749,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBncFH_2_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
-                                     sliderInput(inputId = "BSBncPR_seas2", label ="Private Open Season 2",
+                                     sliderInput(inputId = "BSBncPR_seas2", label ="Private  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3767,7 +3761,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "BSBncPR_2_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
-                                     sliderInput(inputId = "BSBncSH_seas2", label ="Shore Open Season 2",
+                                     sliderInput(inputId = "BSBncSH_seas2", label ="Shore  Season 2",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3786,7 +3780,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$SCUP_NC_input_type, 
-           "All Modes Combined" = div(sliderInput(inputId = "SCUPnc_seas1", label ="Open Season 1",
+           "All Modes Combined" = div(sliderInput(inputId = "SCUPnc_seas1", label =" Season 1",
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3798,7 +3792,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SCUPnc_1_len", label ="Min Length",
                                                            min = 8, max = 12, value = 9, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SCUPncFH_seas1", label ="For Hire Open Season 1",
+           "Seperated By Mode" = div(sliderInput(inputId = "SCUPncFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3810,7 +3804,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SCUPncFH_1_len", label ="Min Length",
                                                           min = 8, max = 12, value = 9, step = .5))) ,
-                                     sliderInput(inputId = "SCUPncPR_seas1", label ="Private Open Season 1",
+                                     sliderInput(inputId = "SCUPncPR_seas1", label ="Private  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3822,7 +3816,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               sliderInput(inputId = "SCUPncPR_1_len", label ="Min Length",
                                                           min = 8, max = 12, value = 9, step = .5))) ,
-                                     sliderInput(inputId = "SCUPncSH_seas1", label ="Shore Open Season 1",
+                                     sliderInput(inputId = "SCUPncSH_seas1", label ="Shore  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3894,16 +3888,13 @@ server <- function(input, output, session) {
 
     harv2 <- harv %>%
       ggplot2::ggplot(ggplot2::aes(x = bsb, y = sf, label = filename.x, color = scup)) +
-      ggplot2::geom_point(color = "steelblue", size = 3) +
-      ggplot2::geom_text(vjust = -0.5, size = 3) +
+      ggplot2::geom_point( size = 3) +
+      ggplot2::geom_text(color = "black", vjust = -0.5, size = 3) +
       #ggplot2::geom_hline(data = pca_sf, ggplot2::aes(yintercept = pca_reqs), color = "black")+
       #ggplot2::geom_vline(data = pca_bsb, ggplot2::aes(xintercept = pca_reqs), color = "black", linetype = "dashed")+
       ggplot2::facet_wrap(~ state) +
-      ggplot2::labs(
-        title = "SF vs BSB Harvest Limits by state",
-        x = "Black Sea Bass RHL",
-        y = "Summer Flounder RHL"
-      ) +
+      ggplot2::labs(title = "SF vs BSB Harvest Limits by state",x = "Black Sea Bass RHL",y = "Summer Flounder RHL") +
+      ggplot2::scale_color_gradient2( low = "blue", mid = "gray", high = "red",  midpoint = 0, limits = c(-10, 10)) + 
       ggplot2::theme_bw()
 
     fig<- plotly::ggplotly(harv2) %>%
@@ -3912,12 +3903,13 @@ server <- function(input, output, session) {
   })
 
   output$summary_percdiff_table <- DT::renderDT({
+
     ref_pct <- outputs() %>% #all_data %>%
       dplyr::filter(number_weight == "weight" &
                       keep_release == "keep" & mode == "all modes" & model == "SQ") %>%
       dplyr::mutate(ref_value = value) %>%
       dplyr::select(filename, category, state, draw, ref_value)
-
+    
     harv <- outputs() %>% #all_data %>%
       dplyr::filter(number_weight == "weight" &
                       keep_release == "keep" & mode == "all modes") %>%
@@ -3928,7 +3920,6 @@ server <- function(input, output, session) {
       tidyr::pivot_wider(names_from = category, values_from = median_pct_diff)
 
     tab<- harv %>% 
-      #dplyr::left_join(ref_pct, by = "state") %>%
       dplyr::mutate(bsb_ok  = abs(bsb)  <= bsb_percent_change,
                     scup_ok = abs(scup) <= scup_percent_change,
                     sf_ok   = abs(sf)   <= sf_percent_change) %>%
@@ -3936,12 +3927,19 @@ server <- function(input, output, session) {
       dplyr::mutate(ok_count = paste0(sum(c_across(c(bsb_ok, scup_ok, sf_ok))), "/3")) %>%
       dplyr::ungroup()%>%
       dplyr::select( -keep_release, -number_weight,  -bsb_ok ,-scup_ok, -sf_ok) %>%
-      dplyr::mutate(across(starts_with("Val"), ~ round(.x, 1)))
+      mutate(
+        bsb  = sprintf("%.2f", bsb),
+        scup = sprintf("%.2f", scup),
+        sf   = sprintf("%.2f", sf)
+      ) %>% 
+      dplyr::rename(State = state, `Run Name` = filename.x,
+                    BSB = bsb, Scup = scup, SF = sf, `Below RHL` = ok_count)
 
+    tab
   })
 
   output$summary_regs_table <- DT::renderDT({
-    Regs_out <- regs() %>%
+    Regs_out <-regs() %>%
       tidyr::separate(input, into = c("species", "season", "measure"), sep = "_") %>%
       dplyr::mutate(season = stringr::str_remove(season, "^seas")) %>%
       tidyr::extract(species, into = c("species", "state2", "mode"), regex =  "([^a-z]+)([a-z]+)(.*)") %>%
@@ -3956,38 +3954,9 @@ server <- function(input, output, session) {
         len = paste(len, collapse = ","),
         season = paste(season2, collapse = ","),
         .groups = "drop" ) %>%
-      dplyr::mutate(mode = if_else(mode == "", "All modes", mode))
+      dplyr::mutate(mode = if_else(mode == "", "All modes", mode)) %>% 
+      dplyr::mutate(season = gsub("2025-", "", season))
 
-  })
-
-  output$summary_regs_fig <- renderPlot({
-    Regs_out <- regs() %>%
-      tidyr::separate(input, into = c("species", "season", "measure"), sep = "_") %>%
-      dplyr::mutate(season = stringr::str_remove(season, "^seas")) %>%
-      tidyr::extract(species, into = c("species", "state2", "mode"), regex =  "([^a-z]+)([a-z]+)(.*)") %>%
-      dplyr::select(-state2) %>%
-      dplyr::group_by(run_name, state, species, mode, season) %>%
-      tidyr::pivot_wider(names_from = measure, values_from = value) %>%
-      dplyr::filter(!bag == 0) %>%
-      dplyr::mutate(season2 = paste0(op, " - ", cl)) %>%
-      dplyr::mutate(op = as.Date(op),cl = as.Date(cl),
-                    mode = if_else(mode == "", "All modes", mode),  # Replace empty mode
-                    label = paste0("Bag: ", bag, ", Len: ", len)) %>%     # Create label for bars
-      #dplyr::filter(species == "SF")
-      dplyr::filter(state == "MA") %>% 
-      dplyr::filter()
-
-    p <- ggplot2::ggplot(Regs_out, ggplot2::aes(x = op, xend = cl, y = interaction(run_name, state,  mode), yend = interaction(run_name, state, mode), color = run_name)) +
-      ggplot2::geom_segment(size = 6) +
-      ggplot2::geom_text(ggplot2::aes(label = label, x = op + (cl - op)/2), color = "white", size = 3.5) +
-      ggplot2::facet_wrap(~species, ncol = 1, scales = "free")+
-      ggplot2::labs(
-        title = "Fishing Season Schedule by Run, State,  and Mode",
-        x = "Date",
-        y = "Run / State /  Mode") +
-      ggplot2::theme_minimal()
-
-   p
   })
 
   
@@ -4068,11 +4037,11 @@ server <- function(input, output, session) {
                        ci_upper = quantile(value, 0.95)) %>%
       left_join(harv)
     
-    p1<- welfare %>% ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = CV, label = filename))+
+    p1<- welfare %>% ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = (CV/1000000), label = filename))+
       ggplot2::geom_point() +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::ggtitle("Angler Satisfaction")+
-      ggplot2::ylab("Angler Satisfaction ($)")+
+      ggplot2::ylab("Angler Satisfaction ($M)")+
       ggplot2::xlab("Percent difference of Harvest from SQ")+
       ggplot2::theme(legend.position = "none")+
       ggplot2::facet_wrap(.~category)+
@@ -4124,11 +4093,11 @@ server <- function(input, output, session) {
     
     # Static plot
     p1 <- trips %>%
-      ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = trips, label = filename)) +
+      ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = (trips/1000000), label = filename)) +
       ggplot2::geom_point() +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::ggtitle(paste("Number of Trips in", state_name)) +
-      ggplot2::ylab("Predicted trips (N)") +
+      ggplot2::ylab("Predicted trips (N) millions") +
       ggplot2::xlab("Percent difference of Harvest from SQ") +
       ggplot2::theme(legend.position = "none") +
       ggplot2::facet_wrap(. ~ category) +
@@ -4183,11 +4152,11 @@ server <- function(input, output, session) {
     
     # Static plot
     p1 <- disc %>%
-      ggplot2::ggplot(ggplot2::aes(x = median_keep_pct_diff, y = median_rel_weight, label = filename)) +
+      ggplot2::ggplot(ggplot2::aes(x = median_keep_pct_diff, y = (median_rel_weight/1000000), label = filename)) +
       ggplot2::geom_point() +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::ggtitle(paste("Discards in", state_name)) +
-      ggplot2::ylab("Discards (lbs)") +
+      ggplot2::ylab("Discards (million lbs)") +
       ggplot2::xlab("Percent difference of Harvest from SQ") +
       ggplot2::theme(legend.position = "none") +
       ggplot2::facet_wrap(. ~ category) +
@@ -4394,7 +4363,7 @@ server <- function(input, output, session) {
   regulations <- observeEvent(input$runmeplease,{
     library(httr)
     library(jsonlite)
-    library(openssl)
+    library(ssl)
     library(uuid)
     
     enqueue_simple_sas <- function(run_name, queue_url_sas = Sys.getenv("AZURE_STORAGE_QUEUE_URL")) {
