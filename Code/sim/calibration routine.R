@@ -342,7 +342,11 @@ for (s in states){
 calibrated_combined <- do.call(rbind, calibrated) %>% 
   dplyr::select(-rel_to_keep_new, -keep_to_rel_new, -p_keep_to_rel_new, -p_rel_to_keep_new)
 
+#calibrated_combined1<-calibrated_combined %>% 
+#  dplyr::filter(state!="NY")
+
 saveRDS(calibrated_combined, file = file.path(iterative_input_data_cd, "calibrated_model_stats.rds"))
+#saveRDS(calibrated_combined1, file = file.path(iterative_input_data_cd, "calibrated_model_stats_MARICT.rds"))
 
 
 # check<-calibrated_combined %>% 

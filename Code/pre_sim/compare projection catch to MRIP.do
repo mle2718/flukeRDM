@@ -828,6 +828,7 @@ foreach s of local statez {
 
 		
 
-	
+	       u "$iterative_input_data_cd\proj_catch_draws_MA_1.dta", clear
+
 	
 	
