@@ -180,7 +180,7 @@ for(x in 1:3){
   for (md in mode_draw) {
     
     # pull trip outcomes from the calibration year
-    base_outcomes0[[md]]<-feather::read_feather(file.path(data_path, paste0("base_outcomes_NC_", md, "_", x, ".feather"))) %>% 
+    base_outcomes0[[md]]<-feather::read_feather(file.path(data_path, paste0("base_outcomes_new_NC_", md, "_", x, ".feather"))) %>% 
       data.table::as.data.table()
     
     base_outcomes0[[md]]<-base_outcomes0[[md]] %>% 
@@ -189,7 +189,7 @@ for(x in 1:3){
       dplyr::select(-date)
     
     # pull in data on the number of choice occasions per mode-day
-    n_choice_occasions0[[md]]<-feather::read_feather(file.path(data_path, paste0("n_choice_occasions_NC_", md, "_", x, ".feather")))  
+    n_choice_occasions0[[md]]<-feather::read_feather(file.path(data_path, paste0("n_choice_occasions_new_NC_", md, "_", x, ".feather")))  
     n_choice_occasions0[[md]]<-n_choice_occasions0[[md]] %>% 
       dplyr::mutate(date_parsed=lubridate::dmy(date)) %>% 
       dplyr::select(-date)
