@@ -4363,7 +4363,7 @@ server <- function(input, output, session) {
   regulations <- observeEvent(input$runmeplease,{
     library(httr)
     library(jsonlite)
-    library(ssl)
+    library(openssl)
     library(uuid)
     
     enqueue_simple_sas <- function(run_name, queue_url_sas = Sys.getenv("AZURE_STORAGE_QUEUE_URL")) {
@@ -5248,7 +5248,7 @@ server <- function(input, output, session) {
     readr::write_csv(regulations, file = here::here(paste0("saved_regs/regs_", input$Run_Name, ".csv")))
     print("saved_inputs")
     
-    enqueue_simple_sas(input$Run_Name)
+    #enqueue_simple_sas(input$Run_Name)
     
     return(regulations)
     

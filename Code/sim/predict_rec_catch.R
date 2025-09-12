@@ -193,7 +193,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
      size_data_sf, size_data_bsb,size_data_scup, 
      base_outcomes, catch_data)
   
-  trip_data$NJ_dummy<-case_when(s=="NJ"~1, TRUE~0)
+  trip_data$NJ_dummy<-dplyr::case_when(s=="NJ"~1, TRUE~0)
   
   # compute utility/choice probabilites/welfare
   # Convert to data.table if not already
