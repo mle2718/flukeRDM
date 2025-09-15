@@ -312,8 +312,8 @@ server <- function(input, output, session) {
         column(4, 
                titlePanel("Black Sea Bass - MA"),
                
-               selectInput("BSB_MA_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("BSB_MA_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("BSBmaMode"),
                
                
@@ -472,7 +472,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFma_1_len", label ="Min Length",
                                                            min = 5, max = 25, value = 16.5, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFmaFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "SFmaFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-21","%m-%d"),as.Date("09-29","%m-%d")), 
@@ -533,7 +533,7 @@ server <- function(input, output, session) {
                                                            min = 3, max = 25, value = 16.5, step = .5)))),
            
            
-           "Seperated By Mode" = div(sliderInput(inputId = "BSBmaFH_seas1", label =" For Hire  Season 1", 
+           "Separated By Mode" = div(sliderInput(inputId = "BSBmaFH_seas1", label =" For Hire  Season 1", 
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-18","%m-%d"),as.Date("09-03","%m-%d")), 
@@ -581,8 +581,8 @@ server <- function(input, output, session) {
         column(4,
                titlePanel("Summer Flounder - RI"),
                
-               selectInput("SF_RI_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("SF_RI_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("SFriMode"),
                
                actionButton("SFRIaddSeason", "Add Season"), 
@@ -872,7 +872,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFri_1_len", label ="Min Length",
                                                            min = 14, max = 21, value = 19, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFriFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "SFriFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("04-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -918,8 +918,8 @@ server <- function(input, output, session) {
         column(4,
                titlePanel("Summer Flounder - CT"),
                
-               selectInput("SF_CT_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("SF_CT_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("SFctMode"),
                
                actionButton("SFCTaddSeason", "Add Season"), 
@@ -1221,7 +1221,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFct_2_len", label ="Min Length",
                                                            min = 14, max = 21, value = 19.5, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFctFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "SFctFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
@@ -1306,8 +1306,8 @@ server <- function(input, output, session) {
         column(4,
                titlePanel("Summer Flounder - NY"),
                
-               selectInput("SF_NY_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("SF_NY_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("SFnyMode"),
                
                actionButton("SFNYaddSeason", "Add Season"), 
@@ -1352,8 +1352,8 @@ server <- function(input, output, session) {
         column(4, 
                titlePanel("Black Sea Bass - NY"),
                
-               selectInput("BSB_NY_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("BSB_NY_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("BSBnyMode"),
                
                
@@ -1534,7 +1534,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFny_2_len", label ="Min Length",
                                                            min = 14, max = 21, value = 19.5, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFnyFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "SFnyFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
@@ -1639,7 +1639,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "BSBny_2_len", label ="Min Length",
                                                            min = 11, max = 18, value = 16.5, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "BSBnyFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "BSBnyFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-23","%m-%d"),as.Date("08-31","%m-%d")), 
@@ -1723,8 +1723,8 @@ server <- function(input, output, session) {
         column(4,
                titlePanel("Summer Flounder - NJ"),
                
-               selectInput("SF_NJ_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("SF_NJ_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("SFnjMode"),
                
                
@@ -1770,8 +1770,8 @@ server <- function(input, output, session) {
         column(4, 
                titlePanel("Black Sea Bass - NJ"),
                
-               selectInput("BSB_NJ_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("BSB_NJ_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("BSBnjMode"),
                
                actionButton("BSBNJaddSeason", "Add Season"), 
@@ -1820,8 +1820,8 @@ server <- function(input, output, session) {
         column(4, 
                titlePanel("Scup - NJ"),
                
-               selectInput("SCUP_NJ_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("SCUP_NJ_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("SCUPnjMode"),
                
                actionButton("SCUPNJaddSeason", "Add Season"), 
@@ -1884,7 +1884,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFnj_1_len", label ="Min Length",
                                                            min = 14, max = 21, value = 18, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFnjFH_seas1", label ="For Hire  Season 1", 
+           "Separated By Mode" = div(sliderInput(inputId = "SFnjFH_seas1", label ="For Hire  Season 1", 
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value =c(as.Date("05-04","%m-%d"),as.Date("09-25","%m-%d")), 
@@ -1984,7 +1984,7 @@ server <- function(input, output, session) {
                                                sliderInput(inputId = "BSBnj_4_len", label ="Min Length",
                                                            min = 11, max = 18, value = 12.5, step = .5)))),
            
-           "Seperated By Mode" = div(sliderInput(inputId = "BSBnjFH_seas1", label =" For Hire  Season 1", 
+           "Separated By Mode" = div(sliderInput(inputId = "BSBnjFH_seas1", label =" For Hire  Season 1", 
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-17","%m-%d"),as.Date("06-19","%m-%d")), 
@@ -2151,7 +2151,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SCUPnj_1_len", label ="Min Length",
                                                            min = 8, max = 12, value = 10, step = .5)))),
-           "Seperated By Mode" = div(sliderInput(inputId = "SCUPnjFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "SCUPnjFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2218,8 +2218,8 @@ server <- function(input, output, session) {
         column(4,
                titlePanel("Summer Flounder - DE"),
                
-               selectInput("SF_DE_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("SF_DE_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("SFdeMode"),
                
                actionButton("SFDEaddSeason", "Add Season"), 
@@ -2264,8 +2264,8 @@ server <- function(input, output, session) {
         column(4, 
                titlePanel("Black Sea Bass - DE"),
                
-               selectInput("BSB_DE_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("BSB_DE_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("BSBdeMode"),
                
                
@@ -2314,8 +2314,8 @@ server <- function(input, output, session) {
         column(4, #### SCUP 
                titlePanel("Scup - DE"),
                
-               selectInput("SCUP_DE_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("SCUP_DE_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("SCUPdeMode"),
                
                actionButton("SCUPDEaddSeason", "Add Season"), 
@@ -2391,7 +2391,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFde_2_len", label ="Min Length",
                                                            min = 14, max = 21, value = 17.5, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFdeFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "SFdeFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
@@ -2497,7 +2497,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "BSBde_2_len", label ="Min Length",
                                                            min = 11, max = 18, value = 13, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "BSBdeFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "BSBdeFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -2590,7 +2590,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SCUPde_1_len", label ="Min Length",
                                                            min = 8, max = 12, value = 9, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SCUPdeFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "SCUPdeFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -2638,8 +2638,8 @@ server <- function(input, output, session) {
         column(4,
                titlePanel("Summer Flounder - MD"),
                
-               selectInput("SF_MD_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("SF_MD_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("SFmdMode"),
                
                actionButton("SFMDaddSeason", "Add Season"), 
@@ -2684,8 +2684,8 @@ server <- function(input, output, session) {
         column(4, 
                titlePanel("Black Sea Bass - MD"),
                
-               selectInput("BSB_MD_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("BSB_MD_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("BSBmdMode"),
                
                
@@ -2734,8 +2734,8 @@ server <- function(input, output, session) {
         column(4, #### SCUP 
                titlePanel("Scup - MD"),
                
-               selectInput("SCUP_MD_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("SCUP_MD_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("SCUPmdMode"),
                
                actionButton("SCUPMDaddSeason", "Add Season"), 
@@ -2811,7 +2811,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFmd_2_len", label ="Min Length",
                                                            min = 14, max = 21, value = 17.5, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFmdFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "SFmdFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
@@ -2917,7 +2917,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "BSBmd_2_len", label ="Min Length",
                                                            min = 11, max = 18, value = 13, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "BSBmdFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "BSBmdFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -3010,7 +3010,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SCUPmd_1_len", label ="Min Length",
                                                            min = 8, max = 12, value = 9, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SCUPmdFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "SCUPmdFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3058,8 +3058,8 @@ server <- function(input, output, session) {
         column(4,
                titlePanel("Summer Flounder - VA"),
                
-               selectInput("SF_VA_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("SF_VA_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("SFvaMode"),
                
                actionButton("SFVAaddSeason", "Add Season"), 
@@ -3104,8 +3104,8 @@ server <- function(input, output, session) {
         column(4, 
                titlePanel("Black Sea Bass - VA"),
                
-               selectInput("BSB_VA_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("BSB_VA_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("BSBvaMode"),
                
                
@@ -3154,8 +3154,8 @@ server <- function(input, output, session) {
         column(4, #### SCUP 
                titlePanel("Scup - VA"),
                
-               selectInput("SCUP_VA_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("SCUP_VA_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("SCUPvaMode"),
                
                actionButton("SCUPVAaddSeason", "Add Season"), 
@@ -3231,7 +3231,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFva_2_len", label ="Min Length",
                                                            min = 14, max = 21, value = 17.5, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFvaFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "SFvaFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
@@ -3336,7 +3336,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "BSBva_2_len", label ="Min Length",
                                                            min = 11, max = 18, value = 13, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "BSBvaFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "BSBvaFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("07-06","%m-%d")), 
@@ -3429,7 +3429,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SCUPva_1_len", label ="Min Length",
                                                            min = 8, max = 12, value = 9, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SCUPvaFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "SCUPvaFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
@@ -3476,8 +3476,8 @@ server <- function(input, output, session) {
         column(4,
                titlePanel("Summer Flounder - NC"),
                
-               selectInput("SF_NC_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("SF_NC_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("SFncMode"),
                
                actionButton("SFNCaddSeason", "Add Season"), 
@@ -3522,8 +3522,8 @@ server <- function(input, output, session) {
         column(4, 
                titlePanel("Black Sea Bass - NC"),
                
-               selectInput("BSB_NC_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("BSB_NC_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("BSBncMode"),
                
                
@@ -3572,8 +3572,8 @@ server <- function(input, output, session) {
         column(4, #### SCUP 
                titlePanel("Scup - NC"),
                
-               selectInput("SCUP_NC_input_type", "Regulations combined or seperated by mode?",
-                           c("All Modes Combined", "Seperated By Mode")),
+               selectInput("SCUP_NC_input_type", "Regulations combined or separated by mode?",
+                           c("All Modes Combined", "Separated By Mode")),
                uiOutput("SCUPncMode"),
                
                actionButton("SCUPNCaddSeason", "Add Season"), 
@@ -3637,7 +3637,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SFnc_1_len", label ="Min Length",
                                                            min = 14, max = 21, value = 15, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SFncFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "SFncFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-16","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -3706,7 +3706,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "BSBnc_2_len", label ="Min Length",
                                                            min = 11, max = 18, value = 13, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "BSBncFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "BSBncFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
@@ -3799,7 +3799,7 @@ server <- function(input, output, session) {
                                         column(6,
                                                sliderInput(inputId = "SCUPnc_1_len", label ="Min Length",
                                                            min = 8, max = 12, value = 9, step = .5)))), 
-           "Seperated By Mode" = div(sliderInput(inputId = "SCUPncFH_seas1", label ="For Hire  Season 1",
+           "Separated By Mode" = div(sliderInput(inputId = "SCUPncFH_seas1", label ="For Hire  Season 1",
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
