@@ -145,8 +145,8 @@ server <- function(input, output, session) {
   mytimeFormat <- "%b %d"
 
   date_slider_defaults <- list(
-    min = as.Date("01-01-2026", "%m-%d"),
-    max = as.Date("12-31-2026", "%m-%d"),
+    min = as.Date("01-01", "%m-%d"),
+    max = as.Date("12-31", "%m-%d"),
     timeFormat = "%b %d",
     ticks = FALSE
   )
