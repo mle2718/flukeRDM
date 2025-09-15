@@ -143,11 +143,8 @@ server <- function(input, output, session) {
     return(scup_rhl)
   }
   
-  mytimeFormat<-function(){ 
-    mytimeFormat <- "%b-%d"
-    return(mytimeFormat)
-  }
-  
+  mytimeFormat <- "%b %d"
+
   
   Run_Name <- function(){
     if(stringr::str_detect(input$Run_Name, "_")){
@@ -237,7 +234,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-24","%m-%d"),as.Date("09-23","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SFmaFH_1_bag", label = "Bag Limit",
@@ -249,7 +246,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-24","%m-%d"),as.Date("09-23","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SFmaPR_1_bag", label = "Bag Limit",
@@ -261,7 +258,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-24","%m-%d"),as.Date("09-23","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SFmaSH_1_bag", label = "Bag Limit",
@@ -276,7 +273,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFmaFH_2_bag", label ="Bag Limit",
@@ -288,7 +285,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFmaPR_2_bag", label ="Bag Limit",
@@ -300,7 +297,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFmaSH_2_bag", label ="Bag Limit",
@@ -323,7 +320,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBmaFH_2_bag", label ="Bag Limit",
@@ -335,7 +332,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBmaPR_2_bag", label ="Bag Limit",
@@ -347,7 +344,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBmaSH_2_bag", label ="Bag Limit",
@@ -365,7 +362,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("06-30","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPmaFH_1_bag", label = "Bag Limit",
@@ -378,7 +375,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("07-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPmaFH_2_bag", label = "Bag Limit",
@@ -392,7 +389,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPmaPR_1_bag", label = "Bag Limit",
@@ -404,7 +401,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPmaSH_1_bag", label = "Bag Limit",
@@ -419,7 +416,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPmaFH_3_bag", label ="Bag Limit",
@@ -431,7 +428,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPmaPR_2_bag", label ="Bag Limit",
@@ -443,7 +440,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPmaSH_2_bag", label ="Bag Limit",
@@ -464,7 +461,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-21","%m-%d"),as.Date("09-29","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SFma_1_bag", label ="Bag Limit",
@@ -476,7 +473,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-21","%m-%d"),as.Date("09-29","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFmaFH_1_bag", label ="Bag Limit",
@@ -488,7 +485,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-21","%m-%d"),as.Date("09-29","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFmaPR_1_bag", label ="Bag Limit",
@@ -500,7 +497,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-21","%m-%d"),as.Date("09-29","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFmaSH_1_bag", label ="Bag Limit",
@@ -523,7 +520,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-18","%m-%d"),as.Date("09-03","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "BSBma_1_bag", label ="Bag Limit",
@@ -537,7 +534,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-18","%m-%d"),as.Date("09-03","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBmaFH_1_bag", label ="Bag Limit",
@@ -549,7 +546,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-18","%m-%d"),as.Date("09-03","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBmaPR_1_bag", label ="Bag Limit",
@@ -561,7 +558,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-18","%m-%d"),as.Date("09-03","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBmaSH_1_bag", label ="Bag Limit",
@@ -591,7 +588,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFriFH_2_bag", label ="Bag Limit",
@@ -603,7 +600,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFriPR_2_bag", label ="Bag Limit",
@@ -615,7 +612,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFriSH_2_bag", label ="Bag Limit",
@@ -631,7 +628,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("06-18","%m-%d"),as.Date("08-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "BSBriFH_1_bag", label ="Bag Limit",
@@ -643,7 +640,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "BSBriFH_2_bag", label ="Bag Limit",
@@ -656,7 +653,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("05-22","%m-%d"),as.Date("08-26","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "BSBriPR_1_bag", label ="Bag Limit",
@@ -669,7 +666,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("08-27","%m-%d"),as.Date("12-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "BSBriPR_2_bag", label ="Bag Limit",
@@ -682,7 +679,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("05-22","%m-%d"),as.Date("08-26","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "BSBriSH_1_bag", label ="Bag Limit",
@@ -695,7 +692,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("08-27","%m-%d"),as.Date("12-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "BSBriSH_2_bag", label ="Bag Limit",
@@ -710,7 +707,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBriFH_3_bag", label ="Bag Limit",
@@ -722,7 +719,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBriPR_3_bag", label ="Bag Limit",
@@ -734,7 +731,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBriSH_3_bag", label ="Bag Limit",
@@ -752,7 +749,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("08-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPriFH_1_bag", label = "Bag Limit",
@@ -765,7 +762,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("09-01","%m-%d"),as.Date("10-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPriFH_2_bag", label = "Bag Limit",
@@ -777,7 +774,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("11-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPriFH_3_bag", label = "Bag Limit",
@@ -790,7 +787,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPriPR_1_bag", label = "Bag Limit",
@@ -802,7 +799,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPriSH_1_bag", label = "Bag Limit",
@@ -817,7 +814,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPriFH_4_bag", label ="Bag Limit",
@@ -829,7 +826,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPriPR_2_bag", label ="Bag Limit",
@@ -841,7 +838,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPriSH_2_bag", label ="Bag Limit",
@@ -864,7 +861,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("04-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SFri_1_bag", label ="Bag Limit",
@@ -876,7 +873,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("04-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFriFH_1_bag", label ="Bag Limit",
@@ -888,7 +885,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("04-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFriPR_1_bag", label ="Bag Limit",
@@ -900,7 +897,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("04-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFriSH_1_bag", label ="Bag Limit",
@@ -928,7 +925,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFctFH_3_bag", label ="Bag Limit",
@@ -940,7 +937,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFctPR_3_bag", label ="Bag Limit",
@@ -952,7 +949,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFctSH_3_bag", label ="Bag Limit",
@@ -968,7 +965,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("05-18","%m-%d"),as.Date("08-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "BSBctFH_1_bag", label ="Bag Limit",
@@ -980,7 +977,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "BSBctFH_2_bag", label ="Bag Limit",
@@ -993,7 +990,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("05-18","%m-%d"),as.Date("06-23","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "BSBctPR_1_bag", label ="Bag Limit",
@@ -1006,7 +1003,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("07-08","%m-%d"),as.Date("11-28","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "BSBctPR_2_bag", label ="Bag Limit",
@@ -1019,7 +1016,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("05-18","%m-%d"),as.Date("06-23","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "BSBctSH_1_bag", label ="Bag Limit",
@@ -1032,7 +1029,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value=c(as.Date("07-08","%m-%d"),as.Date("11-28","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "BSBctSH_2_bag", label ="Bag Limit",
@@ -1047,7 +1044,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBctFH_3_bag", label ="Bag Limit",
@@ -1059,7 +1056,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBctPR_3_bag", label ="Bag Limit",
@@ -1071,7 +1068,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBctSH_3_bag", label ="Bag Limit",
@@ -1089,7 +1086,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("08-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPctFH_1_bag", label = "Bag Limit",
@@ -1102,7 +1099,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("09-01","%m-%d"),as.Date("10-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPctFH_2_bag", label = "Bag Limit",
@@ -1114,7 +1111,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("11-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPctFH_3_bag", label = "Bag Limit",
@@ -1127,7 +1124,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPctPR_1_bag", label = "Bag Limit",
@@ -1139,7 +1136,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPctSH_1_bag", label = "Bag Limit",
@@ -1154,7 +1151,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPctFH_4_bag", label ="Bag Limit",
@@ -1166,7 +1163,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPctPR_2_bag", label ="Bag Limit",
@@ -1178,7 +1175,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPctSH_2_bag", label ="Bag Limit",
@@ -1201,7 +1198,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SFct_1_bag", label ="Bag Limit",
@@ -1213,7 +1210,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("08-02","%m-%d"),as.Date("10-15","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SFct_2_bag", label ="Bag Limit",
@@ -1225,7 +1222,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFctFH_1_bag", label ="Bag Limit",
@@ -1237,7 +1234,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFctPR_1_bag", label ="Bag Limit",
@@ -1249,7 +1246,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFctSH_1_bag", label ="Bag Limit",
@@ -1261,7 +1258,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-02","%m-%d"),as.Date("10-15","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFctFH_2_bag", label ="Bag Limit",
@@ -1273,7 +1270,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-02","%m-%d"),as.Date("10-15","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFctPR_2_bag", label ="Bag Limit",
@@ -1285,7 +1282,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-02","%m-%d"),as.Date("10-15","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFctSH_2_bag", label ="Bag Limit",
@@ -1316,7 +1313,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFnyFH_3_bag", label ="Bag Limit",
@@ -1328,7 +1325,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFnyPR_3_bag", label ="Bag Limit",
@@ -1340,7 +1337,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFnySH_3_bag", label ="Bag Limit",
@@ -1363,7 +1360,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBnyFH_3_bag", label ="Bag Limit",
@@ -1375,7 +1372,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBnyPR_3_bag", label ="Bag Limit",
@@ -1387,7 +1384,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBnySH_3_bag", label ="Bag Limit",
@@ -1405,7 +1402,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("08-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPnyFH_1_bag", label = "Bag Limit",
@@ -1418,7 +1415,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("09-01","%m-%d"),as.Date("10-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPnyFH_2_bag", label = "Bag Limit",
@@ -1430,7 +1427,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("11-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPnyFH_3_bag", label = "Bag Limit",
@@ -1443,7 +1440,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPnyPR_1_bag", label = "Bag Limit",
@@ -1455,7 +1452,7 @@ server <- function(input, output, session) {
                            min = as.Date("01-01","%m-%d"),
                            max = as.Date("12-31","%m-%d"),
                            value =c(as.Date("05-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                           timeFormat = glue(mytimeFormat), ticks = FALSE),
+                           timeFormat = mytimeFormat, ticks = FALSE),
                fluidRow(
                  column(4,
                         numericInput(inputId = "SCUPnySH_1_bag", label = "Bag Limit",
@@ -1470,7 +1467,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPnyFH_4_bag", label ="Bag Limit",
@@ -1482,7 +1479,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPnyPR_2_bag", label ="Bag Limit",
@@ -1494,7 +1491,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPnySH_2_bag", label ="Bag Limit",
@@ -1514,7 +1511,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SFny_1_bag", label ="Bag Limit",
@@ -1526,7 +1523,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("08-02","%m-%d"),as.Date("10-15","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SFny_2_bag", label ="Bag Limit",
@@ -1538,7 +1535,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFnyFH_1_bag", label ="Bag Limit",
@@ -1550,7 +1547,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFnyPR_1_bag", label ="Bag Limit",
@@ -1562,7 +1559,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-04","%m-%d"),as.Date("08-01","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFnySH_1_bag", label ="Bag Limit",
@@ -1574,7 +1571,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-02","%m-%d"),as.Date("10-15","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFnyFH_2_bag", label ="Bag Limit",
@@ -1586,7 +1583,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-02","%m-%d"),as.Date("10-15","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFnyPR_2_bag", label ="Bag Limit",
@@ -1598,7 +1595,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-02","%m-%d"),as.Date("10-15","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFnySH_2_bag", label ="Bag Limit",
@@ -1618,7 +1615,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("06-23","%m-%d"),as.Date("8-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "BSBny_1_bag", label ="Bag Limit",
@@ -1631,7 +1628,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "BSBny_2_bag", label ="Bag Limit",
@@ -1643,7 +1640,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-23","%m-%d"),as.Date("08-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnyFH_1_bag", label ="Bag Limit",
@@ -1655,7 +1652,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-23","%m-%d"),as.Date("08-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnyPR_1_bag", label ="Bag Limit",
@@ -1667,7 +1664,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-23","%m-%d"),as.Date("08-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnySH_1_bag", label ="Bag Limit",
@@ -1681,7 +1678,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnyFH_2_bag", label ="Bag Limit",
@@ -1693,7 +1690,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnyPR_2_bag", label ="Bag Limit",
@@ -1705,7 +1702,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnySH_2_bag", label ="Bag Limit",
@@ -1734,7 +1731,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),#)),
+                                                timeFormat = mytimeFormat, ticks = FALSE),#)),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFnjFH_2_bag", label ="Bag Limit",
@@ -1746,7 +1743,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFnjPR_2_bag", label ="Bag Limit",
@@ -1758,7 +1755,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFnjSH_2_bag", label ="Bag Limit",
@@ -1781,7 +1778,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBnjFH_5_bag", label ="Bag Limit",
@@ -1793,7 +1790,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBnjPR_5_bag", label ="Bag Limit",
@@ -1805,7 +1802,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBnjSH_5_bag", label ="Bag Limit",
@@ -1830,7 +1827,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPnjFH_2_bag", label ="Bag Limit",
@@ -1842,7 +1839,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPnjPR_2_bag", label ="Bag Limit",
@@ -1854,7 +1851,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPnjSH_2_bag", label ="Bag Limit",
@@ -1876,7 +1873,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value =c(as.Date("05-04","%m-%d"),as.Date("09-25","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4, 
                                                numericInput(inputId = "SFnj_1_bag", label ="Bag Limit", 
@@ -1888,7 +1885,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value =c(as.Date("05-04","%m-%d"),as.Date("09-25","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4, 
                                               numericInput(inputId = "SFnjFH_1_bag", label ="Bag Limit", 
@@ -1900,7 +1897,7 @@ server <- function(input, output, session) {
                                                    min = as.Date("01-01","%m-%d"),
                                                    max = as.Date("12-31","%m-%d"),
                                                    value=c(as.Date("05-04","%m-%d"),as.Date("09-25","%m-%d")), 
-                                                   timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                   timeFormat = mytimeFormat, ticks = FALSE),
                                        fluidRow(
                                          column(4, 
                                                 numericInput(inputId = "SFnjPR_1_bag", label ="Bag Limit",
@@ -1912,7 +1909,7 @@ server <- function(input, output, session) {
                                                    min = as.Date("01-01","%m-%d"),
                                                    max = as.Date("12-31","%m-%d"),
                                                    value=c(as.Date("05-04","%m-%d"),as.Date("09-25","%m-%d")), 
-                                                   timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                   timeFormat = mytimeFormat, ticks = FALSE),
                                        fluidRow(
                                          column(4, 
                                                 numericInput(inputId = "SFnjSH_1_bag", label ="Bag Limit",
@@ -1933,7 +1930,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-17","%m-%d"),as.Date("06-19","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "BSBnj_1_bag", label ="Bag Limit",
@@ -1947,7 +1944,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("07-01","%m-%d"),as.Date("08-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "BSBnj_2_bag", label ="Bag Limit",
@@ -1961,7 +1958,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("10-01","%m-%d"),as.Date("10-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "BSBnj_3_bag", label ="Bag Limit",
@@ -1975,7 +1972,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("11-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "BSBnj_4_bag", label ="Bag Limit",
@@ -1988,7 +1985,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-17","%m-%d"),as.Date("06-19","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnjFH_1_bag", label ="Bag Limit",
@@ -2000,7 +1997,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-17","%m-%d"),as.Date("06-19","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnjPR_1_bag", label ="Bag Limit",
@@ -2012,7 +2009,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-17","%m-%d"),as.Date("06-19","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnjSH_1_bag", label ="Bag Limit",
@@ -2025,7 +2022,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("07-01","%m-%d"),as.Date("08-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnjFH_2_bag", label ="Bag Limit",
@@ -2037,7 +2034,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("07-01","%m-%d"),as.Date("08-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnjPR_2_bag", label ="Bag Limit",
@@ -2049,7 +2046,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("07-01","%m-%d"),as.Date("08-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnjSH_2_bag", label ="Bag Limit",
@@ -2062,7 +2059,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-07","%m-%d"),as.Date("10-26","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnjFH_3_bag", label ="Bag Limit",
@@ -2074,7 +2071,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-07","%m-%d"),as.Date("10-26","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnjPR_3_bag", label ="Bag Limit",
@@ -2086,7 +2083,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-07","%m-%d"),as.Date("10-26","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnjSH_3_bag", label ="Bag Limit",
@@ -2099,7 +2096,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("11-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnjFH_4_bag", label ="Bag Limit",
@@ -2111,7 +2108,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("11-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnjPR_4_bag", label ="Bag Limit",
@@ -2123,7 +2120,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("11-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBnjSH_4_bag", label ="Bag Limit",
@@ -2143,7 +2140,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("08-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SCUPnj_1_bag", label ="Bag Limit",
@@ -2155,7 +2152,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPnjFH_1_bag", label ="Bag Limit",
@@ -2167,7 +2164,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPnjPR_1_bag", label ="Bag Limit",
@@ -2179,7 +2176,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPnjSH_1_bag", label ="Bag Limit",
@@ -2228,7 +2225,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFdeFH_3_bag", label ="Bag Limit",
@@ -2240,7 +2237,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFdePR_3_bag", label ="Bag Limit",
@@ -2252,7 +2249,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFdeSH_3_bag", label ="Bag Limit",
@@ -2275,7 +2272,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBdeFH_3_bag", label ="Bag Limit",
@@ -2287,7 +2284,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBdePR_3_bag", label ="Bag Limit",
@@ -2299,7 +2296,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBdeSH_3_bag", label ="Bag Limit",
@@ -2324,7 +2321,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPdeFH_2_bag", label ="Bag Limit",
@@ -2336,7 +2333,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPdePR_2_bag", label ="Bag Limit",
@@ -2348,7 +2345,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPdeSH_2_bag", label ="Bag Limit",
@@ -2371,7 +2368,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SFde_1_bag", label ="Bag Limit",
@@ -2383,7 +2380,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SFde_2_bag", label ="Bag Limit",
@@ -2395,7 +2392,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFdeFH_1_bag", label ="Bag Limit",
@@ -2407,7 +2404,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFdePR_1_bag", label ="Bag Limit",
@@ -2419,7 +2416,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFdeSH_1_bag", label ="Bag Limit",
@@ -2432,7 +2429,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFdeFH_2_bag", label ="Bag Limit",
@@ -2444,7 +2441,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFdePR_2_bag", label ="Bag Limit",
@@ -2456,7 +2453,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFdeSH_2_bag", label ="Bag Limit",
@@ -2476,7 +2473,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "BSBde_1_bag", label ="Bag Limit",
@@ -2489,7 +2486,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "BSBde_2_bag", label ="Bag Limit",
@@ -2501,7 +2498,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBdeFH_1_bag", label ="Bag Limit",
@@ -2513,7 +2510,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBdePR_1_bag", label ="Bag Limit",
@@ -2525,7 +2522,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBdeSH_1_bag", label ="Bag Limit",
@@ -2539,7 +2536,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBdeFH_2_bag", label ="Bag Limit",
@@ -2551,7 +2548,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBdePR_2_bag", label ="Bag Limit",
@@ -2563,7 +2560,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBdeSH_2_bag", label ="Bag Limit",
@@ -2582,7 +2579,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SCUPde_1_bag", label ="Bag Limit",
@@ -2594,7 +2591,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPdeFH_1_bag", label ="Bag Limit",
@@ -2606,7 +2603,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPdePR_1_bag", label ="Bag Limit",
@@ -2618,7 +2615,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPdeSH_1_bag", label ="Bag Limit",
@@ -2648,7 +2645,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFmdFH_3_bag", label ="Bag Limit",
@@ -2660,7 +2657,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFmdPR_3_bag", label ="Bag Limit",
@@ -2672,7 +2669,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFmdSH_3_bag", label ="Bag Limit",
@@ -2695,7 +2692,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBmdFH_3_bag", label ="Bag Limit",
@@ -2707,7 +2704,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBmdPR_3_bag", label ="Bag Limit",
@@ -2719,7 +2716,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBmdSH_3_bag", label ="Bag Limit",
@@ -2744,7 +2741,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPmdFH_2_bag", label ="Bag Limit",
@@ -2756,7 +2753,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPmdPR_2_bag", label ="Bag Limit",
@@ -2768,7 +2765,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPmdSH_2_bag", label ="Bag Limit",
@@ -2791,7 +2788,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SFmd_1_bag", label ="Bag Limit",
@@ -2803,7 +2800,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SFmd_2_bag", label ="Bag Limit",
@@ -2815,7 +2812,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFmdFH_1_bag", label ="Bag Limit",
@@ -2827,7 +2824,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFmdPR_1_bag", label ="Bag Limit",
@@ -2839,7 +2836,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFmdSH_1_bag", label ="Bag Limit",
@@ -2851,7 +2848,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFmdFH_2_bag", label ="Bag Limit",
@@ -2863,7 +2860,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFmdPR_2_bag", label ="Bag Limit",
@@ -2875,7 +2872,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFmdSH_2_bag", label ="Bag Limit",
@@ -2896,7 +2893,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "BSBmd_1_bag", label ="Bag Limit",
@@ -2909,7 +2906,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "BSBmd_2_bag", label ="Bag Limit",
@@ -2921,7 +2918,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBmdFH_1_bag", label ="Bag Limit",
@@ -2933,7 +2930,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBmdPR_1_bag", label ="Bag Limit",
@@ -2945,7 +2942,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBmdSH_1_bag", label ="Bag Limit",
@@ -2959,7 +2956,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBmdFH_2_bag", label ="Bag Limit",
@@ -2971,7 +2968,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBmdPR_2_bag", label ="Bag Limit",
@@ -2983,7 +2980,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBmdSH_2_bag", label ="Bag Limit",
@@ -3002,7 +2999,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SCUPmd_1_bag", label ="Bag Limit",
@@ -3014,7 +3011,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPmdFH_1_bag", label ="Bag Limit",
@@ -3026,7 +3023,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPmdPR_1_bag", label ="Bag Limit",
@@ -3038,7 +3035,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPmdSH_1_bag", label ="Bag Limit",
@@ -3068,7 +3065,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFvaFH_3_bag", label ="Bag Limit",
@@ -3080,7 +3077,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFvaPR_3_bag", label ="Bag Limit",
@@ -3092,7 +3089,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFvaSH_3_bag", label ="Bag Limit",
@@ -3115,7 +3112,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBvaFH_3_bag", label ="Bag Limit",
@@ -3127,7 +3124,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBvaPR_3_bag", label ="Bag Limit",
@@ -3139,7 +3136,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBvaSH_3_bag", label ="Bag Limit",
@@ -3164,7 +3161,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPvaFH_2_bag", label ="Bag Limit",
@@ -3176,7 +3173,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPvaPR_2_bag", label ="Bag Limit",
@@ -3188,7 +3185,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPvaSH_2_bag", label ="Bag Limit",
@@ -3211,7 +3208,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SFva_1_bag", label ="Bag Limit",
@@ -3223,7 +3220,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SFva_2_bag", label ="Bag Limit",
@@ -3235,7 +3232,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFvaFH_1_bag", label ="Bag Limit",
@@ -3247,7 +3244,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFvaPR_1_bag", label ="Bag Limit",
@@ -3259,7 +3256,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFvaSH_1_bag", label ="Bag Limit",
@@ -3271,7 +3268,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFvaFH_2_bag", label ="Bag Limit",
@@ -3283,7 +3280,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFvaPR_2_bag", label ="Bag Limit",
@@ -3295,7 +3292,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFvaSH_2_bag", label ="Bag Limit",
@@ -3315,7 +3312,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-15","%m-%d"),as.Date("07-06","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "BSBva_1_bag", label ="Bag Limit",
@@ -3328,7 +3325,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("08-09","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "BSBva_2_bag", label ="Bag Limit",
@@ -3340,7 +3337,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("07-06","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBvaFH_1_bag", label ="Bag Limit",
@@ -3352,7 +3349,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("07-06","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBvaPR_1_bag", label ="Bag Limit",
@@ -3364,7 +3361,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("07-06","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBvaSH_1_bag", label ="Bag Limit",
@@ -3378,7 +3375,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-09","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBvaFH_2_bag", label ="Bag Limit",
@@ -3390,7 +3387,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-09","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBvaPR_2_bag", label ="Bag Limit",
@@ -3402,7 +3399,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-09","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBvaSH_2_bag", label ="Bag Limit",
@@ -3421,7 +3418,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SCUPva_1_bag", label ="Bag Limit",
@@ -3433,7 +3430,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPvaFH_1_bag", label ="Bag Limit",
@@ -3445,7 +3442,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPvaPR_1_bag", label ="Bag Limit",
@@ -3457,7 +3454,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPvaSH_1_bag", label ="Bag Limit",
@@ -3486,7 +3483,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFncFH_2_bag", label ="Bag Limit",
@@ -3498,7 +3495,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFncPR_2_bag", label ="Bag Limit",
@@ -3510,7 +3507,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SFncSH_2_bag", label ="Bag Limit",
@@ -3533,7 +3530,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBncFH_3_bag", label ="Bag Limit",
@@ -3545,7 +3542,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBncPR_3_bag", label ="Bag Limit",
@@ -3557,7 +3554,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "BSBncSH_3_bag", label ="Bag Limit",
@@ -3582,7 +3579,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPncFH_2_bag", label ="Bag Limit",
@@ -3594,7 +3591,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPncPR_2_bag", label ="Bag Limit",
@@ -3606,7 +3603,7 @@ server <- function(input, output, session) {
                                                 min = as.Date("01-01","%m-%d"),
                                                 max = as.Date("12-31","%m-%d"),
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                timeFormat = mytimeFormat, ticks = FALSE),
                                     fluidRow(
                                       column(4,
                                              numericInput(inputId = "SCUPncSH_2_bag", label ="Bag Limit",
@@ -3629,7 +3626,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("08-16","%m-%d"),as.Date("09-30","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SFnc_1_bag", label ="Bag Limit",
@@ -3641,7 +3638,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-16","%m-%d"),as.Date("09-30","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFncFH_1_bag", label ="Bag Limit",
@@ -3653,7 +3650,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-16","%m-%d"),as.Date("09-30","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFncPR_1_bag", label ="Bag Limit",
@@ -3665,7 +3662,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("08-16","%m-%d"),as.Date("09-30","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SFncSH_1_bag", label ="Bag Limit",
@@ -3685,7 +3682,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "BSBnc_1_bag", label ="Bag Limit",
@@ -3698,7 +3695,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "BSBnc_2_bag", label ="Bag Limit",
@@ -3710,7 +3707,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBncFH_1_bag", label ="Bag Limit",
@@ -3722,7 +3719,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBncPR_1_bag", label ="Bag Limit",
@@ -3734,7 +3731,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("05-15","%m-%d"),as.Date("09-30","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBncSH_1_bag", label ="Bag Limit",
@@ -3748,7 +3745,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBncFH_2_bag", label ="Bag Limit",
@@ -3760,7 +3757,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBncPR_2_bag", label ="Bag Limit",
@@ -3772,7 +3769,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("10-10","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "BSBncSH_2_bag", label ="Bag Limit",
@@ -3791,7 +3788,7 @@ server <- function(input, output, session) {
                                                   min = as.Date("01-01","%m-%d"),
                                                   max = as.Date("12-31","%m-%d"),
                                                   value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                  timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                  timeFormat = mytimeFormat, ticks = FALSE),
                                       fluidRow(
                                         column(4,
                                                numericInput(inputId = "SCUPnc_1_bag", label ="Bag Limit",
@@ -3803,7 +3800,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPncFH_1_bag", label ="Bag Limit",
@@ -3815,7 +3812,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPncPR_1_bag", label ="Bag Limit",
@@ -3827,7 +3824,7 @@ server <- function(input, output, session) {
                                                  min = as.Date("01-01","%m-%d"),
                                                  max = as.Date("12-31","%m-%d"),
                                                  value=c(as.Date("01-01","%m-%d"),as.Date("12-31","%m-%d")), 
-                                                 timeFormat = glue(mytimeFormat), ticks = FALSE),
+                                                 timeFormat = mytimeFormat, ticks = FALSE),
                                      fluidRow(
                                        column(4,
                                               numericInput(inputId = "SCUPncSH_1_bag", label ="Bag Limit",
