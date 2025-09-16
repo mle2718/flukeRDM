@@ -3718,11 +3718,12 @@ server <- function(input, output, session) {
       ) %>%
       dplyr::group_by(filename) %>%
       dplyr::summarise(trips = median(value), .groups = "drop") %>%
-      dplyr::left_join(harv, by = "filename")
+      dplyr::left_join(harv, by = "filename") %>% 
+      dplyr::mutate(trips = trips/1000000)
     
     # Static plot
     p1 <- trips %>%
-      ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = (trips/1000000), label = filename)) +
+      ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = trips, label = filename)) +
       ggplot2::geom_point() +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::ggtitle(paste("Number of Trips in", state_name)) +
