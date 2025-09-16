@@ -3778,11 +3778,12 @@ server <- function(input, output, session) {
       ) %>%
       dplyr::group_by(state, filename, category, number_weight) %>%
       dplyr::summarise(median_rel_weight = median(value), .groups = "drop") %>%
-      dplyr::left_join(harv, by = c("state", "filename", "category", "number_weight"))
+      dplyr::left_join(harv, by = c("state", "filename", "category", "number_weight")) %>% 
+      dplyr::mutate(median_rel_weight = median_rel_weight/1000000)
     
     # Static plot
     p1 <- disc %>%
-      ggplot2::ggplot(ggplot2::aes(x = median_keep_pct_diff, y = (median_rel_weight/1000000), label = filename)) +
+      ggplot2::ggplot(ggplot2::aes(x = median_keep_pct_diff, y = median_rel_weight, label = filename)) +
       ggplot2::geom_point() +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::ggtitle(paste("Discards in", state_name)) +
