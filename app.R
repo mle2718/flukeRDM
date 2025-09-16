@@ -3498,13 +3498,13 @@ server <- function(input, output, session) {
   # Summary
   output$summary_rhl_fig<- plotly::renderPlotly({
 
-    ref_pct <- outputs() %>% #all_data %>%
+    ref_pct <- all_data %>% #outputs() %>% #all_data %>%
       dplyr::filter(number_weight == "weight" &
                       keep_release == "keep" & mode == "all modes" & model == "SQ") %>%
       dplyr::mutate(ref_value = value) %>%
       dplyr::select(filename, category, state, draw, ref_value)
 
-    harv <- outputs() %>% #all_data %>%
+    harv <- all_data %>% #outputs() %>% #all_data %>%
       dplyr::filter(number_weight == "weight" &
                       keep_release == "keep" & mode == "all modes") %>%
       dplyr::left_join(ref_pct, by = join_by(category,  state, draw)) %>%
@@ -3522,7 +3522,7 @@ server <- function(input, output, session) {
       #ggplot2::geom_vline(data = pca_bsb, ggplot2::aes(xintercept = pca_reqs), color = "black", linetype = "dashed")+
       ggplot2::facet_wrap(~ state) +
       ggplot2::labs(title = "SF vs BSB Harvest Limits by state",x = "Black Sea Bass RHL",y = "Summer Flounder RHL") +
-      ggplot2::scale_color_gradient2( low = "blue", mid = "gray", high = "red",  midpoint = 0, limits = c(-10, 10)) + 
+      #ggplot2::scale_color_gradient2( low = "blue", mid = "gray", high = "red",  midpoint = 0, limits = c(-10, 10)) + 
       ggplot2::theme_bw()
 
     fig<- plotly::ggplotly(harv2) %>%
