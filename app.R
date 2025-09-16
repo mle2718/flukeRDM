@@ -3522,7 +3522,7 @@ server <- function(input, output, session) {
       #ggplot2::geom_vline(data = pca_bsb, ggplot2::aes(xintercept = pca_reqs), color = "black", linetype = "dashed")+
       ggplot2::facet_wrap(~ state) +
       ggplot2::labs(title = "SF vs BSB Harvest Limits by state",x = "Black Sea Bass RHL",y = "Summer Flounder RHL") +
-      ggplot2::scale_color_gradient2( low = "blue", mid = "gray", high = "red",  midpoint = 0, limits = c(-10, 10)) + 
+      #ggplot2::scale_color_gradient2( low = "blue", mid = "gray", high = "red",  midpoint = 0, limits = c(-10, 10)) + 
       ggplot2::theme_bw()
 
     fig<- plotly::ggplotly(harv2) %>%
@@ -3660,12 +3660,13 @@ server <- function(input, output, session) {
       # dplyr::group_by( filename, category, draw) %>%
       # dplyr::summarise(Value = sum(as.numeric(value))) %>%
       dplyr::group_by(filename) %>%
+      dplyr::mutate(value = value/1000000) %>% 
       dplyr::summarise(CV = median(value),
                        ci_lower = quantile(value, 0.05),
                        ci_upper = quantile(value, 0.95)) %>%
       left_join(harv)
     
-    p1<- welfare %>% ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = (CV/1000000), label = filename))+
+    p1<- welfare %>% ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = CV, label = filename))+
       ggplot2::geom_point() +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::ggtitle("Angler Satisfaction")+
@@ -3717,11 +3718,12 @@ server <- function(input, output, session) {
       ) %>%
       dplyr::group_by(filename) %>%
       dplyr::summarise(trips = median(value), .groups = "drop") %>%
-      dplyr::left_join(harv, by = "filename")
+      dplyr::left_join(harv, by = "filename") %>% 
+      dplyr::mutate(trips = trips/1000000)
     
     # Static plot
     p1 <- trips %>%
-      ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = (trips/1000000), label = filename)) +
+      ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = trips, label = filename)) +
       ggplot2::geom_point() +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::ggtitle(paste("Number of Trips in", state_name)) +
@@ -3776,11 +3778,12 @@ server <- function(input, output, session) {
       ) %>%
       dplyr::group_by(state, filename, category, number_weight) %>%
       dplyr::summarise(median_rel_weight = median(value), .groups = "drop") %>%
-      dplyr::left_join(harv, by = c("state", "filename", "category", "number_weight"))
+      dplyr::left_join(harv, by = c("state", "filename", "category", "number_weight")) %>% 
+      dplyr::mutate(median_rel_weight = median_rel_weight/1000000)
     
     # Static plot
     p1 <- disc %>%
-      ggplot2::ggplot(ggplot2::aes(x = median_keep_pct_diff, y = (median_rel_weight/1000000), label = filename)) +
+      ggplot2::ggplot(ggplot2::aes(x = median_keep_pct_diff, y = median_rel_weight, label = filename)) +
       ggplot2::geom_point() +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::ggtitle(paste("Discards in", state_name)) +
