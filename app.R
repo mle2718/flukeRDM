@@ -3498,13 +3498,13 @@ server <- function(input, output, session) {
   # Summary
   output$summary_rhl_fig<- plotly::renderPlotly({
 
-    ref_pct <- all_data %>% #outputs() %>% #all_data %>%
+    ref_pct <- outputs() %>% #all_data %>%
       dplyr::filter(number_weight == "weight" &
                       keep_release == "keep" & mode == "all modes" & model == "SQ") %>%
       dplyr::mutate(ref_value = value) %>%
       dplyr::select(filename, category, state, draw, ref_value)
 
-    harv <- all_data %>% #outputs() %>% #all_data %>%
+    harv <- outputs() %>% #all_data %>%
       dplyr::filter(number_weight == "weight" &
                       keep_release == "keep" & mode == "all modes") %>%
       dplyr::left_join(ref_pct, by = join_by(category,  state, draw)) %>%
@@ -3660,12 +3660,13 @@ server <- function(input, output, session) {
       # dplyr::group_by( filename, category, draw) %>%
       # dplyr::summarise(Value = sum(as.numeric(value))) %>%
       dplyr::group_by(filename) %>%
+      dplyr::mutate(value = value/1000000) %>% 
       dplyr::summarise(CV = median(value),
                        ci_lower = quantile(value, 0.05),
                        ci_upper = quantile(value, 0.95)) %>%
       left_join(harv)
     
-    p1<- welfare %>% ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = (CV/1000000), label = filename))+
+    p1<- welfare %>% ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = CV, label = filename))+
       ggplot2::geom_point() +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::ggtitle("Angler Satisfaction")+
