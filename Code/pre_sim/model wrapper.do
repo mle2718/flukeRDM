@@ -40,8 +40,8 @@
 *These need to be changed every year 
 
 *Years/waves of MRIP data. 
-global yr_wvs 20221 20222 20223 20224 20225 20226 20231 20232 20233 20234 20235 20236  20241 20242 20243 20244 20245  20246
-global yearlist 2022 2023 2024 
+global yr_wvs 20221 20222 20223 20224 20225 20226 20231 20232 20233 20234 20235 20236  20241 20242 20243 20244 20245  20246 20251 20252 20253
+global yearlist 2022 2023 2024 2025
 global wavelist 1 2 3 4 5 6
 
 
@@ -51,6 +51,8 @@ global calibration_year_num 2024
 global projection_year "(year==2024 & inlist(wave, 1, 2, 3, 4)) | (year==2023) | (year==2022 & inlist(wave, 5, 6))" //ADJUST THIS AFTER MRIP DATA RELEASE
 
 global calibration_catch_per_trip_years "(year==2024 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2023 & inlist(wave, 6)) | (year==2023 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2022 & inlist(wave, 6))"
+
+global sq_weight_per_fish_years "(year==2025 & inlist(wave, 1, 2, 3)) | (year==2024 & inlist(wave, 1, 2, 3, 4, 5, 6))" //ADJUST THIS AFTER MRIP DATA RELEASE
 
 global calibration_start_date td(01jan2024)
 global calibration_end_date td(31dec2024)
@@ -156,8 +158,11 @@ do "$input_code_cd\compare calibration output to MRIP.do"
 // 6) Generate baseline-year catch-at-length, using the simulated harvest/discard totals from step 5
 do "$input_code_cd\catch_at_length.do"
 
+// 7) Generate projection-year catch-at-length, incorporating the stock assessment data
+		do "$input_code_cd\projected_catch_at_length.do"
 
-// 7)  Estimate projected catch-per-trips at the month and mode level
+		
+// 8)  Estimate projected catch-per-trips at the month and mode level
 		 *will use MRIP catch data from the last two full years. 
 		 *For 2026 mgt. cycle: 2025 waves 1-4, 2024 waves 1-6, 2023 waves 5 & 6	 
 		 
@@ -170,10 +175,12 @@ do "$input_code_cd\catch_at_length.do"
 		//c) generate estimates of simulated total harvest based on random draws of catch-per-trip and directed trips
 		do "$input_code_cd\catch_per_trip_projection_part2.do"
 		
-// 8) Generate projection-year catch-at-length, incorporating the stock assessment data
-		do "$input_code_cd\projected_catch_at_length.do"
+		//d) compare estimates of mean projected catch to MRIP data to ensure consistency and remove extraneous columns from projected catch draw data
+		do "$input_code_cd\compare projection catch to MRIP.do"
+		
 
-
+// 9) Generate random draws of harvest and discard weight-per-fish to use when projecting SQ scenario 
+		do "$input_code_cd\.do"
 
 // Steps 7-10 are not necessary to run. They compare the disaggregated simulated catch and effort data to aggreagte MRIP estimates, and compute catch weight totals in the calibration year 
 
