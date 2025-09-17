@@ -9,9 +9,10 @@ setDT(directed_trips)
 setDT(catch_data)
 setDT(calib_comparison)
 setDT(sf_size_data)
+setDT(bsb_size_data)
+setDT(scup_size_data)
 
 #Set up constants (unchanged):
-floor_subl_sf_harv <- min(directed_trips$fluke_min_y2) - 3 * 2.54
 mode_draw <- c("sh", "pr", "fh")
 
 #Step 2: Reorganize calibration parameters#
@@ -28,6 +29,7 @@ calib_lookup <- calib_comparison %>%
 setDT(calib_lookup)
 setkey(calib_lookup, mode)
 
+
 simulate_mode_sf <- function(md) {
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
@@ -40,19 +42,45 @@ simulate_mode_sf <- function(md) {
   prop_legal_rel_sf     <- calib_row$prop_legal_rel_sf
   all_keep_to_rel_sf <- as.integer(p_keep_to_rel_sf == 1)
   
+  
+  #  sublegal_harvest_floor
+  directed_trips_md <- directed_trips[mode == md]
+  floor_subl_sf_harv <- min(directed_trips_md$fluke_min_y2) - 3 * 2.54
+  
+  # Filter length data by mode
+  sf_size_data <- sf_size_data[mode == md]
+
   # Filter catch data by mode
   catch_data_md <- catch_data[mode == md]
   sf_catch_check_md <- sum(catch_data_md$sf_cat)
   
   if (sf_catch_check_md == 0) {
+    
+    size_data<-catch_data_md %>% 
+      dplyr::select("mode","tripid", "catch_draw","date") %>% 
+      dplyr::mutate(keep_sf_1=0, release_sf_1=0)
+    
+    zero_catch <-data.frame(
+      date = character(0),      
+      catch_draw = numeric(0),    
+      tripid = numeric(0), 
+      mode = character(0) ,   
+      tot_keep_sf_new = numeric(0), 
+      tot_rel_sf_new = numeric(0) 
+    ) 
+    
     return(list(
       trip_data = catch_data_md[, .(date, catch_draw, tripid, mode,
                                     tot_keep_sf_new = 0L, tot_rel_sf_new = 0L,
                                     domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid))],
-      zero_catch = catch_data_md[sf_cat == 0]
+      zero_catch = zero_catch, 
+      size_data=size_data
+      
+      
     ))
   }
-  
+if (sf_catch_check_md != 0) {
+    
   # Expand fish by number caught
   sf_catch_data <- catch_data_md[sf_cat > 0]
   sf_catch_data <- sf_catch_data[rep(1:.N, sf_cat)]
@@ -82,8 +110,7 @@ simulate_mode_sf <- function(md) {
       keep = as.integer(fishid2 <= n_to_keep),
       release = as.integer(fishid2 > n_to_keep)
     )]
-    sum(sublegal_keeps$release)
-    sum(sublegal_keeps$keep)
+
     
     # Drop helper columns *only if they exist*
     cols_to_drop_sub <- intersect(names(sublegal_keeps), c("uniform", "fishid2", "subl_harv_indicator"))
@@ -166,7 +193,7 @@ simulate_mode_sf <- function(md) {
     size_data = keep_release_size_data
   ))
 }
-
+}
 
 ########## black sea bass ##############
 
@@ -177,7 +204,6 @@ setDT(calib_comparison)
 setDT(bsb_size_data)
 
 #Set up constants (unchanged):
-floor_subl_bsb_harv <- min(directed_trips$bsb_min_y2) - 3 * 2.54
 mode_draw <- c("sh", "pr", "fh")
 
 #Step 2: Reorganize calibration parameters#
@@ -208,19 +234,44 @@ simulate_mode_bsb <- function(md) {
   prop_legal_rel_bsb     <- calib_row$prop_legal_rel_bsb
   all_keep_to_rel_bsb <- as.integer(p_keep_to_rel_bsb == 1)
   
+  #  sublegal_harvest_floor
+  directed_trips_md <- directed_trips[mode == md]
+  floor_subl_bsb_harv <- min(directed_trips_md$bsb_min_y2) - 3 * 2.54
+  
+  # Filter length data by mode
+  bsb_size_data <- bsb_size_data[mode == md]
+
   # Filter catch data by mode
   catch_data_md <- catch_data[mode == md]
   bsb_catch_check_md <- sum(catch_data_md$bsb_cat)
   
   if (bsb_catch_check_md == 0) {
+    
+    size_data<-catch_data_md %>% 
+      dplyr::select("mode","tripid", "catch_draw","date") %>% 
+      dplyr::mutate(keep_bsb_1=0, release_bsb_1=0)
+    
+    zero_catch <-data.frame(
+      date = character(0),      
+      catch_draw = numeric(0),    
+      tripid = numeric(0), 
+      mode = character(0) ,   
+      tot_keep_bsb_new = numeric(0), 
+      tot_rel_bsb_new = numeric(0) 
+    ) 
+    
+    
     return(list(
       trip_data = catch_data_md[, .(date, catch_draw, tripid, mode,
                                     tot_keep_bsb_new = 0L, tot_rel_bsb_new = 0L,
                                     domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid))],
-      zero_catch = catch_data_md[bsb_cat == 0]
+      zero_catch = zero_catch,
+      size_data=size_data
     ))
   }
-  
+
+  if (bsb_catch_check_md != 0) {
+    
   # Expand fish by number caught
   bsb_catch_data <- catch_data_md[bsb_cat > 0]
   bsb_catch_data <- bsb_catch_data[rep(1:.N, bsb_cat)]
@@ -250,8 +301,7 @@ simulate_mode_bsb <- function(md) {
       keep = as.integer(fishid2 <= n_to_keep),
       release = as.integer(fishid2 > n_to_keep)
     )]
-    sum(sublegal_keeps$release)
-    sum(sublegal_keeps$keep)
+
     
     # Drop helper columns *only if they exist*
     cols_to_drop_sub <- intersect(names(sublegal_keeps), c("uniform", "fishid2", "subl_harv_indicator"))
@@ -334,7 +384,7 @@ simulate_mode_bsb <- function(md) {
     size_data = keep_release_size_data
   ))
 }
-
+}
 
 ########## scup ##############
 
@@ -345,7 +395,6 @@ setDT(calib_comparison)
 setDT(scup_size_data)
 
 #Set up constants (unchanged):
-floor_subl_scup_harv <- min(directed_trips$scup_min_y2) - 3 * 2.54
 mode_draw <- c("sh", "pr", "fh")
 
 #Step 2: Reorganize calibration parameters#
@@ -376,19 +425,44 @@ simulate_mode_scup <- function(md) {
   prop_legal_rel_scup     <- calib_row$prop_legal_rel_scup
   all_keep_to_rel_scup <- as.integer(p_keep_to_rel_scup == 1)
   
+  #  sublegal_harvest_floor
+  directed_trips_md <- directed_trips[mode == md]
+  floor_subl_scup_harv <- min(directed_trips_md$scup_min_y2) - 3 * 2.54
+  
+  # Filter length data by mode
+  scup_size_data <- scup_size_data[mode == md]
+  
   # Filter catch data by mode
   catch_data_md <- catch_data[mode == md]
   scup_catch_check_md <- sum(catch_data_md$scup_cat)
-  
+
   if (scup_catch_check_md == 0) {
+    
+    size_data<-catch_data_md %>% 
+      dplyr::select("mode","tripid", "catch_draw","date") %>% 
+      dplyr::mutate(keep_scup_1=0, release_scup_1=0)
+    
+    zero_catch <-data.frame(
+      date = character(0),      
+      catch_draw = numeric(0),    
+      tripid = numeric(0), 
+      mode = character(0) ,   
+      tot_keep_scup_new = numeric(0), 
+      tot_rel_scup_new = numeric(0) 
+    ) 
+
     return(list(
       trip_data = catch_data_md[, .(date, catch_draw, tripid, mode,
                                     tot_keep_scup_new = 0L, tot_rel_scup_new = 0L,
                                     domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid))],
-      zero_catch = catch_data_md[scup_cat == 0]
+      size_data = size_data, 
+      zero_catch=zero_catch
+      
     ))
   }
   
+  if (scup_catch_check_md != 0) {
+    
   # Expand fish by number caught
   scup_catch_data <- catch_data_md[scup_cat > 0]
   scup_catch_data <- scup_catch_data[rep(1:.N, scup_cat)]
@@ -418,8 +492,7 @@ simulate_mode_scup <- function(md) {
       keep = as.integer(fishid2 <= n_to_keep),
       release = as.integer(fishid2 > n_to_keep)
     )]
-    sum(sublegal_keeps$release)
-    sum(sublegal_keeps$keep)
+
     
     # Drop helper columns *only if they exist*
     cols_to_drop_sub <- intersect(names(sublegal_keeps), c("uniform", "fishid2", "subl_harv_indicator"))
@@ -501,4 +574,5 @@ simulate_mode_scup <- function(md) {
     zero_catch = zero_catch,
     size_data = keep_release_size_data
   ))
+  }
 }
