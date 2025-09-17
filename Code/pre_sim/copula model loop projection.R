@@ -33,7 +33,8 @@ conflicts_prefer(dplyr::count)
 
 state_datasets <- list()
 #statez<-c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
-statez<-c("MA", "RI", "CT")
+statez<-c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+
 
 for(s in statez) {
   
@@ -53,7 +54,7 @@ for(s in statez) {
   # I used copula model to simulate 1), whereas 2) and 3) are distributed NB
   
   n_sim <- 5000   # number of samples per draw
-  n_draws <- 2  # number of simulated datasets
+  n_draws <- 100  # number of simulated datasets
   
   
   ############ SUMMER FLOUNDER ############
@@ -232,12 +233,13 @@ for(s in statez) {
         # Convert uniform to NB using quantiles
         sim_rel  <- qnbinom(sim_u[,2], size = sampled_theta_rel, mu = sampled_mu_rel)
         
-        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
+        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
+ 
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
           total_excess_keep <- sum(excess_keep)
-          
+
           # Set max values to max_keep
           sim_keep[sim_keep > max_keep] <- max_keep
           
@@ -387,8 +389,8 @@ for(s in statez) {
         sim_rel <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
         
-        if (!any(is.na(sim_rel))) {
-          
+        if (!any(is.na(sim_rel)) && !any(is.infinite(sim_rel))) {
+
           ####### REDISTRIBUTE RELEASE ########
           excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
           total_excess_rel <- sum(excess_rel)
@@ -516,7 +518,7 @@ for(s in statez) {
         
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
-        if (!any(is.na(sim_keep))) {
+        if (!any(is.na(sim_keep)) && !any(is.infinite(sim_keep))) {
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -727,7 +729,7 @@ for(s in statez) {
         sim_rel <- qnbinom(runif(n_sim), size = sampled_theta_rel, mu = sampled_mu_rel)
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta_keep, mu = sampled_mu_keep)
         
-        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
+         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -991,7 +993,7 @@ for(s in statez) {
         # Convert uniform to NB using quantiles
         sim_rel  <- qnbinom(sim_u[,2], size = sampled_theta_rel, mu = sampled_mu_rel)
         
-        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
+         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -1140,7 +1142,7 @@ for(s in statez) {
         sim_rel <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
         
-        if (!any(is.na(sim_rel))) {
+        if (!any(is.na(sim_rel)) && !any(is.infinite(sim_rel))) {
           
           ####### REDISTRIBUTE RELEASE ########
           excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
@@ -1269,7 +1271,7 @@ for(s in statez) {
         
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
-        if (!any(is.na(sim_keep))) {
+        if (!any(is.na(sim_keep)) && !any(is.infinite(sim_keep))) {
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -1481,7 +1483,7 @@ for(s in statez) {
         sim_rel <- qnbinom(runif(n_sim), size = sampled_theta_rel, mu = sampled_mu_rel)
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta_keep, mu = sampled_mu_keep)
         
-        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
+         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -1749,7 +1751,7 @@ for(s in statez) {
         # Convert uniform to NB using quantiles
         sim_rel  <- qnbinom(sim_u[,2], size = sampled_theta_rel, mu = sampled_mu_rel)
         
-        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
+         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -1899,7 +1901,7 @@ for(s in statez) {
         sim_rel <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
         
-        if (!any(is.na(sim_rel))) {
+        if (!any(is.na(sim_rel)) && !any(is.infinite(sim_rel))) {
           
           ####### REDISTRIBUTE RELEASE ########
           excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
@@ -2028,7 +2030,7 @@ for(s in statez) {
         
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
-        if (!any(is.na(sim_keep))) {
+        if (!any(is.na(sim_keep)) && !any(is.infinite(sim_keep))) {
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -2241,7 +2243,7 @@ for(s in statez) {
         sim_rel <- qnbinom(runif(n_sim), size = sampled_theta_rel, mu = sampled_mu_rel)
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta_keep, mu = sampled_mu_keep)
         
-        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
+         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -2354,7 +2356,7 @@ for(s in statez) {
     safe_name <- gsub("[^A-Za-z0-9_]", "_", name)
     
     # Write to Excel
-    write_xlsx(split_datasets[[name]], paste0("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/proj_catch_draws_", s, "_", safe_name, ".xlsx"))
+    write_xlsx(split_datasets[[name]], paste0("E:/Lou's projects/flukeRDM/flukeRDM_iterative_data/proj_catch_draws_", s, "_", safe_name, ".xlsx"))
   }
   
   rm(catch_draws, combined_results_BSB, combined_results_SF, combined_results_SCUP, split_datasets)

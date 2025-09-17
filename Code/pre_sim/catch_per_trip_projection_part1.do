@@ -557,3 +557,4 @@ mvencode missing*, mv(0) override
 mvencode sf_keep_and_rel_ind bsb_keep_and_rel_ind scup_keep_and_rel_ind, mv(0) override
 
 export excel "$input_data_cd\projected_mrip_catch_processed.xlsx", firstrow(variables) replace
+import excel using "$input_data_cd\projected_mrip_catch_processed.xlsx", clear first 

@@ -28,7 +28,7 @@ tempfile catch2024
 save `catch2024', replace 
 
 *A2) 
-import delimited using "$input_data_cd/baseline_catch_at_length.csv", clear  
+import delimited using "$iterative_input_data_cd/baseline_catch_at_length.csv", clear  
 sort draw state species length
 
 merge m:1 species state draw using `catch2024'
