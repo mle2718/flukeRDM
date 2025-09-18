@@ -6,7 +6,6 @@
 	* demographics for each trip that are constant across catch draws
 	
 	
-	
 ********************************
 * Demographics: age and avidity (number trips past 12 months) 
 	* Ages and avidity come from the fishing effort survey 12 MONTH files. 
@@ -48,7 +47,7 @@ dsconcat $dems
 gen total_trips_12=boat_trips_12+shore_trips_12
 gen total_trips_2=boat_trips+shore_trips
 
-* Lou's QA/QC
+* Lou's QA/QC on the FES data 
 
 drop if age==-3 // drop missing ages
 keep if age>=16 // drop anglers below the minimum age required for license to align the age distribution with choice experiment sampling frame, which is based on licensees (16+)
@@ -70,7 +69,7 @@ egen p9995 = pctile(total_trips_12), p(99.95) // drop total_trips_12 above the 9
 drop if total_trips_12>p9995
 
 keep age total_trips_12 wave state
-save "$iterative_input_data_cd\angler_dems.dta", replace 
+save "$input_data_cd\angler_dems.dta", replace 
 
 ********************************
 
@@ -102,35 +101,21 @@ if `r(N)'>0{
 */
 
 
-********************************
+************** Generate catch draw files ******************
 
-* Create catch draw files 
-
-* Note that I originally looped this code over states. But it took up a lot of local memory and would
-* break before finishing. Even after chatGPT's revisions to reduce memory the loop did not complete. 
-* I therefore copied the code and now run each state separately, which seems to work.   
-
-
-
-*------------------------------------------------------------
-* 1.  Main loop over states
-*------------------------------------------------------------
+* This code pulls in the catch-per-trip data estimated by the copula function in R
 *note 7/21/25 - split this three states at a time to avoid cpu memory issues 
 
 
 local statez "MA RI CT"
 foreach s of local statez {
 
-
-    *--------------------------------------------------------
-    * Loop over draws
-    *--------------------------------------------------------
-    forvalues i = 1/110 {
+    forvalues i = 1/$ndraws {
 
 		*----------------------------------------------------
         * Read simulated catch draws
         *----------------------------------------------------
-        import excel using "$iterative_input_data_cd\calib_catch_draws_`s'_`i'.xlsx", clear firstrow
+        import excel using "$input_data_cd\calib_catch_draws_`s'_`i'.xlsx", clear firstrow
 
         distinct id
         local n_simulated_draw = r(ndistinct) //number of catch draws simulation per strata
@@ -156,7 +141,7 @@ foreach s of local statez {
         * Pull directed trips for draw `i'
         *----------------------------------------------------
 	
-        import delimited using "$input_data_cd\directed_trips_calibration_`s'.csv", clear
+        import delimited using "$iterative_input_data_cd\directed_trips_calibration_`s'.csv", clear
         keep if draw == `i'
 
         * waves
@@ -253,7 +238,7 @@ foreach s of local statez {
 
             *  (iii)  Angler demographics
             preserve
-                use "$iterative_input_data_cd\angler_dems.dta", clear
+                use "$input_data_cd\angler_dems.dta", clear
                 keep if wave == `wv' & state == "`s'"
 				count
 				return list
@@ -273,7 +258,7 @@ foreach s of local statez {
 
             *  (iv)  Trip costs
             preserve
-                use "$iterative_input_data_cd\trip_costs.dta", clear
+                use "$input_data_cd\trip_costs.dta", clear
                 keep if state == "`s'" & mode1 == `md'
                 count
 				return list
@@ -325,18 +310,15 @@ foreach s of local statez {
 mata: mata clear
 clear
 local statez "NY NJ DE"
+
 foreach s of local statez {
 
-
-    *--------------------------------------------------------
-    * Loop over draws
-    *--------------------------------------------------------
-    forvalues i = 1/110 {
+    forvalues i = 1/$ndraws {
      
 		*----------------------------------------------------
         * Read simulated catch draws
         *----------------------------------------------------
-        import excel using "$iterative_input_data_cd\calib_catch_draws_`s'_`i'.xlsx", clear firstrow
+        import excel using "$input_data_cd\calib_catch_draws_`s'_`i'.xlsx", clear firstrow
 
         distinct id
         local n_simulated_draw = r(ndistinct) //number of catch draws simulation per strata
@@ -362,7 +344,7 @@ foreach s of local statez {
         * Pull directed trips for draw `i'
         *----------------------------------------------------
 	
-        import delimited using "$input_data_cd\directed_trips_calibration_`s'.csv", clear
+        import delimited using "$iterative_input_data_cd\directed_trips_calibration_`s'.csv", clear
         keep if draw == `i'
 
         * waves
@@ -459,7 +441,7 @@ foreach s of local statez {
 
             *  (iii)  Angler demographics
             preserve
-                use "$iterative_input_data_cd\angler_dems.dta", clear
+                use "$input_data_cd\angler_dems.dta", clear
                 keep if wave == `wv' & state == "`s'"
 				count
 				return list
@@ -479,7 +461,7 @@ foreach s of local statez {
 
             *  (iv)  Trip costs
             preserve
-                use "$iterative_input_data_cd\trip_costs.dta", clear
+                use "$input_data_cd\trip_costs.dta", clear
                 keep if state == "`s'" & mode1 == `md'
                 count
 				return list
@@ -533,16 +515,12 @@ clear
 local statez "MD VA NC"
 foreach s of local statez {
 
-
-    *--------------------------------------------------------
-    * Loop over draws
-    *--------------------------------------------------------
-    forvalues i = 1/110 {
+    forvalues i = 1/$ndraws {
      
 		*----------------------------------------------------
         * Read simulated catch draws
         *----------------------------------------------------
-        import excel using "$iterative_input_data_cd\calib_catch_draws_`s'_`i'.xlsx", clear firstrow
+        import excel using "$input_data_cd\calib_catch_draws_`s'_`i'.xlsx", clear firstrow
 
         distinct id
         local n_simulated_draw = r(ndistinct) //number of catch draws simulation per strata
@@ -568,7 +546,7 @@ foreach s of local statez {
         * Pull directed trips for draw `i'
         *----------------------------------------------------
 	
-        import delimited using "$input_data_cd\directed_trips_calibration_`s'.csv", clear
+        import delimited using "$iterative_input_data_cd\directed_trips_calibration_`s'.csv", clear
         keep if draw == `i'
 
         * waves
@@ -665,7 +643,7 @@ foreach s of local statez {
 
             *  (iii)  Angler demographics
             preserve
-                use "$iterative_input_data_cd\angler_dems.dta", clear
+                use "$input_data_cd\angler_dems.dta", clear
                 keep if wave == `wv' & state == "`s'"
 				count
 				return list
@@ -685,7 +663,7 @@ foreach s of local statez {
 
             *  (iv)  Trip costs
             preserve
-                use "$iterative_input_data_cd\trip_costs.dta", clear
+                use "$input_data_cd\trip_costs.dta", clear
                 keep if state == "`s'" & mode1 == `md'
                 count
 				return list

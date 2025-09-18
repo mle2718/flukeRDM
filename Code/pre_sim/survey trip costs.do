@@ -97,4 +97,4 @@ clear
 dsconcat $costs
 keep mode1 state total_exp
 rename total_exp cost 
-save "$iterative_input_data_cd\trip_costs.dta", replace 
+save "$input_data_cd\trip_costs.dta", replace 

@@ -16,8 +16,14 @@ lapply(packages, library, character.only = TRUE)
 library(plyr)
 library(dplyr)
 
-conflicts_prefer(dplyr::mutate)
 conflicts_prefer(here::here)
+conflicts_prefer(dplyr::filter)
+conflicts_prefer(dplyr::select)
+conflicts_prefer(dplyr::mutate)
+conflicts_prefer(dplyr::rename)
+conflicts_prefer(dplyr::summarize)
+conflicts_prefer(dplyr::summarise)
+conflicts_prefer(dplyr::count)
 
 #There are four folders needed::
 #input data - contains all the MRIP, biological data, angler characteristics data, as well as some data generated in the simulation
@@ -29,17 +35,9 @@ conflicts_prefer(here::here)
 
 
 #Set up R globals for input/output data and code scripts
-
-# input_data_cd=here("lou_files","cod_haddock","input_data")
-# code_cd=here("lou_files","cod_haddock","code")
-# output_data_cd=here("lou_files","cod_haddock","output_data")
-# iterative_input_data_cd=here(input_data_cd, "iterative_data")
-input_data_cd=here("Data")
-test_data_cd=here("Data", "Test_data")
 code_cd=here("Code", "sim")
-#output_data_cd=here("lou_files","cod_haddock","output_data")
-iterative_input_data_cd="C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data"
 input_data_cd="C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025"
+iterative_input_data_cd="E:/Lou's projects/flukeRDM/flukeRDM_iterative_data"
 
 ###################################################
 ###############Pre-sim Stata code##################
@@ -51,8 +49,8 @@ input_data_cd="C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025"
 #options("RStata.StataPath" = "\"C:\\Program Files\\Stata17\\StataMP-64\"")
 #options("RStata.StataVersion" = 17)
 
-#Set number of original draws. We use 150 for the final run. Choose a lot fewer for test runs
-n_simulations<-100
+#Set number of original draws. We create 125 (in case some don't converge in the calibration), but only use 100 for the final run. Choose a lot fewer for test runs
+n_simulations<-125
 
 n_draws<-50 #Number of simulated trips per day
 
@@ -78,26 +76,27 @@ n_draws<-50 #Number of simulated trips per day
 #Notes:
 
 #Simulation stratum are the groups in which we allocate and simulate choice occasions.
-#For the 2025 cod and haddock RDM, the stratum is the combination of mode (pr/fh) and 
-#season (cod open season in y-1/cod closed season in y-1). So there are 4 strata.
+#For the 2025 SFSBSB RDM, the stratum is the combination of mode (pr/fh/sh) and state 
 
 #Projection results are based on 100 iterations of the model. In each iteration we pull 
 #in new distributions of catch-per-trip, directed fishing effort, projected catch-at-length, 
-#and angler preferences. I calibrate the model with 150 iterations, some of which are 
+#and angler preferences. I calibrate the model with 125 iterations, some of which are 
 #excluded after Step 2. From the pool of remaining iterations, I use the first 100 in the projection.
 
 #Prior to running the model, transfer the catch_draw files from .csv to .feather to reduce computing time
 statez <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
 
 for(s in statez) {
-  dtrip0<-read.csv(file.path(input_data_cd, paste0("directed_trips_calibration_", s,".csv")))
-  write_feather(dtrip0, file.path(input_data_cd, paste0("directed_trips_calibration_", s,".feather")))
-for(i in 1:3) {
-  catch<-read_dta(file.path(iterative_input_data_cd, paste0("calib_catch_draws_",s, "_", i,".dta")))
-  #write_feather(catch, file.path(iterative_input_data_cd, paste0("calib_catch_draws_",s, "_", i,".feather")))
+  
+  dtrip0<-read.csv(file.path(iterative_input_data_cd, paste0("directed_trips_calibration_", s,".csv")))
+  write_feather(dtrip0, file.path(iterative_input_data_cd, paste0("directed_trips_calibration_", s,".feather")))
+
+  for(i in 1:n_simulations) {
+  catch<-read_dta(file.path(input_data_cd, paste0("calib_catch_draws_",s, "_", i,".dta")))
+  write_feather(catch, file.path(iterative_input_data_cd, paste0("calib_catch_draws_",s, "_", i,".feather")))
   
   # make fake projection draws
-  write_feather(catch, file.path(iterative_input_data_cd, paste0("projected_catch_draws_",s, "_", i,".feather")))
+  # write_feather(catch, file.path(iterative_input_data_cd, paste0("projected_catch_draws_",s, "_", i,".feather")))
   
 }
 }
@@ -105,12 +104,10 @@ for(i in 1:3) {
 
 
 ##################### STEP 1 #####################
-#Run the calibration algorithm to determine the difference between model-based harvest and MRIP-based harvest. 
-#I do this for each stratum and each stratum's 150 draws of MRIP trips/catch/harvest (4*150=600 iterations).
-#This code retains for each stratum the percent/absolute difference between model-based harvest and MRIP-based harvest by species. 
+# Run the calibration algorithm to determine the difference between model-based harvest and MRIP-based harvest. 
+# I do this for each stratum and each stratum's 125 draws of MRIP trips/catch/harvest.
+# This code retains for each stratum the percent/absolute difference between model-based harvest and MRIP-based harvest by species. 
 
-#directed_trips_file_path = file.path(input_data_cd, "directed_trips_calib_150draws_cm.feather")
-#catch_draws_file_path = iterative_input_data_cd
 MRIP_comparison = read_dta(file.path(iterative_input_data_cd,"simulated_catch_totals.dta")) %>% 
       dplyr::rename(estimated_trips=tot_dtrip_sim, 
               sf_catch=tot_sf_cat_sim, 
@@ -123,22 +120,15 @@ MRIP_comparison = read_dta(file.path(iterative_input_data_cd,"simulated_catch_to
               bsb_rel=tot_bsb_rel_sim, 
               scup_rel=tot_scup_rel_sim) 
 
-#size_data_read = read.csv(file.path(input_data_cd,"rec_selectivity_CaL_open_seasons_cm.csv"))
-
 #Files needed:
-#directed_trips_calib_150draws_cm.csv
-#simulated_catch_totals_open_season.csv
-#rec_selectivity_CaL_open_seasons_cm.csv
-#paste0(catch_draws_file_path, k, "_full.feather")), where k indicates draw (1-150) number
 
 #Scripts needed:
-#calibrate_rec_catch_hstar_code.R
+
 
 source(file.path(code_cd,"calibrate_rec_catch0.R"))
 
 #Output files: 
-#MRIP_simulated_data.rds
-#harvest_differences_check.rds
+#calibration_comparison.feather
 
 
 
@@ -148,26 +138,19 @@ source(file.path(code_cd,"calibrate_rec_catch0.R"))
 #or harvest to discards, until the difference between model-based harvest and MRIP-based harvest 
 #is within abs(5%) or <500 fish. 
 
-#If a reallocation of discards to harvest is needed, I select h* percent of choice occasions with 
-#positive discards, and allocate all fish that are between [(min. size - 2 inches), min.size] as harvest. 
+#If a reallocation of discards to harvest is needed, I reallocate h* percent of all released 
+# fish that are between [(min. size - 3 inches), min.size] as harvest.
 
-#If a reallocation of harvest to discards is needed, I select h* percent of choice occasions with 
-#positive harvest, and allocate all those fish as discards
+#If a reallocation of harvest to discards is needed, I reallocate h* percent of all harvested fish as discards
 
 #Note that in some iterations, the difference in harvest between the model and MRIP from Step 1 is too large relative to the number of 
-#fish discarded in the model; in other words, even if we allocate all discards as harvest, the percent difference in harvest
+#fish discarded in the model. So even if I allocate all discards as harvest, the percent difference in harvest
 #between the model and MRIP will not be within abs(5%) or <500 fish. The code in Step 2 identifies and drops these iterations.
-#For example, draw 1 of 150 consists of four strata: pr_open, pr_closed, fh_open, fh_closed. If the difference in total harvest numbers 
-#between the model and MRIP is too much greater than the simulated number of discards for pr_closed, then we drop pr_closed; but because this 
-#stratum is one of four strata that together make up the total fishing year for draw 1, we must also drop pr_open, fh_open, and fh_closed for draw 1. 
 
 #This script saves calibration output, as well as the proportion of choice occasions in which we reallocate discards as harvest, 
 #or vice versa. 
 
 #Files needed:
-#Discard_Mortality.csv
-#harvest_differences_check.rds (from step 1)
-
 
 #Scripts needed:
 #calibration_catch_weights.R - can be commented out to save time if calibration catch weight are not needed.
@@ -181,7 +164,153 @@ source(file.path(code_cd,"calibration routine.R"))
 #paste0("costs_", i,".rds"))), where i is an indicator for a domain-draw combination
 
 
+# Run the stata code "check calibration convergence.do". This will select 100 of 125 draws out of 
+# for each state/mode combo. This file creates "calibration_good_draws.xlsx", which contains the 
+# original draw number and the "new" draw number (1-100) which facilitates looping/functions
+# In each data input file for the projections, we need map draw (original # of draw) to draw2 (new draw scled 1-100) 
 
+# Directed trips
+statez <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+for(st in statez) {
+
+good_draws<-read_excel(file.path(iterative_input_data_cd, "calibration_good_draws.xlsx")) %>% 
+  dplyr::filter(state==st)
+
+directed_trips<-feather::read_feather(file.path(iterative_input_data_cd, paste0("directed_trips_calibration_", st, ".feather")))%>%  
+  dplyr::left_join(good_draws, by=c("state", "mode", "draw")) %>% 
+  dplyr::filter(!is.na(draw2)) %>%
+  dplyr::select(-draw) %>% 
+  dplyr::rename(draw=draw2) 
+  
+write_feather(directed_trips, file.path(iterative_input_data_cd, paste0("directed_trips_calibration_new_", st,".feather")))
+
+}
+
+
+# Projected catch-at-length *note for Kim that this file now contains distn's by mode
+statez <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+modez <- c("sh", "pr", "fh")
+length_draw_list<-list()
+length_draws_st_list<-list()
+for(st in statez){
+    for(md in modez){
+      
+good_draws<-read_excel(file.path(iterative_input_data_cd, "calibration_good_draws.xlsx")) %>% 
+  dplyr::filter(state==st & mode==md)
+
+length_draw_list[[md]][[st]]<-read_csv(file.path(iterative_input_data_cd, "projected_catch_at_length.csv"), show_col_types = FALSE) %>% 
+  dplyr::filter(state==st) %>% 
+  dplyr::left_join(good_draws, by=c("state", "draw")) %>% 
+  dplyr::filter(!is.na(draw2)) %>% 
+  dplyr::select(-draw) %>% 
+  dplyr::rename(draw=draw2) %>% 
+  dplyr::mutate(mode=md) 
+    }
+  
+}
+length_draws <- dplyr::bind_rows(purrr::flatten(length_draw_list))
+write_csv(length_draws, file.path(iterative_input_data_cd, paste0("projected_catch_at_length_new.csv")))
+
+# After testing with projected catch data, I found no projected catch-at-length distribution for NC summer flounder.
+# This happened because there was no summer flounder catch in NC in the calibration year. 
+# To fix, use length distribution from nearest state, which for NC is VA. 
+
+check_size_data <- read_csv(file.path(iterative_input_data_cd, "projected_catch_at_length_new.csv"), show_col_types = FALSE) %>% 
+  dplyr::mutate(domain=paste0(state, "_", species))
+unique(check_size_data$domain)
+check_size_data<-check_size_data %>% dplyr::select(-domain)
+  
+# Identify rows to duplicate (e.g., where state=="MD" & species=="sf") 
+rows_to_duplicate <- check_size_data %>% dplyr::filter(state=="MD" & species=="sf") 
+rows_to_duplicate$state <- "NC"
+
+check_size_data<-bind_rows(check_size_data, rows_to_duplicate)
+check_size_data<-check_size_data%>% dplyr::mutate(domain=paste0(state, "_", species))
+unique(check_size_data$domain)
+check_size_data<-check_size_data %>% dplyr::select(-domain)
+write_csv(check_size_data, file.path(iterative_input_data_cd, paste0("projected_catch_at_length_new.csv")))
+
+
+
+
+# Calendar year adjustments
+statez <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+for(st in statez) {
+  
+  good_draws<-read_excel(file.path(iterative_input_data_cd, "calibration_good_draws.xlsx")) %>% 
+    dplyr::filter(state==st)
+  
+  calendar_adj<- readr::read_csv(file.path(iterative_input_data_cd, paste0("proj_year_calendar_adjustments_", st, ".csv")), show_col_types = FALSE) %>%
+  dplyr::filter(state == st) %>% 
+  dplyr::left_join(good_draws, by=c("mode", "draw")) %>% 
+    dplyr::filter(!is.na(draw2)) %>% 
+    dplyr::mutate(draw=draw2)%>% 
+    dplyr::select(-draw2) 
+  
+ write_csv(calendar_adj, file.path(iterative_input_data_cd, paste0("proj_year_calendar_adjustments_new_", st, ".csv")))
+  
+}
+
+# Baseline year outcomes and number of choice occassions
+for(dr in 1:100)
+statez <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+mode_draw <- c("sh", "pr", "fh")
+for(dr in 1:100){
+  for (md in mode_draw) {
+    for(st in statez) {
+    good_draws<-read_excel(file.path(iterative_input_data_cd, "calibration_good_draws.xlsx")) %>% 
+      dplyr::filter(state==st & mode==md & draw2==dr) 
+    
+    draw_orig<-mean(good_draws$draw)
+
+  # pull trip outcomes from the calibration year
+  base_outcomes_in<-feather::read_feather(file.path(iterative_input_data_cd, paste0("base_outcomes_", st, "_", md, "_", draw_orig, ".feather"))) %>% 
+    data.table::as.data.table() 
+  
+  write_feather(base_outcomes_in, file.path(iterative_input_data_cd, paste0("base_outcomes_new_", st, "_", md, "_", dr, ".feather")))
+  
+  # pull in data on the number of choice occasions per mode-day
+  n_choice_occasions_in<-feather::read_feather(file.path(iterative_input_data_cd, paste0("n_choice_occasions_", st, "_", md, "_", draw_orig, ".feather"))) %>% 
+    data.table::as.data.table() 
+  
+  write_feather(n_choice_occasions_in, file.path(iterative_input_data_cd, paste0("n_choice_occasions_new_", st, "_", md, "_", dr, ".feather")))
+    }
+  }
+  
+}
+
+# Calibration statistics (sublegal harvest/voluntary release information) 
+good_draws<-read_excel(file.path(iterative_input_data_cd, "calibration_good_draws.xlsx"))
+calib_comparison<-readRDS(file.path(iterative_input_data_cd, "calibrated_model_stats.rds")) %>% 
+  dplyr::left_join(good_draws, by=c("state", "mode", "draw")) %>% 
+  dplyr::filter(!is.na(draw2)) %>%
+  dplyr::select(-draw) %>% 
+  dplyr::rename(draw=draw2) 
+
+saveRDS(calib_comparison, file = file.path(iterative_input_data_cd, "calibrated_model_stats_new.rds"))
+
+
+# re-save new directed trips files as excel files to pull into Stata and compute projected catch draws
+library(writexl)
+
+statez <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+for(st in statez) {
+  
+  directed_trips<-feather::read_feather(file.path(iterative_input_data_cd, paste0("directed_trips_calibration_new_", st, ".feather")))
+  write_xlsx(directed_trips, file.path(iterative_input_data_cd, paste0("directed_trips_calibration_new_", st, ".xlsx")))
+  
+}
+
+
+# Transfer projected catch draw files from .dta to .feather
+statez <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+for(s in statez) {
+  for(i in 1:100) {
+    catch<-read_dta(file.path(iterative_input_data_cd, paste0("proj_catch_draws_",s, "_", i,".dta")))
+    write_feather(catch, file.path(iterative_input_data_cd, paste0("proj_catch_draws_",s, "_", i,".feather")))
+
+  }
+}
 
 ##################### STEP 3 #####################
 #Run the projection algorithm. This algorithm pulls in population-adjusted catch-at-length distributions and allocates 
