@@ -45,7 +45,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   # Replace NA=0 in all columns
   size_data_sf <- size_data_sf %>%
-    mutate(across(everything(), ~replace_na(., 0)))
+    dplyr::mutate(dplyr::across(everything(), ~tidyr::replace_na(., 0)))
 
   ## Run for all modes + aggregate  - black sea bass 
   results_list <- lapply(mode_draw, simulate_mode_bsb, calib_lookup = calib_lookup, 
@@ -62,7 +62,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   # Replace NA=0 in all columns
   size_data_bsb <- size_data_bsb %>%
-    mutate(across(everything(), ~replace_na(., 0)))
+    dplyr::mutate(dplyr::across(everything(), ~tidyr::replace_na(., 0)))
   
   ## Run for all modes + aggregate  - scup 
   results_list <- lapply(mode_draw, simulate_mode_scup, calib_lookup = calib_lookup, 
@@ -79,7 +79,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   # Replace NA=0 in all columns
   size_data_scup <- size_data_scup %>%
-    mutate(across(everything(), ~replace_na(., 0)))
+    dplyr::mutate(dplyr::across(everything(), ~tidyr::replace_na(., 0)))
 
   #merge the trip data
   # Join summer flounder (sf) and black sea bass (bsb) on domain2
@@ -327,7 +327,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   mean_trip_data<-mean_trip_data %>% 
     dplyr::left_join(n_choice_occasions, by = c("mode", "date_parsed")) %>% 
     dplyr::mutate(month = lubridate::month(date_parsed))  %>% 
-    mutate(across(where(is.numeric), ~replace_na(., 0))) %>%  #replace NAs for n_choice_occasions and estimated trips
+    dplyr::mutate(dplyr::across(where(is.numeric), ~tidyr::replace_na(., 0))) %>%  #replace NAs for n_choice_occasions and estimated trips
     dplyr::left_join(calendar_adjustments, by = c("mode", "month")) %>% 
     dplyr::rename(n_choice_occasions0=n_choice_occasions, 
                   estimated_trips0=estimated_trips) %>% 

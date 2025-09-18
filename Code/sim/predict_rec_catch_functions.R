@@ -171,7 +171,7 @@ if (sf_catch_check_md != 0) {
 }
 
 ########## black sea bass ##############
-simulate_mode_bsb <- function(md, calib_lookup, sf_size_data) {
+simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data) {
   
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
@@ -212,13 +212,13 @@ simulate_mode_bsb <- function(md, calib_lookup, sf_size_data) {
     ) 
     
     
-    return(list(
+    return<-list(
       trip_data = catch_data_md[, .(date, catch_draw, tripid, mode,
                                     tot_keep_bsb_new = 0L, tot_rel_bsb_new = 0L,
                                     domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid))],
       zero_catch = zero_catch,
       size_data=size_data
-    ))
+    )
   }
 
   if (bsb_catch_check_md != 0) {
@@ -329,16 +329,16 @@ simulate_mode_bsb <- function(md, calib_lookup, sf_size_data) {
   trip_data <- rbindlist(list(trip_summary, zero_catch))
   trip_data[, domain2 := paste0(date, "_", mode, "_", catch_draw, "_", tripid)]
   
-  return(list(
+  return<-list(
     trip_data = trip_data,
     zero_catch = zero_catch,
     size_data = keep_release_size_data
-  ))
+  )
 }
 }
 
 ########## scup ##############
-simulate_mode_scup <- function(md, calib_lookup, sf_size_data) {
+simulate_mode_scup <- function(md, calib_lookup, scup_size_data) {
   
   
   # Extract calibration parameters
@@ -379,14 +379,14 @@ simulate_mode_scup <- function(md, calib_lookup, sf_size_data) {
       tot_rel_scup_new = numeric(0) 
     ) 
 
-    return(list(
+    return<-list(
       trip_data = catch_data_md[, .(date, catch_draw, tripid, mode,
                                     tot_keep_scup_new = 0L, tot_rel_scup_new = 0L,
                                     domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid))],
       size_data = size_data, 
       zero_catch=zero_catch
       
-    ))
+    )
   }
   
   if (scup_catch_check_md != 0) {
@@ -497,10 +497,10 @@ simulate_mode_scup <- function(md, calib_lookup, sf_size_data) {
   trip_data <- rbindlist(list(trip_summary, zero_catch))
   trip_data[, domain2 := paste0(date, "_", mode, "_", catch_draw, "_", tripid)]
   
-  return(list(
+  return<-list(
     trip_data = trip_data,
     zero_catch = zero_catch,
     size_data = keep_release_size_data
-  ))
+  )
   }
 }

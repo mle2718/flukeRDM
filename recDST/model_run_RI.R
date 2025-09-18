@@ -31,15 +31,15 @@ size_data <- readr::read_csv(file.path(here::here("Data"), "projected_catch_at_l
 sf_size_data <- size_data %>% 
   dplyr::filter(species=="sf") %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
-  dplyr::select(state, fitted_prob, length, draw)
+  dplyr::select(state, fitted_prob, length, draw, mode)
 bsb_size_data <- size_data  %>% 
   dplyr::filter(species=="bsb") %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
-  dplyr::select(state, fitted_prob, length, draw)
+  dplyr::select(state, fitted_prob, length, draw, mode)
 scup_size_data <- size_data %>% 
   dplyr::filter(species=="scup") %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
-  dplyr::select(state,  fitted_prob, length, draw)
+  dplyr::select(state,  fitted_prob, length, draw, mode)
 
 l_w_conversion <- readr::read_csv(file.path(data_path, "L_W_Conversion.csv"), show_col_types = FALSE)  %>% 
   dplyr::filter(state=="RI")
