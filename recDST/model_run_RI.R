@@ -25,7 +25,7 @@ data_path <- here::here("Data/")
 
 
 #### Read in size data ####
-size_data <- readr::read_csv(file.path(here::here("Data"), "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+size_data <- readr::read_csv(file.path(here::here("Data"), "projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
   dplyr::filter(state == "RI")
 
 sf_size_data <- size_data %>% 
@@ -45,7 +45,7 @@ l_w_conversion <- readr::read_csv(file.path(data_path, "L_W_Conversion.csv"), sh
   dplyr::filter(state=="RI")
 
 #### directed trips ####
-directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trips_calibration_RI.feather"))) %>% 
+directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trips_calibration_new_RI.feather"))) %>% 
   tibble::tibble() %>%
   dplyr::select(mode, date, draw, bsb_bag, bsb_min, fluke_bag,fluke_min, scup_bag, scup_min,
                 bsb_bag_y2, bsb_min_y2, fluke_bag_y2,fluke_min_y2, scup_bag_y2, scup_min_y2) %>% 
@@ -142,7 +142,7 @@ for(x in 1:3){
   # dplyr::mutate(day = stringr::str_extract(day, "^\\d{2}"), 
   #               period2 = paste0(month24, "-", day, "-", mode))
   
-  catch_data <- feather::read_feather(file.path(data_path, paste0("projected_catch_draws_RI", "_", x,".feather"))) %>% 
+  catch_data <- feather::read_feather(file.path(data_path, paste0("proj_catch_draws_RI", "_", x,".feather"))) %>% 
     dplyr::left_join(directed_trips2, by=c("mode", "date", "draw")) 
   
   catch_data<-catch_data %>% 
@@ -150,7 +150,7 @@ for(x in 1:3){
                   -scup_keep_sim, -scup_rel_sim, -sf_keep_sim, -sf_rel_sim, -wave)
   
   calendar_adjustments <- readr::read_csv(
-    file.path(here::here(paste0("Data/proj_year_calendar_adjustments_RI.csv"))), show_col_types = FALSE) %>%
+    file.path(here::here(paste0("Data/proj_year_calendar_adjustments_new_RI.csv"))), show_col_types = FALSE) %>%
     dplyr::filter(state == "RI", draw==x) %>% 
     dplyr::select(-dtrip, -dtrip_y2, -state, -draw)
   
@@ -188,7 +188,7 @@ for(x in 1:3){
   
   
   # Pull in calibration comparison information about trip-level harvest/discard re-allocations 
-  calib_comparison<-readRDS(file.path(data_path,"calibrated_model_stats.rds")) %>%
+  calib_comparison<-readRDS(file.path(data_path,"calibrated_model_stats_new.rds")) %>%
     dplyr::filter(state=="RI" & draw==x )  
   
   calib_comparison<-calib_comparison %>% 
