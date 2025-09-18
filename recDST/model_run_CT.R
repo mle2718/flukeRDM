@@ -150,14 +150,9 @@ for(x in 1:3){
   catch_data <- feather::read_feather(file.path(data_path, paste0("proj_catch_draws_CT", "_", x,".feather"))) %>% 
     dplyr::left_join(directed_trips2, by=c("mode", "date", "draw")) 
   
-  catch_data<-catch_data %>% 
-    dplyr::select(-cost, -total_trips_12, -age, -bsb_keep_sim, -bsb_rel_sim, -date_adj, -my_dom_id_string, 
-                  -scup_keep_sim, -scup_rel_sim, -sf_keep_sim, -sf_rel_sim, -wave)
-  
   calendar_adjustments <- readr::read_csv(
-    file.path(here::here(paste0("Data/proj_year_calendar_adjustments_CT.csv"))), show_col_types = FALSE) %>%
-    dplyr::filter(state == "CT", draw==x) %>% 
-    dplyr::select(-dtrip, -dtrip_y2, -state, -draw)
+    file.path(here::here(paste0("Data/proj_year_calendar_adjustments_new_CT.csv"))), show_col_types = FALSE) %>%
+    dplyr::filter(draw==x) 
   
   
   base_outcomes0 <- list()
