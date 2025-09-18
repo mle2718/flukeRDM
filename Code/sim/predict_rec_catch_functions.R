@@ -31,6 +31,7 @@ setkey(calib_lookup, mode)
 
 
 simulate_mode_sf <- function(md) {
+
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
   
@@ -196,35 +197,11 @@ if (sf_catch_check_md != 0) {
 }
 
 ########## black sea bass ##############
-
-#Convert key data frames to data.table format early:
-setDT(directed_trips)
-setDT(catch_data)
-setDT(calib_comparison)
-setDT(bsb_size_data)
-
-#Set up constants (unchanged):
-mode_draw <- c("sh", "pr", "fh")
-
-#Step 2: Reorganize calibration parameters#
-calib_lookup <- calib_comparison %>%
-  dplyr::select(mode, species, rel_to_keep, keep_to_rel, 
-                p_rel_to_keep, p_keep_to_rel, 
-                prop_sub_kept, prop_legal_rel) %>%
-  tidyr::pivot_wider(
-    names_from = species,
-    values_from = c(rel_to_keep, keep_to_rel, p_rel_to_keep, p_keep_to_rel, prop_sub_kept, prop_legal_rel),
-    names_glue = "{.value}_{species}"
-  )
-
-setDT(calib_lookup)
-setkey(calib_lookup, mode)
-
-
 simulate_mode_bsb <- function(md) {
   
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
+  #calib_row <- calib_lookup
   
   rel_to_keep_bsb     <- calib_row$rel_to_keep_bsb
   keep_to_rel_bsb     <- calib_row$keep_to_rel_bsb
@@ -387,35 +364,12 @@ simulate_mode_bsb <- function(md) {
 }
 
 ########## scup ##############
-
-#Convert key data frames to data.table format early:
-setDT(directed_trips)
-setDT(catch_data)
-setDT(calib_comparison)
-setDT(scup_size_data)
-
-#Set up constants (unchanged):
-mode_draw <- c("sh", "pr", "fh")
-
-#Step 2: Reorganize calibration parameters#
-calib_lookup <- calib_comparison %>%
-  dplyr::select(mode, species, rel_to_keep, keep_to_rel, 
-                p_rel_to_keep, p_keep_to_rel, 
-                prop_sub_kept, prop_legal_rel) %>%
-  tidyr::pivot_wider(
-    names_from = species,
-    values_from = c(rel_to_keep, keep_to_rel, p_rel_to_keep, p_keep_to_rel, prop_sub_kept, prop_legal_rel),
-    names_glue = "{.value}_{species}"
-  )
-
-setDT(calib_lookup)
-setkey(calib_lookup, mode)
-
-
 simulate_mode_scup <- function(md) {
+  
   
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
+  #calib_row <- calib_lookup
   
   rel_to_keep_scup     <- calib_row$rel_to_keep_scup
   keep_to_rel_scup     <- calib_row$keep_to_rel_scup
