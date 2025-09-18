@@ -11,9 +11,9 @@ save `master', emptyok
 
 local statez "MA RI CT NY NJ DE MD VA NC"
 foreach s of local statez{
-forv i=1/110{
+forv i=1/$ndraws{
 
-import excel using "$iterative_input_data_cd\calib_catch_draws_`s'_`i'.xlsx", clear firstrow
+import excel using "$input_data_cd\calib_catch_draws_`s'_`i'.xlsx", clear firstrow
 gen sf_cat_sim  = sf_keep_sim + sf_rel_sim
 gen bsb_cat_sim = bsb_keep_sim + bsb_rel_sim
 gen scup_cat_sim = scup_keep_sim + scup_rel_sim
@@ -25,11 +25,11 @@ save `master', replace
 }
 }
 use `master', clear
-save "$iterative_input_data_cd\simulated_means_copula.dta", replace 
+save "$input_data_cd\simulated_means_copula.dta", replace 
 
 
 
-u "$iterative_input_data_cd\simulated_means_copula.dta", clear 
+u "$input_data_cd\simulated_means_copula.dta", clear 
 ds draw my_dom_id, not
 local vars `r(varlist)'
 foreach v of local vars{
@@ -60,7 +60,7 @@ tempfile sim
 save `sim', replace
 
 *Pull in the MRIP means/SEs dataset
-import excel using "$iterative_input_data_cd\baseline_mrip_catch_processed.xlsx", clear first 
+import excel using "$input_data_cd\baseline_mrip_catch_processed.xlsx", clear first 
 keep my_dom_id_string-missing_sesf_rel
 drop missing*
 duplicates drop
@@ -96,6 +96,7 @@ gen pct_diff = ((sim_total-mrip_total)/mrip_total)*100
 gen diff= sim_total-mrip_total
 sort pct_diff
 sort my_dom
+
 tempfile new
 save `new', replace 
 
@@ -133,23 +134,41 @@ qui twoway (rcap mrip_ul mrip_ll my_dom_id_mrip if domain=="`d'", color(blue)  )
 			(scatter mrip_total my_dom_id_mrip if domain=="`d'",  msymbol(o) mcolor(blue)) ///
 			(rcap sim_ul sim_ll my_dom_id_sim if domain=="`d'",  color(red)) ///
 			(scatter sim_total my_dom_id_sim if domain=="`d'", msymbol(o) mcolor(red)), ///
-			legend(order(2 "MRIP estimate" 4 "Simulated estimate")) ///
+			legend(order(2 "MRIP estimate" 4 "Simulated estimate") size(small) rows(1)) ///
 			ytitle("") xtitle("") ylabel(#10,  angle(horizontal) ) ///
 			xlabel(`xlabels',  labsize(small) angle(45)) ///
 			title("`d'", size(medium)) name(`d'_`s', replace) 
 		}
   }
+  
 u `new', clear 
 sort state wave mode 
-grc1leg  bsb_keep_MA sf_keep_MA  scup_keep_MA bsb_rel_MA sf_rel_MA   scup_rel_MA , cols(3) 
-grc1leg  bsb_keep_RI sf_keep_RI scup_keep_RI  bsb_rel_RI sf_rel_RI scup_rel_RI    , cols(3)				
-grc1leg  bsb_keep_CT sf_keep_CT scup_keep_CT  bsb_rel_CT sf_rel_CT  scup_rel_CT  , cols(3)				
-grc1leg  bsb_keep_NY sf_keep_NY scup_keep_NY  bsb_rel_NY sf_rel_NY  scup_rel_NY  , cols(3)	
-grc1leg  bsb_keep_NJ sf_keep_NJ scup_keep_NJ  bsb_rel_NJ sf_rel_NJ  scup_rel_NJ  , cols(3) 
-grc1leg  bsb_keep_DE sf_keep_DE scup_keep_DE  bsb_rel_DE sf_rel_DE  scup_rel_DE  , cols(3)
-grc1leg  bsb_keep_MD sf_keep_MD scup_keep_MD  bsb_rel_MD sf_rel_MD  scup_rel_MD  , cols(3)	
-grc1leg  bsb_keep_VA sf_keep_VA scup_keep_VA  bsb_rel_VA sf_rel_VA  scup_rel_VA  , cols(3)	
-grc1leg  bsb_keep_NC  bsb_rel_NC scup_keep_NC, cols(3) 
+grc1leg  bsb_keep_MA sf_keep_MA  scup_keep_MA bsb_rel_MA sf_rel_MA   scup_rel_MA , cols(3) title("Mean catch-per-trip, MRIP vs. copula estimates MA", size(small))
+graph export "$figure_cd/mean_catch_MRIP_copula_MA.png", as(png) replace
+
+grc1leg  bsb_keep_RI sf_keep_RI scup_keep_RI  bsb_rel_RI sf_rel_RI scup_rel_RI    , cols(3)	title("Mean catch-per-trip, MRIP vs. copula estimates RI", size(small))	
+graph export "$figure_cd/mean_catch_MRIP_copula_RI.png", as(png) replace
+		
+grc1leg  bsb_keep_CT sf_keep_CT scup_keep_CT  bsb_rel_CT sf_rel_CT  scup_rel_CT  , cols(3) title("Mean catch-per-trip, MRIP vs. copula estimates CT", size(small))		
+graph export "$figure_cd/mean_catch_MRIP_copula_CT.png", as(png) replace
+		
+grc1leg  bsb_keep_NY sf_keep_NY scup_keep_NY  bsb_rel_NY sf_rel_NY  scup_rel_NY  , cols(3) title("Mean catch-per-trip, MRIP vs. copula estimates NY", size(small))	
+graph export "$figure_cd/mean_catch_MRIP_copula_NY.png", as(png) replace
+
+grc1leg  bsb_keep_NJ sf_keep_NJ scup_keep_NJ  bsb_rel_NJ sf_rel_NJ  scup_rel_NJ  , cols(3) title("Mean catch-per-trip, MRIP vs. copula estimates NJ", size(small))
+graph export "$figure_cd/mean_catch_MRIP_copula_NJ.png", as(png) replace
+
+grc1leg  bsb_keep_DE sf_keep_DE scup_keep_DE  bsb_rel_DE sf_rel_DE  scup_rel_DE  , cols(3) title("Mean catch-per-trip, MRIP vs. copula estimates DE", size(small))
+graph export "$figure_cd/mean_catch_MRIP_copula_DEA.png", as(png) replace
+
+grc1leg  bsb_keep_MD sf_keep_MD scup_keep_MD  bsb_rel_MD sf_rel_MD  scup_rel_MD  , cols(3) title("Mean catch-per-trip, MRIP vs. copula estimates MD", size(small))	
+graph export "$figure_cd/mean_catch_MRIP_copula_MD.png", as(png) replace
+
+grc1leg  bsb_keep_VA sf_keep_VA scup_keep_VA  bsb_rel_VA sf_rel_VA  scup_rel_VA  , cols(3) title("Mean catch-per-trip, MRIP vs. copula estimates VA", size(small))	
+graph export "$figure_cd/mean_catch_MRIP_copula_VA.png", as(png) replace
+
+grc1leg  bsb_keep_NC  bsb_rel_NC scup_keep_NC, cols(3) title("Mean catch-per-trip, MRIP vs. copula estimates NC", size(small))
+graph export "$figure_cd/mean_catch_MRIP_copula_NC.png", as(png) replace
 
 
 
@@ -167,12 +186,12 @@ save `master', emptyok
 local statez "MA RI CT NY NJ DE MD VA NC"
 
 foreach s of local statez{
-forv i=1/110{
+forv i=1/$ndraws{
 
 *local i=1
 *local s="RI"
 
-use "$iterative_input_data_cd\calib_catch_draws_`s'_`i'.dta", clear 
+use "$input_data_cd\calib_catch_draws_`s'_`i'.dta", clear 
 
 drop if dtrip==0
 
@@ -219,11 +238,11 @@ save `master', replace
 }
 use `master', clear
 
-save "$iterative_input_data_cd\simulated_catch_totals3.dta", replace 
+save "$input_data_cd\simulated_catch_totals3.dta", replace 
 
 
 *B3 compare means @ state, mode, wave level
-u "$iterative_input_data_cd\simulated_catch_totals3.dta", clear 
+u "$input_data_cd\simulated_catch_totals3.dta", clear 
 rename dtrip tot_dtrip_sim
 
 ds draw mode state wave, not
@@ -284,7 +303,7 @@ tempfile sim
 save `sim', replace
 
 
-import excel using "$iterative_input_data_cd\baseline_mrip_catch_processed.xlsx", clear first 
+import excel using "$input_data_cd\baseline_mrip_catch_processed.xlsx", clear first 
 keep my_dom_id_string-missing_sesf_rel
 drop missing*
 duplicates drop
@@ -317,8 +336,8 @@ gen domain=species+"_"+disp
 
 gen pct_diff = ((sim_total-mrip_total)/mrip_total)*100
 gen diff= sim_total-mrip_total
-browse if state=="MA" & mode=="fh" & species=="scup"
 sort pct_diff
+
 tempfile new
 save `new', replace 
 
@@ -356,7 +375,7 @@ qui twoway (rcap mrip_ul mrip_ll my_dom_id_mrip if domain=="`d'", color(blue)  )
 			(scatter mrip_total my_dom_id_mrip if domain=="`d'",  msymbol(o) mcolor(blue)) ///
 			(rcap sim_ul sim_ll my_dom_id_sim if domain=="`d'",  color(red)) ///
 			(scatter sim_total my_dom_id_sim if domain=="`d'", msymbol(o) mcolor(red)), ///
-			legend(order(2 "MRIP estimate" 4 "Simulated estimate")) ///
+			legend(order(2 "MRIP estimate" 4 "Simulated estimate") size(small) rows(1)) ///
 			ytitle("") xtitle("") ylabel(#10,  angle(horizontal) ) ///
 			xlabel(`xlabels',  labsize(small) angle(45)) ///
 			title("`d'", size(medium)) name(`d'_`s'_new, replace) 
@@ -364,20 +383,38 @@ qui twoway (rcap mrip_ul mrip_ll my_dom_id_mrip if domain=="`d'", color(blue)  )
   }
 u `new', clear 
 sort state wave mode 
-grc1leg  bsb_keep_MA_new sf_keep_MA_new  scup_keep_MA_new bsb_rel_MA_new sf_rel_MA_new   scup_rel_MA_new , cols(3) 
-grc1leg  bsb_keep_RI_new sf_keep_RI_new scup_keep_RI_new  bsb_rel_RI_new sf_rel_RI_new scup_rel_RI_new    , cols(3)		
-grc1leg  bsb_keep_CT_new sf_keep_CT_new scup_keep_CT_new  bsb_rel_CT_new sf_rel_CT_new  scup_rel_CT_new  , cols(3)	
-grc1leg  bsb_keep_NY_new sf_keep_NY_new scup_keep_NY_new  bsb_rel_NY_new sf_rel_NY_new  scup_rel_NY_new  , cols(3)	
-grc1leg  bsb_keep_NJ_new sf_keep_NJ_new scup_keep_NJ_new  bsb_rel_NJ_new sf_rel_NJ_new  scup_rel_NJ_new  , cols(3) 
-grc1leg  bsb_keep_DE_new sf_keep_DE_new scup_keep_DE_new  bsb_rel_DE_new sf_rel_DE_new  scup_rel_DE_new  , cols(3) 
-grc1leg  bsb_keep_MD_new sf_keep_MD_new scup_keep_MD_new  bsb_rel_MD_new sf_rel_MD_new  scup_rel_MD_new  , cols(3)	
-grc1leg  bsb_keep_VA_new sf_keep_VA_new scup_keep_VA_new  bsb_rel_VA_new sf_rel_VA_new  scup_rel_VA_new  , cols(3)	 
-grc1leg  bsb_keep_NC_new    bsb_rel_NC scup_keep_NC_new , cols(3)   	
+
+grc1leg  bsb_keep_MA_new sf_keep_MA_new  scup_keep_MA_new bsb_rel_MA_new sf_rel_MA_new scup_rel_MA_new , cols(3) title("Mean catch-per-trip, MRIP vs. simulated estimates MA", size(small))
+graph export "$figure_cd/mean_catch_MRIP_simulated_MA.png", as(png) replace
+
+grc1leg  bsb_keep_RI_new sf_keep_RI_new scup_keep_RI_new  bsb_rel_RI_new sf_rel_RI_new scup_rel_RI_new, cols(3) title("Mean catch-per-trip, MRIP vs. simulated estimates RI", size(small))
+graph export "$figure_cd/mean_catch_MRIP_simulated_RI.png", as(png) replace		
+
+grc1leg  bsb_keep_CT_new sf_keep_CT_new scup_keep_CT_new  bsb_rel_CT_new sf_rel_CT_new  scup_rel_CT_new, cols(3)	title("Mean catch-per-trip, MRIP vs. simulated estimates CT", size(small))
+graph export "$figure_cd/mean_catch_MRIP_simulated_CT.png", as(png) replace
+
+grc1leg  bsb_keep_NY_new sf_keep_NY_new scup_keep_NY_new  bsb_rel_NY_new sf_rel_NY_new  scup_rel_NY_new  , cols(3) title("Mean catch-per-trip, MRIP vs. simulated estimates NY", size(small))
+graph export "$figure_cd/mean_catch_MRIP_simulated_NYA.png", as(png) replace	
+
+grc1leg  bsb_keep_NJ_new sf_keep_NJ_new scup_keep_NJ_new  bsb_rel_NJ_new sf_rel_NJ_new  scup_rel_NJ_new  , cols(3) title("Mean catch-per-trip, MRIP vs. simulated estimates NJ", size(small))
+graph export "$figure_cd/mean_catch_MRIP_simulated_NJ.png", as(png) replace
+
+grc1leg  bsb_keep_DE_new sf_keep_DE_new scup_keep_DE_new  bsb_rel_DE_new sf_rel_DE_new  scup_rel_DE_new  , cols(3) title("Mean catch-per-trip, MRIP vs. simulated estimates DE", size(small))
+graph export "$figure_cd/mean_catch_MRIP_simulated_DE.png", as(png) replace
+
+grc1leg  bsb_keep_MD_new sf_keep_MD_new scup_keep_MD_new  bsb_rel_MD_new sf_rel_MD_new  scup_rel_MD_new  , cols(3) title("Mean catch-per-trip, MRIP vs. simulated estimates MD", size(small))
+graph export "$figure_cd/mean_catch_MRIP_simulated_MD.png", as(png) replace	
+
+grc1leg  bsb_keep_VA_new sf_keep_VA_new scup_keep_VA_new  bsb_rel_VA_new sf_rel_VA_new  scup_rel_VA_new  , cols(3)	 title("Mean catch-per-trip, MRIP vs. simulated estimates VA", size(small))
+graph export "$figure_cd/mean_catch_MRIP_simulated_VA.png", as(png) replace
+
+grc1leg  bsb_keep_NC_new    bsb_rel_NC scup_keep_NC_new , cols(3) title("Mean catch-per-trip, MRIP vs. simulated estimates NC", size(small))
+graph export "$figure_cd/mean_catch_MRIP_simulated_NC.png", as(png) replace
 
 
 
 *B3 compare catch totals @ state, mode, wave level
-u "$iterative_input_data_cd\simulated_catch_totals3.dta", replace 
+u "$input_data_cd\simulated_catch_totals3.dta", replace 
 rename dtrip tot_dtrip_sim
 
 ds draw mode state wave, not
@@ -421,7 +458,7 @@ drop if disp=="dtrip"
 tempfile sim
 save `sim', replace
 
-u  "$iterative_input_data_cd\catch_total_calib_mrip_state_mode_wave.dta", clear 
+u  "$input_data_cd\catch_total_calib_mrip_state_mode_wave.dta", clear 
 reshape long total se ll ul , i(mode state wave) j(new) string
 rename tot mrip_total 
 rename ll mrip_ll
@@ -441,7 +478,7 @@ tempfile catch
 save `catch', replace 
 
 
-u  "$iterative_input_data_cd\directed_trip_calib_mrip_state_wave_total.dta", clear 
+u  "$input_data_cd\directed_trip_calib_mrip_state_wave_total.dta", clear 
 rename se_mrip se_dtrip_mrip
 rename ll ll_dtrip_mrip
 rename ul ul_dtrip_mrip
@@ -518,7 +555,7 @@ qui twoway (rcap mrip_ul mrip_ll my_dom_id_mrip if domain=="`d'", color(blue)  )
 			(scatter mrip_total my_dom_id_mrip if domain=="`d'",  msymbol(o) mcolor(blue)) ///
 			(rcap sim_ul sim_ll my_dom_id_sim if domain=="`d'",  color(red)) ///
 			(scatter sim_total my_dom_id_sim if domain=="`d'", msymbol(o) mcolor(red)), ///
-			legend(order(2 "MRIP estimate" 4 "Simulated estimate")) ///
+			legend(order(2 "MRIP estimate" 4 "Simulated estimate") size(small) rows(1)) ///
 			ytitle("# ('000s)", xoffset(-3)) xtitle("") ylabel(#10,  angle(horizontal) ) ///
 			xlabel(`xlabels',  angle(45) labsize(small)) ///
 			title("`d'", size(medium)) name(`d'_`s', replace) 
@@ -526,20 +563,40 @@ qui twoway (rcap mrip_ul mrip_ll my_dom_id_mrip if domain=="`d'", color(blue)  )
   }
 
 u `new', clear 
-grc1leg  dtrip_MA  dtrip_RI dtrip_CT dtrip_NY dtrip_NJ dtrip_DE dtrip_MD dtrip_VA dtrip_NC , cols(3)   	
-grc1leg  bsb_catch_MA sf_catch_MA  scup_catch_MA bsb_harvest_MA sf_harvest_MA   scup_harvest_MA , cols(3) 	
-grc1leg  bsb_catch_RI sf_catch_RI scup_catch_RI  bsb_harvest_RI sf_harvest_RI scup_harvest_RI    , cols(3)		
-grc1leg  bsb_catch_CT sf_catch_CT scup_catch_CT  bsb_harvest_CT sf_harvest_CT  scup_harvest_CT  , cols(3)	
-grc1leg  bsb_catch_NY sf_catch_NY scup_catch_NY  bsb_harvest_NY sf_harvest_NY  scup_harvest_NY  , cols(3)
-grc1leg  bsb_catch_NJ sf_catch_NJ scup_catch_NJ  bsb_harvest_NJ sf_harvest_NJ  scup_harvest_NJ  , cols(3)
-grc1leg  bsb_catch_DE sf_catch_DE scup_catch_DE  bsb_harvest_DE sf_harvest_DE  scup_harvest_DE  , cols(3) 
-grc1leg  bsb_catch_MD sf_catch_MD scup_catch_MD  bsb_harvest_MD sf_harvest_MD  scup_harvest_MD  , cols(3)
-grc1leg  bsb_catch_VA sf_catch_VA scup_catch_VA  bsb_harvest_VA sf_harvest_VA  scup_harvest_VA  , cols(3)	
-grc1leg  bsb_catch_NC sf_catch_NC scup_catch_NC  bsb_harvest_NC sf_harvest_NC  scup_harvest_NC  , cols(3) 
+grc1leg  dtrip_MA  dtrip_RI dtrip_CT dtrip_NY dtrip_NJ dtrip_DE dtrip_MD dtrip_VA dtrip_NC , cols(3)  title("Directed trips, MRIP vs. simulated estimates", size(small))
+graph export "$figure_cd/dtrip_wave_MRIP_simulated_all_states.png", as(png) replace
+
+grc1leg  bsb_catch_MA sf_catch_MA  scup_catch_MA bsb_harvest_MA sf_harvest_MA   scup_harvest_MA , cols(3) title("Catch totals, MRIP vs. simulated estimates MA", size(small))
+graph export "$figure_cd/catch_total_wave_MRIP_simulated_MA.png", as(png) replace
+	
+grc1leg  bsb_catch_RI sf_catch_RI scup_catch_RI  bsb_harvest_RI sf_harvest_RI scup_harvest_RI    , cols(3)	title("Catch totals, MRIP vs. simulated estimates RI", size(small))
+graph export "$figure_cd/catch_total_wave_MRIP_simulated_RI.png", as(png) replace
+	
+grc1leg  bsb_catch_CT sf_catch_CT scup_catch_CT  bsb_harvest_CT sf_harvest_CT  scup_harvest_CT  , cols(3)	title("Catch totals, MRIP vs. simulated estimates CT", size(small))
+graph export "$figure_cd/catch_total_wave_MRIP_simulated_CT.png", as(png) replace
+	
+grc1leg  bsb_catch_NY sf_catch_NY scup_catch_NY  bsb_harvest_NY sf_harvest_NY  scup_harvest_NY  , cols(3) title("Catch totals, MRIP vs. simulated estimates NY", size(small))
+graph export "$figure_cd/catch_total_wave_MRIP_simulated_NY.png", as(png) replace
+	
+grc1leg  bsb_catch_NJ sf_catch_NJ scup_catch_NJ  bsb_harvest_NJ sf_harvest_NJ  scup_harvest_NJ  , cols(3) title("Catch totals, MRIP vs. simulated estimates NJ", size(small))
+graph export "$figure_cd/catch_total_wave_MRIP_simulated_NJ.png", as(png) replace
+	
+grc1leg  bsb_catch_DE sf_catch_DE scup_catch_DE  bsb_harvest_DE sf_harvest_DE  scup_harvest_DE  , cols(3) title("Catch totals, MRIP vs. simulated estimates DE", size(small))
+graph export "$figure_cd/catch_total_wave_MRIP_simulated_DE.png", as(png) replace
+	
+grc1leg  bsb_catch_MD sf_catch_MD scup_catch_MD  bsb_harvest_MD sf_harvest_MD  scup_harvest_MD  , cols(3) title("Catch totals, MRIP vs. simulated estimates MD", size(small))
+graph export "$figure_cd/catch_total_wave_MRIP_simulated_MD.png", as(png) replace
+	
+grc1leg  bsb_catch_VA sf_catch_VA scup_catch_VA  bsb_harvest_VA sf_harvest_VA  scup_harvest_VA  , cols(3)	title("Catch totals, MRIP vs. simulated estimates VA", size(small))
+graph export "$figure_cd/catch_total_wave_MRIP_simulated_VA.png", as(png) replace
+	
+grc1leg  bsb_catch_NC sf_catch_NC scup_catch_NC  bsb_harvest_NC sf_harvest_NC  scup_harvest_NC  , cols(3) title("Catch totals, MRIP vs. simulated estimates NC", size(small))
+graph export "$figure_cd/catch_total_wave_MRIP_simulated_NC.png", as(png) replace
+	
 
 
 *B3 compare catch totals @ state and mode
-u "$iterative_input_data_cd\simulated_catch_totals3.dta", replace 
+u "$input_data_cd\simulated_catch_totals3.dta", replace 
 rename dtrip tot_dtrip_sim
 
 ds draw mode state wave, not
@@ -586,7 +643,7 @@ drop if disp=="dtrip"
 tempfile sim
 save `sim', replace
 
-u  "$iterative_input_data_cd\catch_total_calib_mrip.dta", clear  
+u  "$input_data_cd\catch_total_calib_mrip.dta", clear  
 reshape long total se ll ul , i(mode state) j(new) string
 rename tot mrip_total 
 rename ll mrip_ll
@@ -607,7 +664,7 @@ tempfile catch
 save `catch', replace 
 
 
-u  "$iterative_input_data_cd\directed_trip_calib_mrip.dta", clear  
+u  "$input_data_cd\directed_trip_calib_mrip.dta", clear  
 rename se_mrip se_dtrip_mrip
 rename ll ll_dtrip_mrip
 rename ul ul_dtrip_mrip
@@ -685,7 +742,7 @@ qui twoway (rcap mrip_ul mrip_ll my_dom_id_mrip if domain=="`d'", color(blue)  )
 			(scatter mrip_total my_dom_id_mrip if domain=="`d'",  msymbol(o) mcolor(blue)) ///
 			(rcap sim_ul sim_ll my_dom_id_sim if domain=="`d'",  color(red)) ///
 			(scatter sim_total my_dom_id_sim if domain=="`d'", msymbol(o) mcolor(red)), ///
-			legend(order(2 "MRIP estimate" 4 "Simulated estimate")) ///
+			legend(order(2 "MRIP estimate" 4 "Simulated estimate") size(small) rows(1)) ///
 			ytitle("# ('000s)", xoffset(-3)) xtitle("") ylabel(#10,  angle(horizontal) ) ///
 			xlabel(`xlabels',  angle(45) labsize(small)) ///
 			title("`d'", size(medium)) name(`d'_`s', replace) 
@@ -693,25 +750,46 @@ qui twoway (rcap mrip_ul mrip_ll my_dom_id_mrip if domain=="`d'", color(blue)  )
   }
 
 u `new', clear 
-grc1leg  dtrip_MA  dtrip_RI dtrip_CT dtrip_NY dtrip_NJ dtrip_DE dtrip_MD dtrip_VA dtrip_NC , cols(3) 
-grc1leg  bsb_catch_MA sf_catch_MA  scup_catch_MA bsb_harvest_MA sf_harvest_MA   scup_harvest_MA , cols(3) 		
-grc1leg  bsb_catch_RI sf_catch_RI scup_catch_RI  bsb_harvest_RI sf_harvest_RI scup_harvest_RI    , cols(3)				
-grc1leg  bsb_catch_CT sf_catch_CT scup_catch_CT  bsb_harvest_CT sf_harvest_CT  scup_harvest_CT  , cols(3)	
-grc1leg  bsb_catch_NY sf_catch_NY scup_catch_NY  bsb_harvest_NY sf_harvest_NY  scup_harvest_NY  , cols(3)
-grc1leg  bsb_catch_NJ sf_catch_NJ scup_catch_NJ  bsb_harvest_NJ sf_harvest_NJ  scup_harvest_NJ  , cols(3) 
-grc1leg  bsb_catch_DE sf_catch_DE scup_catch_DE  bsb_harvest_DE sf_harvest_DE  scup_harvest_DE  , cols(3) 
-grc1leg  bsb_catch_MD sf_catch_MD scup_catch_MD  bsb_harvest_MD sf_harvest_MD  scup_harvest_MD  , cols(3)
-grc1leg  bsb_catch_VA sf_catch_VA scup_catch_VA  bsb_harvest_VA sf_harvest_VA  scup_harvest_VA  , cols(3)	
-grc1leg  bsb_catch_NC sf_catch_NC scup_catch_NC  bsb_harvest_NC sf_harvest_NC  scup_harvest_NC  , cols(3)   	
+grc1leg  dtrip_MA  dtrip_RI dtrip_CT dtrip_NY dtrip_NJ dtrip_DE dtrip_MD dtrip_VA dtrip_NC , cols(3)  title("Directed trips, MRIP vs. simulated estimates", size(small))
+graph export "$figure_cd/dtrip_state_MRIP_simulated_all_states.png", as(png) replace
+
+grc1leg  bsb_catch_MA sf_catch_MA  scup_catch_MA bsb_harvest_MA sf_harvest_MA   scup_harvest_MA , cols(3) title("Catch totals, MRIP vs. simulated estimates MA", size(small))
+graph export "$figure_cd/catch_total_state_MRIP_simulated_MA.png", as(png) replace
+	
+grc1leg  bsb_catch_RI sf_catch_RI scup_catch_RI  bsb_harvest_RI sf_harvest_RI scup_harvest_RI    , cols(3)	title("Catch totals, MRIP vs. simulated estimates RI", size(small))
+graph export "$figure_cd/catch_total_state_MRIP_simulated_RI.png", as(png) replace
+	
+grc1leg  bsb_catch_CT sf_catch_CT scup_catch_CT  bsb_harvest_CT sf_harvest_CT  scup_harvest_CT  , cols(3)	title("Catch totals, MRIP vs. simulated estimates CT", size(small))
+graph export "$figure_cd/catch_total_state_MRIP_simulated_CT.png", as(png) replace
+	
+grc1leg  bsb_catch_NY sf_catch_NY scup_catch_NY  bsb_harvest_NY sf_harvest_NY  scup_harvest_NY  , cols(3) title("Catch totals, MRIP vs. simulated estimates NY", size(small))
+graph export "$figure_cd/catch_total_state_MRIP_simulated_NY.png", as(png) replace
+	
+grc1leg  bsb_catch_NJ sf_catch_NJ scup_catch_NJ  bsb_harvest_NJ sf_harvest_NJ  scup_harvest_NJ  , cols(3) title("Catch totals, MRIP vs. simulated estimates NJ", size(small))
+graph export "$figure_cd/catch_total_state_MRIP_simulated_NJ.png", as(png) replace
+	
+grc1leg  bsb_catch_DE sf_catch_DE scup_catch_DE  bsb_harvest_DE sf_harvest_DE  scup_harvest_DE  , cols(3) title("Catch totals, MRIP vs. simulated estimates DE", size(small))
+graph export "$figure_cd/catch_total_state_MRIP_simulated_DE.png", as(png) replace
+	
+grc1leg  bsb_catch_MD sf_catch_MD scup_catch_MD  bsb_harvest_MD sf_harvest_MD  scup_harvest_MD  , cols(3) title("Catch totals, MRIP vs. simulated estimates MD", size(small))
+graph export "$figure_cd/catch_total_state_MRIP_simulated_MD.png", as(png) replace
+	
+grc1leg  bsb_catch_VA sf_catch_VA scup_catch_VA  bsb_harvest_VA sf_harvest_VA  scup_harvest_VA  , cols(3)	title("Catch totals, MRIP vs. simulated estimates VA", size(small))
+graph export "$figure_cd/catch_total_state_MRIP_simulated_VA.png", as(png) replace
+	
+grc1leg  bsb_catch_NC sf_catch_NC scup_catch_NC  bsb_harvest_NC sf_harvest_NC  scup_harvest_NC  , cols(3) title("Catch totals, MRIP vs. simulated estimates NC", size(small))
+graph export "$figure_cd/catch_total_state_MRIP_simulated_NC.png", as(png) replace
+	
 
 
 
 
 
 
-*FINAL STEP
-*once the simulated totals approximate MRIP, save the data to be used in the R code simulation
-u "$iterative_input_data_cd\simulated_catch_totals3.dta", replace 
+** FINAL STEP
+
+* Once the simulated totals approximate MRIP, save the data to be used in the R code simulation
+u "$input_data_cd\simulated_catch_totals3.dta", replace 
 rename dtrip tot_dtrip_sim
 
 ds draw mode state wave, not
@@ -724,6 +802,30 @@ collapse (sum) tot_sf_keep_sim tot_sf_cat_sim tot_sf_rel_sim ///
 						  tot_bsb_keep_sim tot_bsb_rel_sim tot_bsb_cat_sim ///
 						  tot_scup_keep_sim tot_scup_rel_sim tot_scup_cat_sim tot_dtrip_sim , by(state mode draw)
 						  
-save "$iterative_input_data_cd\simulated_catch_totals.dta", replace 
+save "$output_data_cd\simulated_catch_totals.dta", replace 
 					  
-*********
+
+
+
+
+* Remove extraneous columns from the catch-per-trip data
+local states 
+mata: mata clear
+clear
+
+local statez "MA RI CT NY NJ DE MD VA NC"
+
+foreach s of local statez {
+	forvalues i = 1/$ndraws {
+       u "$input_data_cd\calib_catch_draws_`s'_`i'.dta", clear
+	   drop my_dom_id_string day month wave day_i sf_keep_sim sf_rel_sim bsb_keep_sim bsb_rel_sim scup_keep_sim scup_rel_sim dtrip
+	   compress
+	   save  "$input_data_cd\calib_catch_draws_`s'_`i'.dta", replace
+		}
+}	
+
+		
+
+	
+	
+	

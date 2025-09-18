@@ -3,8 +3,12 @@
 #This is the calibration-year trip simulation WITHOUT any adjustments for illegal harvest or voluntary release
 
 states <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+# s<-"MA"
+# md<-"pr"
+# i<-1
+
 mode_draw <- c("sh", "pr", "fh")
-draws <- 1:5
+draws <- 1:n_simulations
 
 # Create an empty list to collect results
 calib_comparison <- list()
@@ -18,7 +22,7 @@ for (s in states) {
     for (i in draws) {
       
       # import necessary data
-      dtripz<-feather::read_feather(file.path(input_data_cd, paste0("directed_trips_calibration_", s, ".feather"))) %>% 
+      dtripz<-feather::read_feather(file.path(iterative_input_data_cd, paste0("directed_trips_calibration_", s, ".feather"))) %>% 
         tibble::tibble() %>%
         dplyr::filter(draw == i) %>%
         dplyr::select(mode, date, bsb_bag, bsb_min, fluke_bag,fluke_min, scup_bag, scup_min) %>% 
@@ -26,8 +30,7 @@ for (s in states) {
       
       catch_data <- feather::read_feather(file.path(iterative_input_data_cd, paste0("calib_catch_draws_",s, "_", i,".feather"))) %>% 
         dplyr::left_join(dtripz, by=c("mode", "date"))%>% 
-        dplyr::filter(mode==md) %>% 
-        dplyr::select(-sf_keep_sim, -sf_rel_sim, -scup_keep_sim, -scup_rel_sim, -bsb_keep_sim, -bsb_rel_sim)
+        dplyr::filter(mode==md) 
       
       angler_dems<-catch_data %>% 
         dplyr::select(date, mode, tripid, total_trips_12, age, cost)%>% 
@@ -35,17 +38,17 @@ for (s in states) {
       
       angler_dems<-dplyr::distinct(angler_dems)
       
-      sf_size_data <- read_csv(file.path(input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+      sf_size_data <- read_csv(file.path(iterative_input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
         dplyr::filter(state == s, species=="sf", draw==i) %>% 
         dplyr::filter(!is.na(fitted_prob)) %>% 
         dplyr::select(state, fitted_prob, length)
       
-      bsb_size_data <- read_csv(file.path(input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+      bsb_size_data <- read_csv(file.path(iterative_input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
         dplyr::filter(state == s, species=="bsb" , draw==i) %>% 
         dplyr::filter(!is.na(fitted_prob)) %>% 
         dplyr::select(state, fitted_prob, length)
       
-      scup_size_data <- read_csv(file.path(input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+      scup_size_data <- read_csv(file.path(iterative_input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
         dplyr::filter(state == s, species=="scup", draw==i) %>% 
         dplyr::filter(!is.na(fitted_prob)) %>% 
         dplyr::select(state,  fitted_prob, length)
@@ -306,32 +309,32 @@ for (s in states) {
       parameters <- dplyr::distinct(parameters) 
       
       # utility params - no NJ interaction
-      # parameters<-  parameters %>% 
-      #   #dplyr::arrange(date, mode, tripid) %>% 
-      #   dplyr::mutate(beta_sqrt_sf_keep= rnorm(nrow(parameters), mean = 0.827, sd = 1.267), 
-      #                 beta_sqrt_sf_release = rnorm(nrow(parameters), mean = 0.065 , sd = 0.325) , 
-      #                 beta_sqrt_bsb_keep = rnorm(nrow(parameters), mean = 0.353, sd = 0.129), 
-      #                 beta_sqrt_bsb_release = rnorm(nrow(parameters), mean = 0.074 , sd = 0), 
-      #                 beta_sqrt_sf_bsb_keep = rnorm(nrow(parameters), mean=-0.056  , sd = 0.196 ), 
-      #                 beta_sqrt_scup_catch = rnorm(nrow(parameters), mean = 0.018 , sd = 0), 
-      #                 beta_opt_out = rnorm(nrow(parameters), mean =-2.056 , sd = 1.977), 
-      #                 beta_opt_out_avidity = rnorm(nrow(parameters), mean =-0.010 , sd = 0), 
-      #                 beta_opt_out_age = rnorm(nrow(parameters), mean =0.010 , sd = 0), 
-      #                 beta_cost = -0.012) 
+      parameters<-  parameters %>%
+        #dplyr::arrange(date, mode, tripid) %>%
+        dplyr::mutate(beta_sqrt_sf_keep= rnorm(nrow(parameters), mean = 0.827, sd = 1.267),
+                      beta_sqrt_sf_release = rnorm(nrow(parameters), mean = 0.065 , sd = 0.325) ,
+                      beta_sqrt_bsb_keep = rnorm(nrow(parameters), mean = 0.353, sd = 0.129),
+                      beta_sqrt_bsb_release = rnorm(nrow(parameters), mean = 0.074 , sd = 0),
+                      beta_sqrt_sf_bsb_keep = rnorm(nrow(parameters), mean=-0.056  , sd = 0.196 ),
+                      beta_sqrt_scup_catch = rnorm(nrow(parameters), mean = 0.018 , sd = 0),
+                      beta_opt_out = rnorm(nrow(parameters), mean =-2.056 , sd = 1.977),
+                      beta_opt_out_avidity = rnorm(nrow(parameters), mean =-0.010 , sd = 0),
+                      beta_opt_out_age = rnorm(nrow(parameters), mean =0.010 , sd = 0),
+                      beta_cost = -0.012)
       
       # utility params - with NJ interaction
-      parameters<-  parameters %>% 
-        dplyr::mutate(beta_sqrt_sf_keep= rnorm(nrow(parameters), mean = 0.643, sd = 1.267), 
-                      beta_NJ_sf_keep= rnorm(nrow(parameters), mean = 0.280, sd = 0), 
-                      beta_sqrt_sf_release = rnorm(nrow(parameters), mean = 0.065 , sd =0.322 ) , 
-                      beta_sqrt_bsb_keep = rnorm(nrow(parameters), mean =0.353 , sd = 0.126), 
-                      beta_sqrt_bsb_release = rnorm(nrow(parameters), mean = 0.074 , sd =0 ), 
-                      beta_sqrt_sf_bsb_keep = rnorm(nrow(parameters), mean=-0.057  , sd = 0.194 ), 
-                      beta_sqrt_scup_catch = rnorm(nrow(parameters), mean = 0.018 , sd =0 ), 
-                      beta_opt_out = rnorm(nrow(parameters), mean = -2.091, sd = 1.983), 
-                      beta_opt_out_avidity = rnorm(nrow(parameters), mean = -0.010, sd = 0), 
-                      beta_opt_out_age = rnorm(nrow(parameters), mean = 0.011, sd = 0), 
-                      beta_cost = -0.012) 
+      # parameters<-  parameters %>% 
+      #   dplyr::mutate(beta_sqrt_sf_keep= rnorm(nrow(parameters), mean = 0.643, sd = 1.267), 
+      #                 beta_NJ_sf_keep= rnorm(nrow(parameters), mean = 0.280, sd = 0), 
+      #                 beta_sqrt_sf_release = rnorm(nrow(parameters), mean = 0.065 , sd =0.322 ) , 
+      #                 beta_sqrt_bsb_keep = rnorm(nrow(parameters), mean =0.353 , sd = 0.126), 
+      #                 beta_sqrt_bsb_release = rnorm(nrow(parameters), mean = 0.074 , sd =0 ), 
+      #                 beta_sqrt_sf_bsb_keep = rnorm(nrow(parameters), mean=-0.057  , sd = 0.194 ), 
+      #                 beta_sqrt_scup_catch = rnorm(nrow(parameters), mean = 0.018 , sd =0 ), 
+      #                 beta_opt_out = rnorm(nrow(parameters), mean = -2.091, sd = 1.983), 
+      #                 beta_opt_out_avidity = rnorm(nrow(parameters), mean = -0.010, sd = 0), 
+      #                 beta_opt_out_age = rnorm(nrow(parameters), mean = 0.011, sd = 0), 
+      #                 beta_cost = -0.012) 
       
       trip_data<- trip_data %>% 
         dplyr::left_join(parameters, by = c("date", "mode", "tripid")) %>% 
@@ -354,7 +357,7 @@ for (s in states) {
       trip_data <-trip_data %>%
         dplyr::mutate(
           vA = beta_sqrt_sf_keep*sqrt(tot_keep_sf_new) +
-            beta_NJ_sf_keep*NJ_dummy +
+            #beta_NJ_sf_keep*NJ_dummy +
             beta_sqrt_sf_release*sqrt(tot_rel_sf_new) +
             beta_sqrt_bsb_keep*sqrt(tot_keep_bsb_new) +
             beta_sqrt_bsb_release*sqrt(tot_rel_bsb_new) +
@@ -421,7 +424,7 @@ for (s in states) {
         .[]
       
       
-      dtrips<-feather::read_feather(file.path(input_data_cd, paste0("directed_trips_calibration_", s, ".feather"))) %>% 
+      dtrips<-feather::read_feather(file.path(iterative_input_data_cd, paste0("directed_trips_calibration_", s, ".feather"))) %>% 
         tibble::tibble() %>%
         dplyr::filter(draw == i) %>%
         dplyr::select(mode, date, dtrip) %>% 

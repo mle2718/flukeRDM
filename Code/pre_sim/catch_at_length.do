@@ -18,7 +18,7 @@
 * a) calibration year catch-at-length
 
 * CT VAS
-cd "C:\Users\andrew.carr-harris\Desktop\MRIP_data_2025\length_data"
+cd "$input_data_cd\length_data"
 import excel "2024 CT VAS SFL SCUP BSB.xlsx", clear first 
 renvarlab, lower
 gen species="sf" if catch_common_name== "FLOUNDER, SUMMER"
@@ -83,7 +83,6 @@ tempfile ri_vas
 save `ri_vas', replace
 
 * ALS tag
-cd "C:\Users\andrew.carr-harris\Desktop\MRIP_data_2025\length_data"
 import excel using "FLK_ALS_TAG_DATA_2025.xlsx", clear first 
 keep Date Place Species Length zonedescription
 tempfile als_fluke_tag
@@ -501,7 +500,7 @@ save `prop_ab1', replace
 merge 1:1 species region length using `prop_b2'
 drop _merge spec_reg sumfish
 
-expand 150
+expand $ndraws
 bysort region species l: gen draw=_n
 tempfile props
 save `props', replace 
@@ -540,205 +539,6 @@ restore
 drop if species=="scup"
 append using `scup'
 
-
-/*
-clear
-mata: mata clear
-
-tempfile tl1 cl1
-dsconcat $triplist
-
-sort year strat_id psu_id id_code
-drop if strmatch(id_code, "*xx*")==1
-duplicates drop 
-save `tl1'
-clear
-
-dsconcat $catchlist
-sort year strat_id psu_id id_code
-replace common=subinstr(lower(common)," ","",.)
-save `cl1'
-
-replace var_id=strat_id if strmatch(var_id,"")
-
-use `tl1'
-merge 1:m year strat_id psu_id id_code using `cl1', keep(1 3) nogenerate /*Keep all trips including catch==0*/
-replace var_id=strat_id if strmatch(var_id,"")
-
-* keep management unit states
-keep if inlist(st,25, 44, 9, 36, 34, 51, 10, 24, 37)
-
-gen state="MA" if st==25
-replace state="MD" if st==24
-replace state="RI" if st==44
-replace state="CT" if st==9
-replace state="NY" if st==36
-replace state="NJ" if st==34
-replace state="DE" if st==10
-replace state="VA" if st==51
-replace state="NC" if st==37
-
-drop region
-gen region="NO" if inlist(state, "MA", "RI", "CT", "NY") 
-replace region="NJ" if inlist(state, "NJ") 
-replace region="SO" if inlist(state, "DE", "MD", "VA", "NC") 
-
-// classify trips that I care about into the things I care about (caught or targeted sf/bsb) and things I don't care about "ZZ" 
-replace prim1_common=subinstr(lower(prim1_common)," ","",.)
-replace prim2_common=subinstr(lower(prim1_common)," ","",.)
-
-/* we need to retain 1 observation for each strat_id, psu_id, and id_code.  */
-/* A.  Trip (Targeted or Caught) (fluke, sea bass, or scup) then it should be marked in the domain "_ATLCO"
-   B.  Trip did not (Target or Caught) (fluke, sea bass, or scup) then it is marked in the the domain "ZZZZZ"
-*/
-
-gen common_dom="ZZ"
-replace common_dom="SF" if inlist(common, "summerflounder") 
-replace common_dom="SF" if inlist(common, "blackseabass") 
-replace common_dom="SF" if inlist(common, "scup") 
-
-tostring wave, gen(wv2)
-tostring year, gen(yr2)
-
-gen my_dom_id_string=region+"_"+common_dom
-replace my_dom_id_string=subinstr(ltrim(rtrim(my_dom_id_string))," ","",.)
-
-gen sf_tot_cat=tot_cat if common=="summerflounder"
-egen sum_sf_tot_cat=sum(sf_tot_cat), by(strat_id psu_id id_code)
-
-gen sf_harvest=landing if common=="summerflounder"
-egen sum_sf_harvest=sum(sf_harvest), by(strat_id psu_id id_code)
- 
-gen sf_releases=release if common=="summerflounder"
-egen sum_sf_releases=sum(sf_releases), by(strat_id psu_id id_code)
- 
-gen bsb_tot_cat=tot_cat if common=="blackseabass"
-egen sum_bsb_tot_cat=sum(bsb_tot_cat), by(strat_id psu_id id_code)
-
-gen bsb_harvest=landing if common=="blackseabass"
-egen sum_bsb_harvest=sum(bsb_harvest), by(strat_id psu_id id_code)
-
-gen bsb_releases=release if common=="blackseabass"
-egen sum_bsb_releases=sum(bsb_releases), by(strat_id psu_id id_code)
-
-gen scup_tot_cat=tot_cat if common=="scup"
-egen sum_scup_tot_cat=sum(scup_tot_cat), by(strat_id psu_id id_code)
-
-gen scup_harvest=landing if common=="scup"
-egen sum_scup_harvest=sum(scup_harvest), by(strat_id psu_id id_code)
-
-gen scup_releases=release if common=="scup"
-egen sum_scup_releases=sum(scup_releases), by(strat_id psu_id id_code)
-
-drop sf_tot_cat sf_harvest sf_releases bsb_tot_cat bsb_harvest bsb_releases  scup_tot_cat scup_harvest scup_releases
-rename sum_sf_tot_cat sf_cat
-rename sum_sf_harvest sf_keep
-rename sum_sf_releases sf_rel
-rename sum_bsb_tot_cat bsb_cat
-rename sum_bsb_harvest bsb_keep
-rename sum_bsb_releases bsb_rel
-rename sum_scup_tot_cat scup_cat
-rename sum_scup_harvest scup_keep
-rename sum_scup_releases scup_rel
-
-/* Set a variable "no_dup"=0 if the record is "$my_common" catch and no_dup=1 otherwise.*/
-  
-gen no_dup=0
-replace no_dup=1 if  strmatch(common, "summerflounder")==0
-replace no_dup=1 if strmatch(common, "blackseabass")==0
-replace no_dup=1 if strmatch(common, "scup")==0
-
-/*
-We sort on year, strat_id, psu_id, id_code, "no_dup", and "my_dom_id_string". For records with duplicate year, strat_id, psu_id, and id_codes, the first entry will be "my_common catch" if it exists.  These will all be have sp_dom "SF."  If there is no my_common catch, but the trip targeted (fluke, sea bass, or scup) or caught either species, the secondary sorting on "my_dom_id_string" ensures the trip is properly classified.
-
-After sorting, we generate a count variable (count_obs1 from 1....n) and we keep only the "first" observations within each "year, strat_id, psu_id, and id_codes" group.
-*/
-
-bysort year strat_id psu_id id_code (my_dom_id_string no_dup): gen count_obs1=_n
-
-keep if count_obs1==1 // This keeps only one record for trips with catch of multiple species. We have already computed catch of the species of interest above and saved these in a trip-row
-
-order strat_id psu_id id_code no_dup my_dom_id_string count_obs1 common
-
-svyset psu_id [pweight= wp_int], strata(strat_id) singleunit(certainty)
-
-keep if common_dom=="SF"
-drop if wp_int==0
-encode my_dom_id_string, gen(my_dom_id)
-
-preserve
-keep my_dom_id my_dom_id_string
-duplicates drop 
-tempfile domains
-save `domains', replace 
-restore
-
-tempfile basefile
-save `basefile', replace 
-* Create a postfile to collect results
-tempfile results
-postfile handle str15 varname str15 domain float total se ll95 ul95 using `results', replace
-
-* Loop over variables
-foreach var in sf_keep sf_rel sf_cat bsb_keep bsb_rel bsb_cat scup_keep scup_rel scup_cat {
-
-    * Run svy mean for the variable by domain
-    svy: total `var', over(my_dom_id)
-
-    * Grab result matrix and domain labels
-    matrix M = r(table)
-    local colnames : colnames M
-
-    * Loop over columns (domains)
-    foreach col of local colnames {
-        local m  = M[1, "`col'"]
-        local se = M[2, "`col'"]
-        local lb = M[5, "`col'"]
-        local ub = M[6, "`col'"]
-
-        post handle ("`var'") ("`col'") (`m') (`se') (`lb') (`ub')
-    }
-}
-
-postclose handle
-
-* Load results back into memory
-use `results', clear
-
-split domain, parse("@")
-drop domain1
-split domain2, parse(.)
-drop domain2 domain22
-split domain21, parse(bn)
-drop domain21
-destring domain211, replace
-rename domain21 my_dom_id
-merge m:1 my_dom_id using `domains' 
-sort varname  my_dom_id
-keep varname total  my_dom_id_string
-split varname, parse(_)
-drop varname
-rename varname1 species
-rename varname2 disp
-reshape wide total, i(species my) j(disp) string
-split my, parse(_)
-rename my_dom_id_string1 region
-drop  my_dom_id_string2  my_dom_id_string
-order region species 
-
-preserve
-keep if species=="scup"
-replace region="CST"
-collapse (sum) totalcat totalkeep totalrel, by(species region)
-tempfile scup
-save `scup',replace
-restore
-
-drop if species=="scup"
-append using `scup'
-*/
-
-
 merge 1:m species region draw using `props'
 drop _merge
 replace prop_ab1=0 if prop_ab1==.
@@ -760,8 +560,6 @@ format sumcatch %12.0gc
 sort draw region species length
 gen observed_prob = catch/sumcatch
 drop sumcatch 
-
-keep if draw<=110
 
 * estimate gamma parameters for each catch-at-length distribution
 * note: I restrict the range of fitted values to within the min/max length of observed catch
@@ -955,5 +753,5 @@ append using `bsb'
 destring draw, replace
 drop region
 order state species draw length
-export delimited using "$input_data_cd/baseline_catch_at_length.csv", replace 
+export delimited using "$output_data_cd/baseline_catch_at_length.csv", replace 
 

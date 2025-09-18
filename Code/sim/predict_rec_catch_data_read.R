@@ -2,21 +2,21 @@
 ## Run this script prior to predict rec catch
 
 #Lou's repos
-iterative_input_data_cd="C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data"
+iterative_input_data_cd="E:/Lou's projects/flukeRDM/flukeRDM_iterative_data"
 input_data_cd="C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025"
 
 #check
 
 ############# To Run Individual
 # Variables to change 
-dr<-1
-st="NJ"
-ndraws=50 #number of choice occasions simulte per strata
+#dr<-1
+#st="NJ"
+ndraws=50 #number of choice occasions to simulate per strata
 
 library(magrittr)
 ############# To Run in Loop 
 
-#for (st in c("MA", "RI")){
+#for (st in c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")){
 #  for (dr in 1:2){
     
     # import necessary data
@@ -28,7 +28,7 @@ library(magrittr)
     #          have subscripts _y2 (note this is slightly different from cod and haddock 2024)
 
 
-    directed_trips<-feather::read_feather(file.path(input_data_cd, paste0("directed_trips_calibration_", st, ".feather"))) %>% 
+    directed_trips<-feather::read_feather(file.path(iterative_input_data_cd, paste0("directed_trips_calibration_new_", st, ".feather"))) %>% 
       tibble::tibble() %>%
       dplyr::filter(draw == dr) %>%
       dplyr::select(mode, date, 
@@ -40,34 +40,32 @@ library(magrittr)
                     scup_min_SQ=scup_min, scup_bag_SQ=scup_bag)
     
     
-    catch_data <- feather::read_feather(file.path(iterative_input_data_cd, paste0("projected_catch_draws_",st, "_", dr,".feather"))) %>% 
+    catch_data <- feather::read_feather(file.path(iterative_input_data_cd, paste0("proj_catch_draws_",st, "_", dr,".feather"))) %>% 
       dplyr::left_join(directed_trips, by=c("mode", "date")) 
-    
-    catch_data<-catch_data %>% 
-      dplyr::select(-cost, -total_trips_12, -age, -bsb_keep_sim, -bsb_rel_sim, -day_i, -my_dom_id_string, 
-                    -scup_keep_sim, -scup_rel_sim, -sf_keep_sim, -sf_rel_sim, -wave)
     
     l_w_conversion <- readr::read_csv(file.path("C:/Users/andrew.carr-harris/Desktop/Git/flukeRDM/Data", "L_W_Conversion.csv"), show_col_types = FALSE)  %>% 
       dplyr::filter(state==st)
     
     
-    sf_size_data <- read_csv(file.path(input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+    sf_size_data <- read_csv(file.path(iterative_input_data_cd, "projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
       dplyr::filter(state == st, species=="sf", draw==dr) %>% 
       dplyr::filter(!is.na(fitted_prob)) %>% 
-      dplyr::select(state, fitted_prob, length)
+      dplyr::select(state, fitted_prob, length, mode)
     
-    bsb_size_data <- read_csv(file.path(input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+    bsb_size_data <- read_csv(file.path(iterative_input_data_cd, "projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
       dplyr::filter(state == st, species=="bsb" , draw==dr) %>% 
       dplyr::filter(!is.na(fitted_prob)) %>% 
-      dplyr::select(state, fitted_prob, length)
+      dplyr::select(state, fitted_prob, length, mode)
     
-    scup_size_data <- read_csv(file.path(input_data_cd, "baseline_catch_at_length.csv"), show_col_types = FALSE)  %>% 
+    scup_size_data <- read_csv(file.path(iterative_input_data_cd, "projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
       dplyr::filter(state == st, species=="scup", draw==dr) %>% 
       dplyr::filter(!is.na(fitted_prob)) %>% 
-      dplyr::select(state,  fitted_prob, length)
+      dplyr::select(state,  fitted_prob, length, mode)
     
     calendar_adjustments <- readr::read_csv(
-      file.path(input_data_cd, paste0("proj_year_calendar_adjustments_", st, ".csv")), show_col_types = FALSE) %>%
+      file.path(iterative_input_data_cd, paste0("proj_year_calendar_adjustments_new_", st, ".csv")), show_col_types = FALSE) %>%
+      dplyr::select(-state.y) %>% 
+      dplyr::rename(state=state.x) %>% 
       dplyr::filter(state == st, draw==dr) %>% 
       dplyr::select(-dtrip, -dtrip_y2, -state, -draw)
       
@@ -79,7 +77,7 @@ library(magrittr)
     for (md in mode_draw) {
       
       # pull trip outcomes from the calibration year
-      base_outcomes0[[md]]<-feather::read_feather(file.path(iterative_input_data_cd, paste0("base_outcomes_", st, "_", md, "_", dr, ".feather"))) %>% 
+      base_outcomes0[[md]]<-feather::read_feather(file.path(iterative_input_data_cd, paste0("base_outcomes_new_", st, "_", md, "_", dr, ".feather"))) %>% 
         data.table::as.data.table()
       
       base_outcomes0[[md]]<-base_outcomes0[[md]] %>% 
@@ -88,7 +86,7 @@ library(magrittr)
         dplyr::select(-date)
       
       # pull in data on the number of choice occasions per mode-day
-      n_choice_occasions0[[md]]<-feather::read_feather(file.path(iterative_input_data_cd, paste0("n_choice_occasions_MA_", md, "_", dr, ".feather")))  
+      n_choice_occasions0[[md]]<-feather::read_feather(file.path(iterative_input_data_cd, paste0("n_choice_occasions_new_", st,"_", md, "_", dr, ".feather")))  
       n_choice_occasions0[[md]]<-n_choice_occasions0[[md]] %>% 
         dplyr::mutate(date_parsed=lubridate::dmy(date)) %>% 
         dplyr::select(-date)
@@ -107,7 +105,7 @@ library(magrittr)
     
  
     # Pull in calibration comparison information about trip-level harvest/discard re-allocations 
-    calib_comparison<-readRDS(file.path(iterative_input_data_cd, "calibrated_model_stats.rds")) %>% 
+    calib_comparison<-readRDS(file.path(iterative_input_data_cd, "calibrated_model_stats_new.rds")) %>% 
       dplyr::filter(state==st & draw==dr ) 
     
     calib_comparison<-calib_comparison %>% 
