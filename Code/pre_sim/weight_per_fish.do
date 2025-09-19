@@ -395,7 +395,7 @@ save `harv', replace
 * discard mortality 10% for summer flounder, 15% for black sea bass and scup.
 
 * summer flounder 
-import excel using "$input_data_cd\sf_mt_rec_disc.xlsx", clear first
+import excel using "$input_data_cd\length_data\sf_mt_rec_disc.xlsx", clear first // no data for VA and NC
 renvarlab, lower
 keep if year==2024
 rename st_f state
@@ -420,7 +420,8 @@ drop if _merge==1
 gen total_lbs=total_mt*2204.62
 gen avg_wt_rel=total_lbs/total_rel
 
-*use neighboring state values if there is missing values for a state
+*use neighboring state values if there is missing values for a state 
+*replace VA and NC with MD values
 expand 2 if state=="MD", gen(dup)
 replace state="VA" if dup==1
 drop _merge dup
@@ -449,7 +450,7 @@ drop _merge
 save `harv', replace
 */
 * scup
-import excel using "$input_data_cd\scup_mt_rec_disc.xlsx", clear first
+import excel using "$input_data_cd\length_data\scup_mt_rec_disc.xlsx", clear first //data by year and semester, I will combine semesters
 renvarlab, lower
 keep if year==2024
 gen total_mt= w_mt/.15
@@ -497,6 +498,7 @@ bysort state: gen tab=_n
 gen mode="sh" if tab==1
 replace mode="fh" if tab==2
 replace mode="pr" if tab==3
+drop tab
 
 tempfile scup_disc
 save `scup_disc', replace 
@@ -509,7 +511,7 @@ drop _merge
 */
 
 *bsb
-import excel using "$input_data_cd\bsb_mt_rec_disc.xlsx", clear first
+import excel using "$input_data_cd\length_data\bsb_mt_rec_disc.xlsx", clear first //data by North and South 
 renvarlab, lower
 keep if year==2024
 
@@ -569,10 +571,60 @@ drop tab
 append using `scup_disc'
 append using `sf_disc'
 
-drop region tab 
+drop region  
 order state mode species
 
 merge 1:1 state mode species using `harv'
 
 drop total_harv_n tot_wt_harv
 sort species state mode
+drop _merge
+*Now fill in missing values using neighboring states 
+export excel using  "$input_data_cd\weight_per_catch_missing.xlsx", firstrow(variables) replace 
+
+
+* Define state order
+gen st_order= 1 if state=="MA"
+replace st_order=2 if state=="RI"
+replace st_order=3 if state=="CT" 
+replace st_order=4 if state=="NY"
+replace st_order=5 if state=="NJ"
+replace st_order=6 if state=="DE" 
+replace st_order=7 if state=="MD" 
+replace st_order=8 if state=="VA"
+replace st_order=9 if state=="NC"
+
+
+* Sort by species, mode, and state order
+sort species mode st_order
+
+* For each species/mode/state combo, carry neighbor values
+bysort species mode (st_order): gen harv_prev = avg_wt_harv[_n-1]
+bysort species mode (st_order): gen harv_next = avg_wt_harv[_n+1]
+
+* If missing, replace with neighbor averages
+gen avg_wt_harv_filled = avg_wt_harv
+replace avg_wt_harv_filled = (harv_prev + harv_next)/2 if missing(avg_wt_harv) & !missing(harv_prev) & !missing(harv_next)
+replace avg_wt_harv_filled = harv_prev if missing(avg_wt_harv_filled) & !missing(harv_prev)
+replace avg_wt_harv_filled = harv_next if missing(avg_wt_harv_filled) & !missing(harv_next)
+
+drop harv_prev harv_next
+
+* Loop over distance outward from 1 to 8 states
+forvalues d = 1/8 {
+    * Look backward (up-coast)
+    bysort species mode (st_order): ///
+        replace avg_wt_harv_filled = avg_wt_harv_filled[_n-`d'] ///
+        if missing(avg_wt_harv_filled) & !missing(avg_wt_harv_filled[_n-`d'])
+
+    * Look forward (down-coast)
+    bysort species mode (st_order): ///
+        replace avg_wt_harv_filled = avg_wt_harv_filled[_n+`d'] ///
+        if missing(avg_wt_harv_filled) & !missing(avg_wt_harv_filled[_n+`d'])
+}
+
+replace avg_wt_harv=avg_wt_harv_filled
+drop st_order avg_wt_harv_filled
+
+export excel using  "$input_data_cd\SQ_weight_per_catch.xlsx", firstrow(variables) replace 
+
