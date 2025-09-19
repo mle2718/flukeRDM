@@ -16,6 +16,8 @@ library(tidyr)
 library(dplyr)
 library(ggplot2)
 library(writexl)
+library(plyr)
+library(dplyr)
 
 conflicts_prefer(dplyr::filter)
 
@@ -23,12 +25,12 @@ conflicts_prefer(dplyr::filter)
 
 state_datasets <- list()
 statez<-c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
-statez<-c("DE")
+statez<-c("CT", "NY", "NJ", "DE", "MD", "VA", "NC")
 
 for(s in statez) {
   
   # Load data
-  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/baseline_mrip_catch_processed.xlsx") %>% 
+  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/baseline_mrip_catch_processed.xlsx") %>% 
     filter(state==s)
   
   
@@ -43,7 +45,7 @@ for(s in statez) {
   # I used copula model to simulate 1), whereas 2) and 3) are distributed NB
   
   n_sim <- 5000   # number of samples per draw
-  n_draws <- 110  # number of simulated datasets
+  n_draws <- 150  # number of simulated datasets
   
   
   ############ SUMMER FLOUNDER ############
@@ -816,7 +818,7 @@ for(s in statez) {
   
   
   ############ BLACK SEA BASS ############  
-  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/baseline_mrip_catch_processed.xlsx") %>% 
+  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/baseline_mrip_catch_processed.xlsx") %>% 
     filter(state==s)
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0
@@ -1568,7 +1570,7 @@ for(s in statez) {
   
   
   ############ SCUP ############  
-  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/baseline_mrip_catch_processed.xlsx") %>% 
+  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/baseline_mrip_catch_processed.xlsx") %>% 
     filter(state==s)
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0
@@ -2344,7 +2346,7 @@ for(s in statez) {
     safe_name <- gsub("[^A-Za-z0-9_]", "_", name)
     
     # Write to Excel
-    write_xlsx(split_datasets[[name]], paste0("C:/Users/andrew.carr-harris/Desktop/flukeRDM_iterative_data/calib_catch_draws_", s, "_", safe_name, ".xlsx"))
+    write_xlsx(split_datasets[[name]], paste0("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/calib_catch_draws_", s, "_", safe_name, ".xlsx"))
   }
   
   rm(catch_draws, combined_results_BSB, combined_results_SF, combined_results_SCUP, split_datasets)

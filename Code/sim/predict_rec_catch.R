@@ -2,28 +2,26 @@
 # This function predict recreational catch for summer flounder, black sea bass, and scup. 
 
 # Run predict_rec_catch_data_read testing. 
-
-
 predict_rec_catch <- function(st, dr, directed_trips, catch_data, 
                               sf_size_data, bsb_size_data, scup_size_data, 
                               l_w_conversion, calib_comparison, n_choice_occasions, 
                               calendar_adjustments, base_outcomes){
   
-   setDT(directed_trips)
-   setDT(catch_data)
-   setDT(calib_comparison)
-   setDT(sf_size_data)
-   setDT(bsb_size_data)
-   setDT(scup_size_data)
+  #Convert key data frames to data.table format early:
+  setDT(directed_trips)
+  setDT(catch_data)
+  setDT(calib_comparison)
+  setDT(sf_size_data)
+  setDT(bsb_size_data)
+  setDT(scup_size_data)
   
+  #Set up constants (unchanged):
   mode_draw <- c("sh", "pr", "fh")
-  floor_subl_sf_harv <- min(directed_trips$fluke_min_y2) - 3 * 2.54
-  floor_subl_bsb_harv <- min(directed_trips$bsb_min_y2) - 3 * 2.54
-  floor_subl_scup_harv <- min(directed_trips$scup_min_y2) - 3 * 2.54
   
+  #Step 2: Reorganize calibration parameters#
   calib_lookup <- calib_comparison %>%
-    dplyr::select(mode, species, rel_to_keep, keep_to_rel,
-                  p_rel_to_keep, p_keep_to_rel,
+    dplyr::select(mode, species, rel_to_keep, keep_to_rel, 
+                  p_rel_to_keep, p_keep_to_rel, 
                   prop_sub_kept, prop_legal_rel) %>%
     tidyr::pivot_wider(
       names_from = species,
@@ -33,21 +31,25 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   setDT(calib_lookup)
   setkey(calib_lookup, mode)
+  
   ## Run for all modes + aggregate  - summer flounder 
-  results_list <- lapply(mode_draw, simulate_mode_sf, calib_lookup = calib_lookup, 
-                         floor_subl_sf_harv= floor_subl_sf_harv, sf_size_data = sf_size_data)
+  results_list <- lapply(mode_draw, simulate_mode_sf, calib_lookup = calib_lookup,
+                         sf_size_data = sf_size_data)
   
   sf_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data"))
   data.table::setkey(sf_trip_data, domain2)
   
   zero_catch_sf <- rbindlist(lapply(results_list, `[[`, "zero_catch"))
-  print("Starting SF Size")
-  size_data_sf <- rbindlist(lapply(results_list, `[[`, "size_data"))
-  print("made it out SF Size")
   
+  size_data_sf <- rbindlist(lapply(results_list, `[[`, "size_data"), fill=TRUE)
+  
+  # Replace NA=0 in all columns
+  size_data_sf <- size_data_sf %>%
+    dplyr::mutate(dplyr::across(everything(), ~tidyr::replace_na(., 0)))
+
   ## Run for all modes + aggregate  - black sea bass 
   results_list <- lapply(mode_draw, simulate_mode_bsb, calib_lookup = calib_lookup, 
-                         floor_subl_bsb_harv = floor_subl_bsb_harv, bsb_size_data = bsb_size_data)
+                          bsb_size_data = bsb_size_data)
   
   bsb_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
     dplyr::select(-date, -mode, -catch_draw, -tripid)
@@ -56,12 +58,15 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   zero_catch_bsb <- rbindlist(lapply(results_list, `[[`, "zero_catch"))
   
-  size_data_bsb <- rbindlist(lapply(results_list, `[[`, "size_data"))
+  size_data_bsb <- rbindlist(lapply(results_list, `[[`, "size_data"), fill=TRUE)
   
+  # Replace NA=0 in all columns
+  size_data_bsb <- size_data_bsb %>%
+    dplyr::mutate(dplyr::across(everything(), ~tidyr::replace_na(., 0)))
   
   ## Run for all modes + aggregate  - scup 
   results_list <- lapply(mode_draw, simulate_mode_scup, calib_lookup = calib_lookup, 
-                         floor_subl_scup_harv= floor_subl_scup_harv, scup_size_data = scup_size_data)
+                          scup_size_data = scup_size_data)
   
   scup_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
     dplyr::select(-date, -mode, -catch_draw, -tripid)
@@ -70,9 +75,12 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   zero_catch_scup <- rbindlist(lapply(results_list, `[[`, "zero_catch"))
 
+  size_data_scup <- rbindlist(lapply(results_list, `[[`, "size_data"), fill=TRUE)
   
-  size_data_scup <- rbindlist(lapply(results_list, `[[`, "size_data"))
- 
+  # Replace NA=0 in all columns
+  size_data_scup <- size_data_scup %>%
+    dplyr::mutate(dplyr::across(everything(), ~tidyr::replace_na(., 0)))
+
   #merge the trip data
   # Join summer flounder (sf) and black sea bass (bsb) on domain2
   trip_data_a <- merge(sf_trip_data, bsb_trip_data, by = "domain2", all = TRUE)
@@ -80,16 +88,12 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   # Join the result with scup data on domain2
   trip_data <- merge(trip_data_a, scup_trip_data, by = "domain2", all = TRUE)
   
-  sf_catch_check<-sum(sf_trip_data$tot_keep_sf_new+sf_trip_data$tot_rel_sf_new)
-  bsb_catch_check<-sum(bsb_trip_data$tot_keep_bsb_new+bsb_trip_data$tot_rel_bsb_new)
-  scup_catch_check<-sum(scup_trip_data$tot_keep_scup_new+scup_trip_data$tot_rel_scup_new)
+  # sf_catch_check<-sum(sf_trip_data$tot_keep_sf_new+sf_trip_data$tot_rel_sf_new)
+  # bsb_catch_check<-sum(bsb_trip_data$tot_keep_bsb_new+bsb_trip_data$tot_rel_bsb_new)
+  # scup_catch_check<-sum(scup_trip_data$tot_keep_scup_new+scup_trip_data$tot_rel_scup_new)
   
   rm(trip_data_a)
   
-  
-  # merge the length data
-  #If there is catch of all three species:
-  if(sf_catch_check !=0 & bsb_catch_check!=0 & scup_catch_check!=0){
     
     # Convert to data.table
     data.table::setDT(size_data_sf)
@@ -135,20 +139,19 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     rm(zero_catch_sf,zero_catch_bsb,zero_catch_scup,zero_catch_check, length_temp, zero_catch_temp)
     
     length_data<-data.table::as.data.table(length_data) 
-  }
   
-  
-  # #If there is catch of only sf 
-  # if(sf_catch_check !=0 & bsb_catch_check==0){
-  #   
-  #   keep_release_cod<-trip_data %>% 
-  #     dplyr::select("period2","tripid", "catch_draw") %>% 
-  #     dplyr::mutate(keep_cod_1=0, release_cod_1=0)
-  #   
-  #   length_data <- keep_release_hadd %>%
-  #     dplyr::full_join(keep_release_cod, by = c("period2","tripid", "catch_draw"))
-  #   
-  #   length_data[is.na(length_data)] <- 0
+
+  # If there is catch of only sf 
+ # if(sf_catch_check !=0 & bsb_catch_check==0 & scup_catch_check==0){
+     
+    #     dplyr::select("period2","tripid", "catch_draw") %>% 
+    #     dplyr::mutate(keep_had_1=0, release_had_1=0)
+    #   
+    #   length_data <- keep_release_cod %>%
+    #     dplyr::full_join(keep_release_hadd, by = c("period2","tripid", "catch_draw"))
+    #   
+    #   length_data[is.na(length_data)] <- 0
+
   #   
   #   
   # }
@@ -192,8 +195,8 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   rm(sf_trip_data, scup_trip_data, bsb_trip_data, 
      size_data_sf, size_data_bsb,size_data_scup, 
      base_outcomes, catch_data)
-  
-  trip_data$NJ_dummy<-dplyr::case_when(s=="NJ"~1, TRUE~0)
+
+  #trip_data$NJ_dummy<-case_when(s=="NJ"~1, TRUE~0)
   
   # compute utility/choice probabilites/welfare
   # Convert to data.table if not already
@@ -216,7 +219,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   # Compute vA and v0
   trip_data[, `:=`(
     vA = beta_sqrt_sf_keep * sqrt_keep_sf_new +
-      beta_NJ_sf_keep*NJ_dummy +
+      #beta_NJ_sf_keep*NJ_dummy +
       beta_sqrt_sf_release * sqrt_rel_sf_new +
       beta_sqrt_bsb_keep * sqrt_keep_bsb_new +
       beta_sqrt_bsb_release * sqrt_rel_bsb_new +
@@ -225,7 +228,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
       beta_cost * cost,
     
     v0 = beta_sqrt_sf_keep * sqrt_keep_sf_base +
-      beta_NJ_sf_keep*NJ_dummy +
+      #beta_NJ_sf_keep*NJ_dummy +
       beta_sqrt_sf_release * sqrt_rel_sf_base +
       beta_sqrt_bsb_keep * sqrt_keep_bsb_base +
       beta_sqrt_bsb_release * sqrt_rel_bsb_base +
@@ -293,7 +296,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
                   -"cost", -"age", -"total_trips_12", -"catch_draw", -"group_index", 
                   -"log_sum_alt", -"log_sum_base", -"tot_keep_sf_base",  -"tot_rel_sf_base",  -"tot_cat_sf_base", 
                   -"tot_keep_bsb_base",  -"tot_rel_bsb_base", -"tot_cat_bsb_base",  
-                  -"tot_keep_scup_base",-"tot_rel_scup_base",  -"tot_cat_scup_base", -"prob0", -"NJ_dummy") 
+                  -"tot_keep_scup_base",-"tot_rel_scup_base",  -"tot_cat_scup_base", -"prob0") 
   
   all_vars<-c()
   all_vars <- names(mean_trip_data)[!names(mean_trip_data) %in% c("date_parsed","mode", "tripid")]
@@ -324,6 +327,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   mean_trip_data<-mean_trip_data %>% 
     dplyr::left_join(n_choice_occasions, by = c("mode", "date_parsed")) %>% 
     dplyr::mutate(month = lubridate::month(date_parsed))  %>% 
+    dplyr::mutate(dplyr::across(where(is.numeric), ~tidyr::replace_na(., 0))) %>%  #replace NAs for n_choice_occasions and estimated trips
     dplyr::left_join(calendar_adjustments, by = c("mode", "month")) %>% 
     dplyr::rename(n_choice_occasions0=n_choice_occasions, 
                   estimated_trips0=estimated_trips) %>% 
@@ -501,7 +505,11 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     fill = TRUE) %>% 
     dplyr::mutate(state = st, draw=dr)
   
-  print("Finished predict_rec_catch")
+  predictions<-predictions %>% 
+    dplyr::mutate(state=st, draw=dr)
   
+  print("Finished predict_rec_catch")
+
   return(predictions) 
 }
+

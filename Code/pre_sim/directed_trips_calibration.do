@@ -316,7 +316,7 @@ replace se=dtrip if se==.
 preserve 
 keep my_dom_id_string  missing_SE_imputation
 duplicates drop 
-save "$iterative_input_data_cd\directed_trips_imputations_`s'.dta", replace
+save "$input_data_cd\directed_trips_imputations_`s'.dta", replace
 restore 
 
 keep dtrip se state year month2 kod mode
@@ -530,7 +530,7 @@ restore
 */
 
 compress
-export delimited using "$input_data_cd\directed_trips_calibration_`s'.csv",  replace 
+export delimited using "$iterative_input_data_cd\directed_trips_calibration_`s'.csv",  replace 
 
 
 
@@ -589,7 +589,7 @@ return list
 drop check 
 compress
 
-export delimited using "$input_data_cd\proj_year_calendar_adjustments_`s'.csv",  replace 
+export delimited using "$iterative_input_data_cd\proj_year_calendar_adjustments_`s'.csv",  replace 
 }
 
 
@@ -600,8 +600,7 @@ export delimited using "$input_data_cd\proj_year_calendar_adjustments_`s'.csv", 
 ************** Part B  **************
 * Compute totals estimates to compare with calibration output
 
-* by state and mode
-
+** Estimates by state and mode
 cd $input_data_cd
 
 clear
@@ -739,13 +738,12 @@ rename ul ul_mrip
 keep if dom_id=="1" // keep directed trip estimates for species group of interest 
 drop dom
 
-save "$iterative_input_data_cd\directed_trip_calib_mrip.dta", replace 
+save "$input_data_cd\directed_trip_calib_mrip.dta", replace 
 
 
 
 
-* by state 
-
+** Estimates by state 
 cd $input_data_cd
 
 clear
@@ -882,15 +880,10 @@ rename ul ul_mrip
 keep if dom_id=="1" // keep directed trip estimates for species group of interest 
 drop dom
 
-save "$iterative_input_data_cd\directed_trip_calib_mrip_state_total.dta", replace 
+save "$input_data_cd\directed_trip_calib_mrip_state_total.dta", replace 
 
 
-
-
-
-
-* by state mode wave 
-
+** Estimates by state, mode, and wave 
 cd $input_data_cd
 
 clear
@@ -1030,4 +1023,4 @@ rename ul ul_mrip
 keep if dom_id=="1" // keep directed trip estimates for species group of interest 
 drop dom
 
-save "$iterative_input_data_cd\directed_trip_calib_mrip_state_wave_total.dta", replace 
+save "$input_data_cd\directed_trip_calib_mrip_state_wave_total.dta", replace 
