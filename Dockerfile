@@ -4,8 +4,8 @@ RUN apt-get update \
     nano \
     && rm -rf /var/lib/apt/lists/*
 COPY shiny-server.conf /etc/shiny-server/shiny-server.conf
-COPY ./recDST /srv/rdmtool/recDST
-COPY ./app.R /srv/rdmtool/.
+COPY . /srv/rdmtool/
+COPY ./recDST/app.R /srv/rdmtool/.
 RUN install2.r -e -s \
     shiny \
     shinyjs \
@@ -26,10 +26,4 @@ RUN install2.r -e -s \
     future \
     furrr \
     rlang \
-    httr \
-    jsonlite \
-    openssl \
-    uuid \
-    plotly \
-    DT \
     && chown -R shiny:shiny /srv/rdmtool

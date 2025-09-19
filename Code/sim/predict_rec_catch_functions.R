@@ -3,9 +3,6 @@
 
 
 ########## summer flounder ##############
-
-
-
 simulate_mode_sf <- function(md, calib_lookup, sf_size_data) {
 
   # Extract calibration parameters
@@ -175,7 +172,6 @@ simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data) {
   
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
-  #calib_row <- calib_lookup
   
   rel_to_keep_bsb     <- calib_row$rel_to_keep_bsb
   keep_to_rel_bsb     <- calib_row$keep_to_rel_bsb
@@ -340,10 +336,8 @@ simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data) {
 ########## scup ##############
 simulate_mode_scup <- function(md, calib_lookup, scup_size_data) {
   
-  
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
-  #calib_row <- calib_lookup
   
   rel_to_keep_scup     <- calib_row$rel_to_keep_scup
   keep_to_rel_scup     <- calib_row$keep_to_rel_scup
