@@ -3,34 +3,8 @@
 
 
 ########## summer flounder ##############
+simulate_mode_sf <- function(md, calib_lookup, sf_size_data) {
 
-#Convert key data frames to data.table format early:
-setDT(directed_trips)
-setDT(catch_data)
-setDT(calib_comparison)
-setDT(sf_size_data)
-setDT(bsb_size_data)
-setDT(scup_size_data)
-
-#Set up constants (unchanged):
-mode_draw <- c("sh", "pr", "fh")
-
-#Step 2: Reorganize calibration parameters#
-calib_lookup <- calib_comparison %>%
-  dplyr::select(mode, species, rel_to_keep, keep_to_rel, 
-                p_rel_to_keep, p_keep_to_rel, 
-                prop_sub_kept, prop_legal_rel) %>%
-  tidyr::pivot_wider(
-    names_from = species,
-    values_from = c(rel_to_keep, keep_to_rel, p_rel_to_keep, p_keep_to_rel, prop_sub_kept, prop_legal_rel),
-    names_glue = "{.value}_{species}"
-  )
-
-setDT(calib_lookup)
-setkey(calib_lookup, mode)
-
-
-simulate_mode_sf <- function(md) {
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
   
@@ -48,7 +22,7 @@ simulate_mode_sf <- function(md) {
   floor_subl_sf_harv <- min(directed_trips_md$fluke_min_y2) - 3 * 2.54
   
   # Filter length data by mode
-  sf_size_data <- sf_size_data[mode == md]
+  sf_size_data1 <- sf_size_data[mode == md]
 
   # Filter catch data by mode
   catch_data_md <- catch_data[mode == md]
@@ -69,15 +43,13 @@ simulate_mode_sf <- function(md) {
       tot_rel_sf_new = numeric(0) 
     ) 
     
-    return(list(
+    return<- ist(
       trip_data = catch_data_md[, .(date, catch_draw, tripid, mode,
                                     tot_keep_sf_new = 0L, tot_rel_sf_new = 0L,
                                     domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid))],
       zero_catch = zero_catch, 
       size_data=size_data
-      
-      
-    ))
+    )
   }
 if (sf_catch_check_md != 0) {
     
@@ -87,8 +59,8 @@ if (sf_catch_check_md != 0) {
   sf_catch_data[, fishid := .I]
   
   # Sample fish lengths
-  sf_catch_data[, fitted_length := sample(sf_size_data$length, .N, 
-                                          prob = sf_size_data$fitted_prob, replace = TRUE)]
+  sf_catch_data[, fitted_length := sample(sf_size_data1$length, .N, 
+                                          prob = sf_size_data1$fitted_prob, replace = TRUE)]
   
   # Identify keepable fish
   sf_catch_data[, posskeep := as.integer(fitted_length >= fluke_min_y2)]
@@ -187,41 +159,16 @@ if (sf_catch_check_md != 0) {
   trip_data <- rbindlist(list(trip_summary, zero_catch))
   trip_data[, domain2 := paste0(date, "_", mode, "_", catch_draw, "_", tripid)]
   
-  return(list(
+  return<- list(
     trip_data = trip_data,
     zero_catch = zero_catch,
     size_data = keep_release_size_data
-  ))
+  )
 }
 }
 
 ########## black sea bass ##############
-
-#Convert key data frames to data.table format early:
-setDT(directed_trips)
-setDT(catch_data)
-setDT(calib_comparison)
-setDT(bsb_size_data)
-
-#Set up constants (unchanged):
-mode_draw <- c("sh", "pr", "fh")
-
-#Step 2: Reorganize calibration parameters#
-calib_lookup <- calib_comparison %>%
-  dplyr::select(mode, species, rel_to_keep, keep_to_rel, 
-                p_rel_to_keep, p_keep_to_rel, 
-                prop_sub_kept, prop_legal_rel) %>%
-  tidyr::pivot_wider(
-    names_from = species,
-    values_from = c(rel_to_keep, keep_to_rel, p_rel_to_keep, p_keep_to_rel, prop_sub_kept, prop_legal_rel),
-    names_glue = "{.value}_{species}"
-  )
-
-setDT(calib_lookup)
-setkey(calib_lookup, mode)
-
-
-simulate_mode_bsb <- function(md) {
+simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data) {
   
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
@@ -239,7 +186,7 @@ simulate_mode_bsb <- function(md) {
   floor_subl_bsb_harv <- min(directed_trips_md$bsb_min_y2) - 3 * 2.54
   
   # Filter length data by mode
-  bsb_size_data <- bsb_size_data[mode == md]
+  bsb_size_data1 <- bsb_size_data[mode == md]
 
   # Filter catch data by mode
   catch_data_md <- catch_data[mode == md]
@@ -261,13 +208,13 @@ simulate_mode_bsb <- function(md) {
     ) 
     
     
-    return(list(
+    return<-list(
       trip_data = catch_data_md[, .(date, catch_draw, tripid, mode,
                                     tot_keep_bsb_new = 0L, tot_rel_bsb_new = 0L,
                                     domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid))],
       zero_catch = zero_catch,
       size_data=size_data
-    ))
+    )
   }
 
   if (bsb_catch_check_md != 0) {
@@ -278,8 +225,8 @@ simulate_mode_bsb <- function(md) {
   bsb_catch_data[, fishid := .I]
   
   # Sample fish lengths
-  bsb_catch_data[, fitted_length := sample(bsb_size_data$length, .N, 
-                                          prob = bsb_size_data$fitted_prob, replace = TRUE)]
+  bsb_catch_data[, fitted_length := sample(bsb_size_data1$length, .N, 
+                                          prob = bsb_size_data1$fitted_prob, replace = TRUE)]
   
   # Identify keepable fish
   bsb_catch_data[, posskeep := as.integer(fitted_length >= bsb_min_y2)]
@@ -378,41 +325,16 @@ simulate_mode_bsb <- function(md) {
   trip_data <- rbindlist(list(trip_summary, zero_catch))
   trip_data[, domain2 := paste0(date, "_", mode, "_", catch_draw, "_", tripid)]
   
-  return(list(
+  return<-list(
     trip_data = trip_data,
     zero_catch = zero_catch,
     size_data = keep_release_size_data
-  ))
+  )
 }
 }
 
 ########## scup ##############
-
-#Convert key data frames to data.table format early:
-setDT(directed_trips)
-setDT(catch_data)
-setDT(calib_comparison)
-setDT(scup_size_data)
-
-#Set up constants (unchanged):
-mode_draw <- c("sh", "pr", "fh")
-
-#Step 2: Reorganize calibration parameters#
-calib_lookup <- calib_comparison %>%
-  dplyr::select(mode, species, rel_to_keep, keep_to_rel, 
-                p_rel_to_keep, p_keep_to_rel, 
-                prop_sub_kept, prop_legal_rel) %>%
-  tidyr::pivot_wider(
-    names_from = species,
-    values_from = c(rel_to_keep, keep_to_rel, p_rel_to_keep, p_keep_to_rel, prop_sub_kept, prop_legal_rel),
-    names_glue = "{.value}_{species}"
-  )
-
-setDT(calib_lookup)
-setkey(calib_lookup, mode)
-
-
-simulate_mode_scup <- function(md) {
+simulate_mode_scup <- function(md, calib_lookup, scup_size_data) {
   
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
@@ -430,7 +352,7 @@ simulate_mode_scup <- function(md) {
   floor_subl_scup_harv <- min(directed_trips_md$scup_min_y2) - 3 * 2.54
   
   # Filter length data by mode
-  scup_size_data <- scup_size_data[mode == md]
+  scup_size_data1 <- scup_size_data[mode == md]
   
   # Filter catch data by mode
   catch_data_md <- catch_data[mode == md]
@@ -451,14 +373,14 @@ simulate_mode_scup <- function(md) {
       tot_rel_scup_new = numeric(0) 
     ) 
 
-    return(list(
+    return<-list(
       trip_data = catch_data_md[, .(date, catch_draw, tripid, mode,
                                     tot_keep_scup_new = 0L, tot_rel_scup_new = 0L,
                                     domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid))],
       size_data = size_data, 
       zero_catch=zero_catch
       
-    ))
+    )
   }
   
   if (scup_catch_check_md != 0) {
@@ -469,8 +391,8 @@ simulate_mode_scup <- function(md) {
   scup_catch_data[, fishid := .I]
   
   # Sample fish lengths
-  scup_catch_data[, fitted_length := sample(scup_size_data$length, .N, 
-                                           prob = scup_size_data$fitted_prob, replace = TRUE)]
+  scup_catch_data[, fitted_length := sample(scup_size_data1$length, .N, 
+                                           prob = scup_size_data1$fitted_prob, replace = TRUE)]
   
   # Identify keepable fish
   scup_catch_data[, posskeep := as.integer(fitted_length >= scup_min_y2)]
@@ -569,10 +491,10 @@ simulate_mode_scup <- function(md) {
   trip_data <- rbindlist(list(trip_summary, zero_catch))
   trip_data[, domain2 := paste0(date, "_", mode, "_", catch_draw, "_", tripid)]
   
-  return(list(
+  return<-list(
     trip_data = trip_data,
     zero_catch = zero_catch,
     size_data = keep_release_size_data
-  ))
+  )
   }
 }
