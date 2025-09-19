@@ -23,27 +23,28 @@ data_path <- here::here("Data/")
 
 
 #### Read in size data ####
-sf_size_data <- readr::read_csv(file.path(data_path, "fluke_projected_catch_at_lengths.csv"), show_col_types = FALSE)  %>% 
-  dplyr::filter(state == "NY") %>% 
-  dplyr::filter(!is.na(fitted_prob)) %>% 
-  dplyr::select(state, fitted_prob, length, draw)
+size_data <- readr::read_csv(file.path(here::here("Data"), "projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
+  dplyr::filter(state == "NY")
 
-bsb_size_data <- readr::read_csv(file.path(data_path, "bsb_projected_catch_at_lengths.csv"), show_col_types = FALSE)  %>% 
-  dplyr::filter(state == "NY") %>% 
+sf_size_data <- size_data %>% 
+  dplyr::filter(species=="sf") %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
-  dplyr::select(state, fitted_prob, length, draw)
-
-scup_size_data <- readr::read_csv(file.path(data_path, "scup_projected_catch_at_lengths.csv"), show_col_types = FALSE)  %>% 
-  dplyr::filter(state == "NY") %>% 
+  dplyr::select(state, fitted_prob, length, draw, mode)
+bsb_size_data <- size_data  %>% 
+  dplyr::filter(species=="bsb") %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
-  dplyr::select(state,  fitted_prob, length, draw)
+  dplyr::select(state, fitted_prob, length, draw, mode)
+scup_size_data <- size_data %>% 
+  dplyr::filter(species=="scup") %>% 
+  dplyr::filter(!is.na(fitted_prob)) %>% 
+  dplyr::select(state,  fitted_prob, length, draw, mode)
 
 
 l_w_conversion <- readr::read_csv(file.path(data_path, "L_W_Conversion.csv"), show_col_types = FALSE)  %>% 
   dplyr::filter(state=="NY")
 
-
-directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trips_calibration_CT.feather"))) %>% 
+#### directed trips ####
+directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trips_calibration_new_NY.feather"))) %>% 
   tibble::tibble() %>%
   dplyr::select(mode, date, draw, bsb_bag_y2, bsb_min_y2, fluke_bag,fluke_min, scup_bag_y2, scup_min_y2,
                 bsb_bag_y2_y2, bsb_min_y2_y2, fluke_bag_y2,fluke_min_y2, scup_bag_y2_y2, scup_min_y2_y2) %>% 
@@ -161,13 +162,18 @@ for(x in 1:1){
   # dplyr::mutate(day = stringr::str_extract(day, "^\\d{2}"), 
   #               period2 = paste0(month24, "-", day, "-", mode))
   
-  catch_data <- feather::read_feather(file.path(data_path, paste0("projected_catch_draws_NY", "_", x,".feather"))) %>% 
-    dplyr::left_join(directed_trips, by=c("mode", "date", "draw")) 
+  catch_data <- feather::read_feather(file.path(data_path, paste0("proj_catch_draws_NY", "_", x,".feather"))) %>% 
+    dplyr::left_join(directed_trips2, by=c("mode", "date", "draw")) 
+
   
   catch_data<-catch_data %>% 
     dplyr::select(-cost, -total_trips_12, -age, -bsb_keep_sim, -bsb_rel_sim, -day_i, -my_dom_id_string, 
                   -scup_keep_sim, -scup_rel_sim, -sf_keep_sim, -sf_rel_sim, -wave)
-  
+
+  calendar_adjustments <- readr::read_csv(
+    file.path(here::here(paste0("Data/proj_year_calendar_adjustments_new_NY.csv"))), show_col_types = FALSE) %>%
+    dplyr::filter(state == "NY", draw==x) %>% 
+    dplyr::select(-dtrip, -dtrip_y2, -state, -draw)
   
   base_outcomes0 <- list()
   n_choice_occasions0 <- list()
@@ -176,7 +182,7 @@ for(x in 1:1){
   for (md in mode_draw) {
     
     # pull trip outcomes from the calibration year
-    base_outcomes0[[md]]<-feather::read_feather(file.path(data_path, paste0("base_outcomes_NY_", md, "_", x, ".feather"))) %>% 
+    base_outcomes0[[md]]<-feather::read_feather(file.path(data_path, paste0("base_outcomes_new_NY_", md, "_", x, ".feather"))) %>% 
       data.table::as.data.table()
     
     base_outcomes0[[md]]<-base_outcomes0[[md]] %>% 
@@ -185,7 +191,7 @@ for(x in 1:1){
       dplyr::select(-date)
     
     # pull in data on the number of choice occasions per mode-day
-    n_choice_occasions0[[md]]<-feather::read_feather(file.path(data_path, paste0("n_choice_occasions_NY_", md, "_", x, ".feather")))  
+    n_choice_occasions0[[md]]<-feather::read_feather(file.path(data_path, paste0("n_choice_occasions_new_NY_", md, "_", x, ".feather")))  
     n_choice_occasions0[[md]]<-n_choice_occasions0[[md]] %>% 
       dplyr::mutate(date_parsed=lubridate::dmy(date)) %>% 
       dplyr::select(-date)
@@ -202,8 +208,9 @@ for(x in 1:1){
   
   
   # Pull in calibration comparison information about trip-level harvest/discard re-allocations 
-  calib_comparison<-feather::read_feather(file.path(data_path, "calibration_comparison.feather")) %>% 
-    dplyr::filter(state=="NY" & draw==x )   
+
+  calib_comparison<-readRDS(file.path(data_path,"calibrated_model_stats_new.rds")) %>%
+    dplyr::filter(state=="NY" & draw==x )  
   
   sf_size_data <- sf_size_data %>% 
     dplyr::filter(draw == x) %>%  #Change to X for model for sf and scup
