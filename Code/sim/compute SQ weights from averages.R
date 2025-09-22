@@ -58,7 +58,6 @@ SQ_output_long_summed$mode<-"all modes"
 catch_weights_SQ<-rbindlist(list(SQ_output_long_summed, SQ_output_long), use.names = TRUE,  fill = TRUE)
 
 
-
 # CHECK -> Compute catch weights based on calibration data, compare to MRIP query site
 # calib_comparison<-readRDS(file.path(iterative_input_data_cd, "calibrated_model_stats_new.rds")) %>%
 #   dplyr::select(state, draw, species, mode, model_keep, model_rel, MRIP_keep, MRIP_rel, diff_keep, diff_rel, pct_diff_keep, pct_diff_rel) %>%
@@ -135,3 +134,8 @@ catch_weights_SQ<-rbindlist(list(SQ_output_long_summed, SQ_output_long), use.nam
 #                    mean_mrip_keep_weightavg=mean(mrip_keep_weightavg),
 #                    mean_mrip_release_weightavg=mean(mrip_release_weightavg)) %>%
 #   dplyr::ungroup()
+# 
+# 
+# calib_comparison_coast<-calib_comparison_coast %>% 
+#   dplyr::mutate(model_release_mt=mean_release_weightavg/2204, 
+#                 mrip_release_mt=mean_mrip_release_weightavg/2204)
