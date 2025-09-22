@@ -112,9 +112,9 @@ directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trip
 
     predictions_out10 <- data.frame()
     #future::plan(future::multisession, workers = 36)
-    #future::plan(future::multisession, workers = 3)
-    #get_predictions_out<- function(x){
-    for(x in 1:3){
+    future::plan(future::multisession, workers = 25)
+  get_predictions_out<- function(x){
+    #for(x in 1:3){
       
       print(x)
       
@@ -232,21 +232,25 @@ directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trip
       source(here::here("Code/sim/predict_rec_catch.R"))
       
       test<- predict_rec_catch(st = "MA", dr = x,
-                               directed_trips = directed_trips2, catch_data, 
+                               directed_trips = directed_trips2, 
+                               catch_data = catch_data, 
                                sf_size_data = sf_size_data2,
                                bsb_size_data = bsb_size_data2, 
                                scup_size_data = scup_size_data2, 
-                               l_w_conversion, calib_comparison, n_choice_occasions, 
-                               calendar_adjustments, base_outcomes)
+                               l_w_conversion = l_w_conversion,
+                               calib_comparison = calib_comparison, 
+                               n_choice_occasions = n_choice_occasions, 
+                               calendar_adjustments = calendar_adjustments, 
+                               base_outcomes = base_outcomes)
       
-      test <- test %>% 
+      test <- test %>%
         dplyr::mutate(draw = c(x),
                       #model = c("Alt"))
                       model = c(Run_Name))
-      
-      #regs <- # Input table will be used to fill out regs in DT
-      
-      predictions_out10<- predictions_out10 %>% rbind(test) 
+      # 
+      # #regs <- # Input table will be used to fill out regs in DT
+      # 
+      # predictions_out10<- predictions_out10 %>% rbind(test)
     }
     
     
@@ -257,7 +261,7 @@ directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trip
     # use furrr package to parallelize the get_predictions_out function 100 times
     # This will spit out a dataframe with 100 predictions 
     #predictions_out10<- furrr::future_map_dfr(1:100, ~get_predictions_out(.), .id = "draw")
-    #predictions_out10<- furrr::future_map_dfr(1:3, ~get_predictions_out(.), .id = "draw")
+    predictions_out10<- furrr::future_map_dfr(1:25, ~get_predictions_out(.), .id = "draw")
     
     #readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
     readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))

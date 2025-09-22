@@ -156,11 +156,11 @@ directed_trips<- directed_trips %>%
     scup_min_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SCUPdeSH_seas2_op) & date_adj <= lubridate::yday(SCUPdeSH_seas2_cl) ~ as.numeric(SCUPdeSH_2_len) * 2.54, TRUE ~ scup_min_y2))
 
 
-predictions_out10 <- data.frame()
+#predictions_out10 <- data.frame()
 #future::plan(future::multisession, workers = 36)
-#future::plan(future::multisession, workers = 3)
-#get_predictions_out<- function(x){
-for(x in 1:3){
+future::plan(future::multisession, workers = 25)
+get_predictions_out<- function(x){
+#for(x in 1:3){
   
   print(x)
   
@@ -278,12 +278,16 @@ for(x in 1:3){
   source(here::here("Code/sim/predict_rec_catch.R"))
   
   test<- predict_rec_catch(st = "DE", dr = x,
-                           directed_trips = directed_trips2, catch_data, 
+                           directed_trips = directed_trips2, 
+                           catch_data = catch_data, 
                            sf_size_data = sf_size_data2,
                            bsb_size_data = bsb_size_data2, 
                            scup_size_data = scup_size_data2, 
-                           l_w_conversion, calib_comparison, n_choice_occasions, 
-                           calendar_adjustments, base_outcomes)
+                           l_w_conversion = l_w_conversion,
+                           calib_comparison = calib_comparison, 
+                           n_choice_occasions = n_choice_occasions, 
+                           calendar_adjustments = calendar_adjustments, 
+                           base_outcomes = base_outcomes)
   
   test <- test %>% 
     dplyr::mutate(draw = c(x),
@@ -292,7 +296,7 @@ for(x in 1:3){
   
   #regs <- # Input table will be used to fill out regs in DT
   
-  predictions_out10<- predictions_out10 %>% rbind(test) 
+ # predictions_out10<- predictions_out10 %>% rbind(test) 
 }
 
 
@@ -303,7 +307,7 @@ print("out of loop")
 # use furrr package to parallelize the get_predictions_out function 100 times
 # This will spit out a dataframe with 100 predictions 
 #predictions_out10<- furrr::future_map_dfr(1:100, ~get_predictions_out(.), .id = "draw")
-#predictions_out10<- furrr::future_map_dfr(1:3, ~get_predictions_out(.), .id = "draw")
+predictions_out10<- furrr::future_map_dfr(1:25, ~get_predictions_out(.), .id = "draw")
 
 #readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
 readr::write_csv(predictions_out10, file = here::here(paste0("output/output_DE_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
