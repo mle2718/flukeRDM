@@ -140,11 +140,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     
     length_data<-data.table::as.data.table(length_data) 
   
-<<<<<<< HEAD
-  
-=======
 
->>>>>>> bfc8aae33fbf7089c65960e97c69df536235c88d
   # If there is catch of only sf 
  # if(sf_catch_check !=0 & bsb_catch_check==0 & scup_catch_check==0){
      

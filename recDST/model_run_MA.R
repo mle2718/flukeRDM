@@ -110,166 +110,163 @@ directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trip
 
 #   readr::write_csv(directed_trips, file = here::here(paste0("output/MA_directed_trips_", Run_Name, ".csv")))
 
-
-
-
-predictions_out10 <- data.frame()
-#future::plan(future::multisession, workers = 36)
-#future::plan(future::multisession, workers = 3)
-#get_predictions_out<- function(x){
-for(x in 1:1){
-  
-  print(x)
-  
-  directed_trips <- directed_trips %>% 
-    dplyr::filter(draw == x) # %>%
-    # dplyr::mutate(day = stringr::str_extract(day, "^\\d{2}"), 
-    #               period2 = paste0(month24, "-", day, "-", mode))
-  
-  catch_data <- feather::read_feather(file.path(data_path, paste0("proj_catch_draws_MA", "_", x,".feather"))) %>% 
-    dplyr::left_join(directed_trips2, by=c("mode", "date", "draw")) 
-  
-  catch_data<-catch_data %>% 
-    dplyr::select(-cost, -total_trips_12, -age, -bsb_keep_sim, -bsb_rel_sim, -day_i, -my_dom_id_string, 
-                  -scup_keep_sim, -scup_rel_sim, -sf_keep_sim, -sf_rel_sim, -wave)
-  
-  calendar_adjustments <- readr::read_csv(
-    file.path(here::here(paste0("Data/proj_year_calendar_adjustments_new_MA.csv"))), show_col_types = FALSE) %>%
-    dplyr::filter(state == "MA", draw==x) %>% 
-    dplyr::select(-dtrip, -dtrip_y2, -state, -draw)
-  
-  base_outcomes0 <- list()
-  n_choice_occasions0 <- list()
-  
-  mode_draw <- c("sh", "pr", "fh")
-  for (md in mode_draw) {
+    predictions_out10 <- data.frame()
+    #future::plan(future::multisession, workers = 36)
+    #future::plan(future::multisession, workers = 3)
+    #get_predictions_out<- function(x){
+    for(x in 1:3){
+      
+      print(x)
+      
+      directed_trips2 <- directed_trips %>% 
+        dplyr::filter(draw == x) # %>%
+      # dplyr::mutate(day = stringr::str_extract(day, "^\\d{2}"), 
+      #               period2 = paste0(month24, "-", day, "-", mode))
+      
+      catch_data <- feather::read_feather(file.path(data_path, paste0("proj_catch_draws_MA", "_", x,".feather"))) %>% 
+        dplyr::left_join(directed_trips2, by=c("mode", "date", "draw")) 
+      
+      calendar_adjustments <- readr::read_csv(
+        file.path(here::here(paste0("Data/proj_year_calendar_adjustments_new_MA.csv"))), show_col_types = FALSE) %>% 
+        dplyr::filter(draw == x)
+      
+      
+      base_outcomes0 <- list()
+      n_choice_occasions0 <- list()
+      
+      mode_draw <- c("sh", "pr", "fh")
+      for (md in mode_draw) {
+        
+        # pull trip outcomes from the calibration year
+        base_outcomes0[[md]]<-feather::read_feather(file.path(data_path, paste0("base_outcomes_new_MA_", md, "_", x, ".feather"))) %>% 
+          data.table::as.data.table()
+        
+        base_outcomes0[[md]]<-base_outcomes0[[md]] %>% 
+          dplyr::select(-domain2) %>% 
+          dplyr::mutate(date_parsed=lubridate::dmy(date)) %>% 
+          dplyr::select(-date)
+        
+        # pull in data on the number of choice occasions per mode-day
+        n_choice_occasions0[[md]]<-feather::read_feather(file.path(data_path, paste0("n_choice_occasions_new_MA_", md, "_", x, ".feather")))  
+        n_choice_occasions0[[md]]<-n_choice_occasions0[[md]] %>% 
+          dplyr::mutate(date_parsed=lubridate::dmy(date)) %>% 
+          dplyr::select(-date)
+        
+      }
+      
+      base_outcomes <- dplyr::bind_rows(base_outcomes0)
+      n_choice_occasions <- dplyr::bind_rows(n_choice_occasions0) %>% 
+        dplyr::arrange(date_parsed, mode)
+      rm(base_outcomes0, n_choice_occasions0)
+      
+      base_outcomes<-base_outcomes %>% 
+        dplyr::arrange(date_parsed, mode, tripid, catch_draw)
+      
+      
+      # Pull in calibration comparison information about trip-level harvest/discard re-allocations 
+      calib_comparison<-readRDS(file.path(data_path,"calibrated_model_stats_new.rds")) %>%
+        dplyr::filter(state=="MA" & draw==x )  
+      
+      calib_comparison<-calib_comparison %>% 
+        dplyr::rename(n_legal_rel_bsb=n_legal_bsb_rel, 
+                      n_legal_rel_scup=n_legal_scup_rel, 
+                      n_legal_rel_sf=n_legal_sf_rel, 
+                      n_sub_kept_bsb=n_sub_bsb_kept,
+                      n_sub_kept_sf=n_sub_sf_kept,
+                      n_sub_kept_scup=n_sub_scup_kept,
+                      prop_legal_rel_bsb=prop_legal_bsb_rel,
+                      prop_legal_rel_sf=prop_legal_sf_rel,
+                      prop_legal_rel_scup=prop_legal_scup_rel,
+                      prop_sub_kept_bsb=prop_sub_bsb_kept,
+                      prop_sub_kept_sf=prop_sub_sf_kept,
+                      prop_sub_kept_scup=prop_sub_scup_kept,
+                      convergence_sf=sf_convergence,
+                      convergence_bsb=bsb_convergence,
+                      convergence_scup=scup_convergence) 
+      
+      ##########
+      # List of species suffixes
+      species_suffixes <- c("sf", "bsb", "scup")
+      
+      # Get all variable names
+      all_vars <- names(calib_comparison)
+      
+      # Identify columns that are species-specific (contain _sf, _bsb, or _scup)
+      species_specific_vars <- all_vars[
+        stringr::str_detect(all_vars, paste0("(_", species_suffixes, ")$", collapse = "|"))
+      ]
+      
+      id_vars <- setdiff(all_vars, species_specific_vars)
+      
+      calib_comparison<-calib_comparison %>% 
+        dplyr::select(mode, all_of(species_specific_vars))
+      
+      # Extract base variable names (without _sf, _bsb, _scup)
+      base_names <- unique(stringr::str_replace(species_specific_vars, "_(sf|bsb|scup)$", ""))
+      
+      # Pivot the data longer on the species-specific columns
+      calib_comparison <- calib_comparison %>%
+        tidyr::pivot_longer(
+          cols = all_of(species_specific_vars),
+          names_to = c(".value", "species"),
+          names_pattern = "(.*)_(sf|bsb|scup)"
+        ) %>% 
+        dplyr::distinct()
+      
+      sf_size_data2 <- sf_size_data %>% 
+        dplyr::filter(draw == x) %>%  #Change to X for model for sf and scup
+        dplyr::select(-draw)
+      
+      ### Change when bsb_size is updated
+      bsb_size_data2 <- bsb_size_data %>% 
+        dplyr::filter(draw == x) %>% 
+        dplyr::select(-draw)
+      
+      scup_size_data2 <- scup_size_data %>% 
+        dplyr::filter(draw == x) %>% 
+        dplyr::select(-draw)
+      
+      
+      ## Run the predict catch function
+      source(here::here("Code/sim/predict_rec_catch_functions.R"))
+      source(here::here("Code/sim/predict_rec_catch.R"))
+      
+      test<- predict_rec_catch(st = "MA", dr = x,
+                               directed_trips = directed_trips2, catch_data, 
+                               sf_size_data = sf_size_data2,
+                               bsb_size_data = bsb_size_data2, 
+                               scup_size_data = scup_size_data2, 
+                               l_w_conversion, calib_comparison, n_choice_occasions, 
+                               calendar_adjustments, base_outcomes)
+      
+      test <- test %>% 
+        dplyr::mutate(draw = c(x),
+                      #model = c("Alt"))
+                      model = c(Run_Name))
+      
+      #regs <- # Input table will be used to fill out regs in DT
+      
+      predictions_out10<- predictions_out10 %>% rbind(test) 
+    }
     
-    # pull trip outcomes from the calibration year
-    base_outcomes0[[md]]<-feather::read_feather(file.path(data_path, paste0("base_outcomes_new_MA_", md, "_", x, ".feather"))) %>% 
-      data.table::as.data.table()
     
-    base_outcomes0[[md]]<-base_outcomes0[[md]] %>% 
-      dplyr::select(-domain2) %>% 
-      dplyr::mutate(date_parsed=lubridate::dmy(date)) %>% 
-      dplyr::select(-date)
+    print("out of loop")
     
-    # pull in data on the number of choice occasions per mode-day
-    n_choice_occasions0[[md]]<-feather::read_feather(file.path(data_path, paste0("n_choice_occasions_new_MA_", md, "_", x, ".feather")))  
-    n_choice_occasions0[[md]]<-n_choice_occasions0[[md]] %>% 
-      dplyr::mutate(date_parsed=lubridate::dmy(date)) %>% 
-      dplyr::select(-date)
     
-  }
-  
-  base_outcomes <- dplyr::bind_rows(base_outcomes0)
-  n_choice_occasions <- dplyr::bind_rows(n_choice_occasions0) %>% 
-    dplyr::arrange(date_parsed, mode)
-  rm(base_outcomes0, n_choice_occasions0)
-  
-  base_outcomes<-base_outcomes %>% 
-    dplyr::arrange(date_parsed, mode, tripid, catch_draw)
-  
-  
-  # Pull in calibration comparison information about trip-level harvest/discard re-allocations 
-  calib_comparison<-readRDS(file.path(data_path,"calibrated_model_stats_new.rds")) %>%
-    dplyr::filter(state=="MA" & draw==x )  
-  
-  calib_comparison<-calib_comparison %>% 
-    dplyr::rename(n_legal_rel_bsb=n_legal_bsb_rel, 
-                  n_legal_rel_scup=n_legal_scup_rel, 
-                  n_legal_rel_sf=n_legal_sf_rel, 
-                  n_sub_kept_bsb=n_sub_bsb_kept,
-                  n_sub_kept_sf=n_sub_sf_kept,
-                  n_sub_kept_scup=n_sub_scup_kept,
-                  prop_legal_rel_bsb=prop_legal_bsb_rel,
-                  prop_legal_rel_sf=prop_legal_sf_rel,
-                  prop_legal_rel_scup=prop_legal_scup_rel,
-                  prop_sub_kept_bsb=prop_sub_bsb_kept,
-                  prop_sub_kept_sf=prop_sub_sf_kept,
-                  prop_sub_kept_scup=prop_sub_scup_kept,
-                  convergence_sf=sf_convergence,
-                  convergence_bsb=bsb_convergence,
-                  convergence_scup=scup_convergence) 
-  
-  ##########
-  # List of species suffixes
-  species_suffixes <- c("sf", "bsb", "scup")
-  
-  # Get all variable names
-  all_vars <- names(calib_comparison)
-  
-  # Identify columns that are species-specific (contain _sf, _bsb, or _scup)
-  species_specific_vars <- all_vars[
-    stringr::str_detect(all_vars, paste0("(_", species_suffixes, ")$", collapse = "|"))
-  ]
-  
-  id_vars <- setdiff(all_vars, species_specific_vars)
-  
-  calib_comparison<-calib_comparison %>% 
-    dplyr::select(mode, all_of(species_specific_vars))
-  
-  # Extract base variable names (without _sf, _bsb, _scup)
-  base_names <- unique(stringr::str_replace(species_specific_vars, "_(sf|bsb|scup)$", ""))
-  
-  # Pivot the data longer on the species-specific columns
-  calib_comparison <- calib_comparison %>%
-    tidyr::pivot_longer(
-      cols = all_of(species_specific_vars),
-      names_to = c(".value", "species"),
-      names_pattern = "(.*)_(sf|bsb|scup)"
-    ) %>% 
-    dplyr::distinct()
-  
-  sf_size_data2 <- sf_size_data %>% 
-    dplyr::filter(draw == x) %>%  #Change to X for model for sf and scup
-    dplyr::select(-draw)
     
-  ### Change when bsb_size is updated
-  bsb_size_data <- bsb_size_data %>% 
-    dplyr::filter(draw == 0) %>% 
-    dplyr::select(-draw)
-  
-  scup_size_data <- scup_size_data %>% 
-    dplyr::filter(draw == x) %>% 
-    dplyr::select(-draw)
-  
-  
-  ## Run the predict catch function
-  source(here::here("Code/sim/predict_rec_catch.R"))
-  
-  test<- predict_rec_catch(st = "MA", dr = x,
-                           directed_trips, catch_data, 
-                           sf_size_data, bsb_size_data, scup_size_data, 
-                           l_w_conversion, calib_comparison, n_choice_occasions, 
-                           base_outcomes)
-  
-  test <- test %>% 
-    dplyr::mutate(draw = c(x),
-                  #model = c("Alt"))
-                  model = c(Run_Name))
-  
-  #regs <- # Input table will be used to fill out regs in DT
-  
-  predictions_out10<- predictions_out10 %>% rbind(test) 
-}
+    # use furrr package to parallelize the get_predictions_out function 100 times
+    # This will spit out a dataframe with 100 predictions 
+    #predictions_out10<- furrr::future_map_dfr(1:100, ~get_predictions_out(.), .id = "draw")
+    #predictions_out10<- furrr::future_map_dfr(1:3, ~get_predictions_out(.), .id = "draw")
+    
+    #readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
+    readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
+    
+    
+    end_time <- Sys.time()
+    
+    print(end_time - start_time)
 
-
-print("out of loop")
-
-
-
-# use furrr package to parallelize the get_predictions_out function 100 times
-# This will spit out a dataframe with 100 predictions 
-#predictions_out10<- furrr::future_map_dfr(1:100, ~get_predictions_out(.), .id = "draw")
-#predictions_out10<- furrr::future_map_dfr(1:3, ~get_predictions_out(.), .id = "draw")
-
-#readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
-readr::write_csv(predictions_out10, file = here::here(paste0("output/output_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
-
-
-end_time <- Sys.time()
-
-print(end_time - start_time)
 
 
 
