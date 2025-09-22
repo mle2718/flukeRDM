@@ -5,7 +5,7 @@ library(here)
 library(googledrive)
 library(purrr)
 library(glue)
-here::i_am("Code/pre_sim/get_feather.R")
+here::i_am("Code/pre_sim/get_input_data_feather.R")
 
 
 # 
