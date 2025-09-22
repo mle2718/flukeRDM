@@ -97,7 +97,7 @@ get_files_recursive <- function(folder_item, current_path = "") {
 
 
 ###############################################################################
-# Get a specific subfolder by name
+# Get all subfolders
 subfolder_list<-c("a_projected_catch_draws","aa_L_W_conversion","aaa_catch_weights_SQ")
 
 
