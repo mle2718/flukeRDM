@@ -56,7 +56,8 @@ SQ_output_long_summed$mode<-"all modes"
 
 # combine mode-specific and aggregate catch weights
 catch_weights_SQ<-rbindlist(list(SQ_output_long_summed, SQ_output_long), use.names = TRUE,  fill = TRUE)
-
+catch_weights_SQ<-catch_weights_SQ %>% 
+  dplyr::mutate(value=value/2204) #convert pounds to metric tons
 
 # CHECK -> Compute catch weights based on calibration data, compare to MRIP query site
 # calib_comparison<-readRDS(file.path(iterative_input_data_cd, "calibrated_model_stats_new.rds")) %>%
