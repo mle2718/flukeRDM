@@ -100,36 +100,36 @@ get_files_recursive <- function(folder_item, current_path = "") {
 # Get all subfolders
 subfolder_list<-c("a_projected_catch_draws","aa_L_W_conversion","aaa_catch_weights_SQ")
 
-
-for (k in 1:nrow(subfolder_list)) {
-  
-  subfolder_name <- subfolder_list[k]
-    
-  subfolder <- files_in_folder %>% 
-    filter(name == subfolder_name)
-
-  if (nrow(subfolder) > 0) {
-    # Download from this specific subfolder
-    subfolder_files <- get_files_recursive(subfolder[1, ], subfolder_name)
-    
-    # Download preserving structure
-    for (i in 1:nrow(subfolder_files)) {
-      local_path <- here("Data", subfolder_files$path[i])
-      if (!dir.exists(local_path) && local_path != here("Data")) {
-        dir.create(local_path, recursive = TRUE)
-      }
-      
-      local_file_path <- here("Data", subfolder_files$full_path[i])
-      drive_download(
-        file = subfolder_files$id[i],
-        path = local_file_path,
-        overwrite = TRUE
-      )
-      
-      cat("Downloaded:", subfolder_files$full_path[i], "\n")
-    }
-  }
-}
+# Code to preserve directories.
+# for (k in 1:length(subfolder_list)) {
+#   
+#   subfolder_name <- subfolder_list[k]
+#     
+#   subfolder <- files_in_folder %>% 
+#     filter(name == subfolder_name)
+# 
+#   if (nrow(subfolder) > 0) {
+#     # Download from this specific subfolder
+#     subfolder_files <- get_files_recursive(subfolder[1, ], subfolder_name)
+#     
+#     # Download preserving structure
+#     for (i in 1:nrow(subfolder_files)) {
+#       local_path <- here("Data", subfolder_files$path[i])
+#       if (!dir.exists(local_path) && local_path != here("Data")) {
+#         dir.create(local_path, recursive = TRUE)
+#       }
+#       
+#       local_file_path <- here("Data", subfolder_files$full_path[i])
+#       drive_download(
+#         file = subfolder_files$id[i],
+#         path = local_file_path,
+#         overwrite = TRUE
+#       )
+#       
+#       cat("Downloaded:", subfolder_files$full_path[i], "\n")
+#     }
+#   }
+# }
 
 
 ###############################################################################
@@ -141,27 +141,29 @@ for (k in 1:nrow(subfolder_list)) {
 # No paths,everything into the Data directory
 ###############################################################################
 
-# for (k in 1:nrow(subfolder_list)) {
-#   subfolder_name <- subfolder_list[k]
-#   
-#   if (nrow(subfolder) > 0) {
-#     # Download from this specific subfolder
-#     subfolder_files <- get_files_recursive(subfolder[1, ], subfolder_name)
-#   
-#     # Download preserving structure
-#     for (i in 1:nrow(subfolder_files)) {
-#       local_path <- here("Data", subfolder_files$path[i])
-#       local_file_path <- here("Data", subfolder_files$full_path[i])
-#       drive_download(
-#         file = subfolder_files$id[i],
-#         path = here("Data",subfolder_files$name[i]),
-#         overwrite = TRUE
-#       )
-#   
-#       cat("Downloaded:", subfolder_files$name[i], "\n")
-#     }
-#   }
-# }
+for (k in 1:length(subfolder_list)) {
+  subfolder_name <- subfolder_list[k]
+  subfolder <- files_in_folder %>% 
+     filter(name == subfolder_name)
+  
+  if (nrow(subfolder) > 0) {
+    # Download from this specific subfolder
+    subfolder_files <- get_files_recursive(subfolder[1, ], subfolder_name)
+
+    # Download preserving structure
+    for (i in 1:nrow(subfolder_files)) {
+      local_path <- here("Data", subfolder_files$path[i])
+      local_file_path <- here("Data", subfolder_files$full_path[i])
+      drive_download(
+        file = subfolder_files$id[i],
+        path = here("Data",subfolder_files$name[i]),
+        overwrite = TRUE
+      )
+
+      cat("Downloaded:", subfolder_files$name[i], "\n")
+    }
+  }
+}
 
 
 
