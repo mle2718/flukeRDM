@@ -359,8 +359,8 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     .[,lapply(.SD, mean), by = c("date_parsed","mode", "tripid"), .SDcols = pattern_vars]  
   
   length_data<-length_data %>% 
-    dplyr::left_join(expansion_factors, b=c("date_parsed","mode", "tripid"))
-  
+      dplyr::right_join(expansion_factors, b=c("date_parsed","mode", "tripid"))
+
   length_data <- length_data %>%
     data.table::as.data.table() %>%
     .[,as.vector(pattern_vars) := lapply(.SD, function(x) x * expand), .SDcols = pattern_vars] %>%
@@ -383,20 +383,19 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   ]
   
   # Combine and reshape
-  model_output1 <- rbindlist(list(aggregate_trip_data_mode, aggregate_trip_data_allmodes), use.names=TRUE)[
-    , .(CV = change_CS, ntrips = n_trips_alt, mode)
-  ][
-    , .(var = c("CV", "ntrips"), value = c(CV, ntrips)), by = mode
-  ][
-    , `:=`(
-      category = fifelse(var == "CV", "CV", "predicted trips"),
-      keep_release = "N/A",
-      param = "N/A",
-      number_weight = fifelse(var == "CV", "dollars", "trips")
-    )
-  ][, var := NULL]
+  model_output1 <- rbindlist(list(aggregate_trip_data_mode, aggregate_trip_data_allmodes), use.names=TRUE)
+  model_output1_long <- melt(
+    model_output1,
+    id.vars = c("mode"),   # keep these as identifiers
+    measure.vars = c("change_CS", "n_trips_alt"),
+    variable.name = "metric",
+    value.name = "value"
+  )
   
-  
+  model_output1_long[, metric := fifelse(metric == "change_CS", "CV",
+                                         fifelse(metric == "n_trips_alt", "predicted trips", "metric"))]
+  model_output1_long$species<-"NA"
+
   
   ## Compute catch weight estimates
   # Process length-frequency data
@@ -443,7 +442,21 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   length_data1[, weight := weight * 2.20462262185]
   
   ## Totals
-  length_data1[, total_weight := number_at_length * weight]
+  length_data1[, keep_weight := fifelse(keep_release == "keep", 
+                                        number_at_length * weight, 
+                                        0)]
+  
+  length_data1[, release_weight := fifelse(keep_release == "release", 
+                                           number_at_length * weight, 
+                                           0)]
+  
+  length_data1[, keep_numbers := fifelse(keep_release == "keep", 
+                                        number_at_length, 
+                                        0)]
+  
+  length_data1[, release_numbers := fifelse(keep_release == "release", 
+                                           number_at_length, 
+                                           0)]
   
   ## Discard mortality weight
   length_data1[, discmort_weight := fcase(
@@ -453,7 +466,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     default = 0
   )]
   
-  ## Discard mortality number
+  ## Discard mortality numbers
   length_data1[, discmort_number := fcase(
     keep_release == "release" & species == "sf", 0.10 * number_at_length,
     keep_release == "release" & species == "scup", 0.15 * number_at_length,
@@ -461,20 +474,24 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     default = 0
   )]
   
-  ## Summarise by species, mode, keep_release
+  ## Summarise by species, mode
   length_data1 <- length_data1[, .(
-    total_numbers = sum(number_at_length),
-    total_weight = sum(total_weight),
+    keep_numbers = sum(keep_numbers),
+    release_numbers = sum(release_numbers),
+    keep_weight = sum(keep_weight),
+    release_weight = sum(release_weight),
     discmort_weight = sum(discmort_weight),
     discmort_number = sum(discmort_number)
-  ), by = .(species, mode, keep_release)]
+  ), by = .(species, mode)]
   
-  ## Create var1 and melt again
+
   length_data_long <- melt(
-    length_data1[, var1 := paste(species, mode, keep_release, sep = "_")],
-    id.vars = c("var1"),  # only identifiers
-    measure.vars = c("total_numbers", "total_weight", "discmort_weight", "discmort_number"),
-    variable.name = "param",
+    length_data1,
+    id.vars = c("species", "mode"),   # keep these as identifiers
+    measure.vars = c("keep_numbers", "release_numbers",
+                     "keep_weight", "release_weight",
+                     "discmort_weight", "discmort_number"),
+    variable.name = "metric",
     value.name = "value"
   )
   
@@ -482,25 +499,20 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   length_data_long <- length_data_long[!is.na(value)]
   
   ## Split and classify
-  length_data_long[, c("category", "mode", "keep_release") := tstrsplit(var1, "_")]
-  length_data_long[, number_weight := fifelse(grepl("weight", param), "weight", "number")]
-  length_data_long[, param := gsub("total_|discmort_", "", param)]
-  
-  ## All modes aggregation
   length_data_long_all <- length_data_long[, .(value = sum(value)),
-                                           by = .(category, keep_release, param, number_weight)]
+                                            by = .(metric, species)]
+  
   length_data_long_all[, mode := "all modes"]
   
   ## Final bind
-  length_output <- rbindlist(
-    list(length_data_long_all, length_data_long),
+  length_output <- rbindlist(list(length_data_long_all, length_data_long) ,
     use.names = TRUE,
     fill = TRUE
-  )[ , var1 := NULL ]
+  )
   
   
   predictions <- rbindlist(
-    list(length_output, model_output1),
+    list(length_output, model_output1_long),
     use.names = TRUE,
     fill = TRUE) %>% 
     dplyr::mutate(state = st, draw=dr)

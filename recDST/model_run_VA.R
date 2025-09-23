@@ -5,17 +5,15 @@ Run_Name <- args[1]
 
 saved_regs<- read.csv(here::here(paste0("saved_regs/regs_", Run_Name, ".csv")))
 
-for (a in seq_len(nrow(saved_regs))) {
+for (a in seq_len(nrow(save_regs))) {
   # Extract name and value
-  obj_name <- saved_regs$input[a]
-  obj_value <- saved_regs$value[a]
+  obj_name <- save_regs$input[a]
+  obj_value <- save_regs$value[a]
   
   # Assign to object in the environment
   assign(obj_name, obj_value)
 }
 
-start_time<- Sys.time()
-# directed_trips<- directed_trips %>%  
 print("start model_VA")
 state1 = "VA"
 predictions_all = list()
@@ -39,6 +37,7 @@ scup_size_data <- size_data %>%
   dplyr::filter(species=="scup") %>% 
   dplyr::filter(!is.na(fitted_prob)) %>% 
   dplyr::select(state,  fitted_prob, length, draw, mode)
+
 
 l_w_conversion <- readr::read_csv(file.path(data_path, "L_W_Conversion.csv"), show_col_types = FALSE)  %>% 
   dplyr::filter(state=="VA")
@@ -86,7 +85,7 @@ if (exists("BSBva_seas1_op")) {
       bsb_min_y2=dplyr::case_when(date_adj >= lubridate::yday(BSBva_seas1_op) & date_adj <= lubridate::yday(BSBva_seas1_cl) ~ as.numeric(BSBva_1_len) * 2.54, TRUE ~ 254), 
       bsb_bag_y2=dplyr::case_when(date_adj >= lubridate::yday(BSBva_seas2_op) & date_adj <= lubridate::yday(BSBva_seas2_cl) ~ as.numeric(BSBva_2_bag), TRUE ~ bsb_bag_y2), 
       bsb_min_y2=dplyr::case_when(date_adj >= lubridate::yday(BSBva_seas2_op) & date_adj <= lubridate::yday(BSBva_seas2_cl) ~ as.numeric(BSBva_2_len) * 2.54, TRUE ~ bsb_min_y2))
-      
+  
 } else {
   directed_trips<- directed_trips %>%
     dplyr::mutate(
@@ -152,11 +151,11 @@ directed_trips<- directed_trips %>%
     scup_min_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(SCUPvaPR_seas2_op) & date_adj <= lubridate::yday(SCUPvaPR_seas2_cl) ~ as.numeric(SCUPvaPR_2_len) * 2.54, TRUE ~ scup_min_y2),
     scup_min_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SCUPvaSH_seas2_op) & date_adj <= lubridate::yday(SCUPvaSH_seas2_cl) ~ as.numeric(SCUPvaSH_2_len) * 2.54, TRUE ~ scup_min_y2))
 
-predictions_out10 <- data.frame()
+#predictions_out10 <- data.frame()
 #future::plan(future::multisession, workers = 36)
-#future::plan(future::multisession, workers = 3)
-#get_predictions_out<- function(x){
-for(x in 1:3){
+future::plan(future::multisession, workers = 25)
+get_predictions_out<- function(x){
+#for(x in 1:3){
   
   print(x)
   
@@ -168,14 +167,9 @@ for(x in 1:3){
   catch_data <- feather::read_feather(file.path(data_path, paste0("proj_catch_draws_VA", "_", x,".feather"))) %>% 
     dplyr::left_join(directed_trips2, by=c("mode", "date", "draw")) 
   
-  catch_data<-catch_data %>% 
-    dplyr::select(-cost, -total_trips_12, -age, -bsb_keep_sim, -bsb_rel_sim, -date_adj, -my_dom_id_string, 
-                  -scup_keep_sim, -scup_rel_sim, -sf_keep_sim, -sf_rel_sim, -wave)
-  
   calendar_adjustments <- readr::read_csv(
     file.path(here::here(paste0("Data/proj_year_calendar_adjustments_new_VA.csv"))), show_col_types = FALSE) %>%
-    dplyr::filter(state == "VA", draw==x) %>% 
-    dplyr::select(-dtrip, -dtrip_y2, -state, -draw)
+    dplyr::filter( draw==x)
   
   
   base_outcomes0 <- list()
@@ -279,12 +273,16 @@ for(x in 1:3){
   source(here::here("Code/sim/predict_rec_catch.R"))
   
   test<- predict_rec_catch(st = "VA", dr = x,
-                           directed_trips = directed_trips2, catch_data, 
+                           directed_trips = directed_trips2, 
+                           catch_data = catch_data, 
                            sf_size_data = sf_size_data2,
                            bsb_size_data = bsb_size_data2, 
                            scup_size_data = scup_size_data2, 
-                           l_w_conversion, calib_comparison, n_choice_occasions, 
-                           calendar_adjustments, base_outcomes)
+                           l_w_conversion = l_w_conversion,
+                           calib_comparison = calib_comparison, 
+                           n_choice_occasions = n_choice_occasions, 
+                           calendar_adjustments = calendar_adjustments, 
+                           base_outcomes = base_outcomes)
   
   test <- test %>% 
     dplyr::mutate(draw = c(x),
@@ -293,7 +291,7 @@ for(x in 1:3){
   
   #regs <- # Input table will be used to fill out regs in DT
   
-  predictions_out10<- predictions_out10 %>% rbind(test) 
+  #predictions_out10<- predictions_out10 %>% rbind(test) 
 }
 
 
@@ -304,7 +302,7 @@ print("out of loop")
 # use furrr package to parallelize the get_predictions_out function 100 times
 # This will spit out a dataframe with 100 predictions 
 #predictions_out10<- furrr::future_map_dfr(1:100, ~get_predictions_out(.), .id = "draw")
-#predictions_out10<- furrr::future_map_dfr(1:3, ~get_predictions_out(.), .id = "draw")
+predictions_out10<- furrr::future_map_dfr(1:25, ~get_predictions_out(.), .id = "draw")
 
 #readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
 readr::write_csv(predictions_out10, file = here::here(paste0("output/output_VA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))

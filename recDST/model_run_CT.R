@@ -1,31 +1,23 @@
-
 ##############################
-#### CT Rec model run  ########
+### CT Rec model run  ########
 ##############################
-
 Run_Name <- args[1]
 
 saved_regs<- read.csv(here::here(paste0("saved_regs/regs_", Run_Name, ".csv")))
 
-for (a in seq_len(nrow(saved_regs))) {
+for (a in seq_len(nrow(save_regs))) {
   # Extract name and value
-  obj_name <- saved_regs$input[a]
-  obj_value <- saved_regs$value[a]
+  obj_name <- save_regs$input[a]
+  obj_value <- save_regs$value[a]
   
   # Assign to object in the environment
   assign(obj_name, obj_value)
 }
 
-start_time<- Sys.time()
-# directed_trips<- directed_trips %>%  
 print("start model_CT")
 state1 = "CT"
 predictions_all = list()
 
-data_path <- here::here("Data/")
-
-
-#### Read in size data ####
 size_data <- readr::read_csv(file.path(here::here("Data"), "projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
   dplyr::filter(state == "CT")
 
@@ -89,7 +81,7 @@ directed_trips<- directed_trips %>%
     fluke_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SFctFH_seas3_op) & date_adj <= lubridate::yday(SFctFH_seas3_cl) ~ as.numeric(SFctFH_3_bag), TRUE ~ fluke_bag_y2),
     fluke_bag_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(SFctPR_seas3_op) & date_adj <= lubridate::yday(SFctPR_seas3_cl) ~ as.numeric(SFctPR_3_bag), TRUE ~ fluke_bag_y2),
     fluke_bag_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SFctSH_seas3_op) & date_adj <= lubridate::yday(SFctSH_seas3_cl) ~ as.numeric(SFctSH_3_bag), TRUE ~ fluke_bag_y2),
-
+    
     fluke_min_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SFctFH_seas3_op) & date_adj <= lubridate::yday(SFctFH_seas3_cl) ~ as.numeric(SFctFH_3_len) * 2.54, TRUE ~ fluke_min_y2),
     fluke_min_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(SFctPR_seas3_op) & date_adj <= lubridate::yday(SFctPR_seas3_cl) ~ as.numeric(SFctPR_3_len) * 2.54, TRUE ~ fluke_min_y2),
     fluke_min_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SFctSH_seas3_op) & date_adj <= lubridate::yday(SFctSH_seas3_cl) ~ as.numeric(SFctSH_3_len) * 2.54, TRUE ~ fluke_min_y2),
@@ -113,7 +105,7 @@ directed_trips<- directed_trips %>%
     bsb_min_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(BSBctFH_seas3_op) & date_adj <= lubridate::yday(BSBctFH_seas3_cl) ~ as.numeric(BSBctFH_3_len) * 2.54, TRUE ~ bsb_min_y2), 
     bsb_min_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(BSBctPR_seas3_op) & date_adj <= lubridate::yday(BSBctPR_seas3_cl) ~ as.numeric(BSBctPR_3_len) * 2.54, TRUE ~ bsb_min_y2), 
     bsb_min_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(BSBctSH_seas3_op) & date_adj <= lubridate::yday(BSBctSH_seas3_cl) ~ as.numeric(BSBctSH_3_len) * 2.54, TRUE ~ bsb_min_y2),
-
+    
     scup_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SCUPctFH_seas1_op) & date_adj <= lubridate::yday(SCUPctFH_seas1_cl) ~ as.numeric(SCUPctFH_1_bag), TRUE ~ 0), 
     scup_min_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SCUPctFH_seas1_op) & date_adj <= lubridate::yday(SCUPctFH_seas1_cl) ~ as.numeric(SCUPctFH_1_len) * 2.54, TRUE ~ 254),
     scup_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SCUPctFH_seas2_op) & date_adj <= lubridate::yday(SCUPctFH_seas2_cl) ~ as.numeric(SCUPctFH_2_bag), TRUE ~ scup_bag_y2),
@@ -134,11 +126,11 @@ directed_trips<- directed_trips %>%
     scup_min_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SCUPctSH_seas2_op) & date_adj <= lubridate::yday(SCUPctSH_seas2_cl) ~ as.numeric(SCUPctSH_2_len) * 2.54, TRUE ~ scup_min_y2))
 
 
-predictions_out10 <- data.frame()
+#predictions_out10 <- data.frame()
 #future::plan(future::multisession, workers = 36)
-#future::plan(future::multisession, workers = 3)
-#get_predictions_out<- function(x){
-for(x in 1:3){
+future::plan(future::multisession, workers = 25)
+get_predictions_out<- function(x){
+#for(x in 1:3){
   
   print(x)
   
@@ -153,7 +145,6 @@ for(x in 1:3){
   calendar_adjustments <- readr::read_csv(
     file.path(here::here(paste0("Data/proj_year_calendar_adjustments_new_CT.csv"))), show_col_types = FALSE) %>%
     dplyr::filter(draw==x) 
-  
   
   base_outcomes0 <- list()
   n_choice_occasions0 <- list()
@@ -256,12 +247,16 @@ for(x in 1:3){
   source(here::here("Code/sim/predict_rec_catch.R"))
   
   test<- predict_rec_catch(st = "CT", dr = x,
-                           directed_trips = directed_trips2, catch_data, 
+                           directed_trips = directed_trips2, 
+                           catch_data = catch_data, 
                            sf_size_data = sf_size_data2,
                            bsb_size_data = bsb_size_data2, 
                            scup_size_data = scup_size_data2, 
-                           l_w_conversion, calib_comparison, n_choice_occasions, 
-                           calendar_adjustments, base_outcomes)
+                           l_w_conversion = l_w_conversion,
+                           calib_comparison = calib_comparison, 
+                           n_choice_occasions = n_choice_occasions, 
+                           calendar_adjustments = calendar_adjustments, 
+                           base_outcomes = base_outcomes)
   
   test <- test %>% 
     dplyr::mutate(draw = c(x),
@@ -270,7 +265,7 @@ for(x in 1:3){
   
   #regs <- # Input table will be used to fill out regs in DT
   
-  predictions_out10<- predictions_out10 %>% rbind(test) 
+  #predictions_out10<- predictions_out10 %>% rbind(test) 
 }
 
 
@@ -281,7 +276,7 @@ print("out of loop")
 # use furrr package to parallelize the get_predictions_out function 100 times
 # This will spit out a dataframe with 100 predictions 
 #predictions_out10<- furrr::future_map_dfr(1:100, ~get_predictions_out(.), .id = "draw")
-#predictions_out10<- furrr::future_map_dfr(1:3, ~get_predictions_out(.), .id = "draw")
+predictions_out10<- furrr::future_map_dfr(1:25, ~get_predictions_out(.), .id = "draw")
 
 #readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
 readr::write_csv(predictions_out10, file = here::here(paste0("output/output_CT_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))

@@ -3,9 +3,6 @@
 
 
 ########## summer flounder ##############
-
-
-
 simulate_mode_sf <- function(md, calib_lookup, sf_size_data) {
 
   # Extract calibration parameters
@@ -21,7 +18,8 @@ simulate_mode_sf <- function(md, calib_lookup, sf_size_data) {
   
   
   #  sublegal_harvest_floor
-  directed_trips_md <- directed_trips[mode == md]
+  #directed_trips_md <- directed_trips[mode == md]
+  directed_trips_md <- directed_trips %>% dplyr::filter(mode == md)
   floor_subl_sf_harv <- min(directed_trips_md$fluke_min_y2) - 3 * 2.54
   
   # Filter length data by mode
@@ -175,7 +173,6 @@ simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data) {
   
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
-  #calib_row <- calib_lookup
   
   rel_to_keep_bsb     <- calib_row$rel_to_keep_bsb
   keep_to_rel_bsb     <- calib_row$keep_to_rel_bsb
@@ -186,7 +183,7 @@ simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data) {
   all_keep_to_rel_bsb <- as.integer(p_keep_to_rel_bsb == 1)
   
   #  sublegal_harvest_floor
-  directed_trips_md <- directed_trips[mode == md]
+  directed_trips_md <- directed_trips %>% dplyr::filter(mode == md)
   floor_subl_bsb_harv <- min(directed_trips_md$bsb_min_y2) - 3 * 2.54
   
   # Filter length data by mode
@@ -340,10 +337,8 @@ simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data) {
 ########## scup ##############
 simulate_mode_scup <- function(md, calib_lookup, scup_size_data) {
   
-  
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
-  #calib_row <- calib_lookup
   
   rel_to_keep_scup     <- calib_row$rel_to_keep_scup
   keep_to_rel_scup     <- calib_row$keep_to_rel_scup
@@ -354,7 +349,7 @@ simulate_mode_scup <- function(md, calib_lookup, scup_size_data) {
   all_keep_to_rel_scup <- as.integer(p_keep_to_rel_scup == 1)
   
   #  sublegal_harvest_floor
-  directed_trips_md <- directed_trips[mode == md]
+  directed_trips_md <- directed_trips %>% dplyr::filter(mode == md)
   floor_subl_scup_harv <- min(directed_trips_md$scup_min_y2) - 3 * 2.54
   
   # Filter length data by mode
