@@ -1,6 +1,16 @@
 # Code to get feather files from a google drive url.
 # This is a piece of utility code, it is not used to run the actual RDM
 # 
+# There are 5 groups of files
+# "base_outcomes_new_STATE_MODE_NN"
+# "n_choice_occassion_new_STATE_MODE_NN"
+# "proj_catch_draws_new_STATE_NN"
+# "directed_trips_calibration_new_STATE"
+# "proj_year_calendar_adjustments_new_STATE" (csv)
+#  miscellaneous files:
+#    calibrated_model_stats_new.rds, projected_catch_at_length_new.csv, 
+#    SQ_weight_per_catch.xlsx, L_W_Conversion.csv
+
 library(here)
 library(googledrive)
 library(purrr)
