@@ -20,10 +20,19 @@ library(conflicted)
 conflicts_prefer(dplyr::filter)
 here::i_am("Code/pre_sim/get_input_data_feather.R")
 
+#################################################################################
+# Declare a preliminary or "new" data
+#################################################################################
+# If you want to get "preliminary data" or "both preliminary and new data", set new_insert to this:
+#new_insert<-"_"
 
-# 
+# If you want to ONLY "new", set new_insert to this:
+new_insert<-"_new_"
+#################################################################################
+
+
+
 # # This puts the url for the flukeRDM gooogle drive into the object "flukeRDM_url"
-
 source(here("Code","pre_sim","flukeRDM_url.R"))
 
 flukeRDM<-drive_get(path=flukeRDM_input_data_url)
@@ -32,9 +41,11 @@ files_in_folder <- drive_ls(flukeRDM)
 # There are alot of files.  This will copy them all to "Data". It WILL overwrite.
 # It is not recursive
 # Split the files list into  "base_outcomes" and everything else
-base_outcomes_list <- files_in_folder[grepl("^base_outcomes.*\\.feather$", files_in_folder$name, ignore.case = TRUE), ]
 
-files_in_folder2 <- files_in_folder[!grepl("^base_outcomes.*\\.feather$", files_in_folder$name, ignore.case = TRUE), ]
+search_string<-glue("^base_outcomes{new_insert}.*\\.feather$")
+
+base_outcomes_list <- files_in_folder[grepl(search_string, files_in_folder$name, ignore.case = TRUE), ]
+files_in_folder2 <- files_in_folder[!grepl(search_string, files_in_folder$name, ignore.case = TRUE), ]
 
 
 
@@ -50,8 +61,11 @@ walk2(
 ######################################################
 # Get all the "n_choice_occasions" files
 ######################################################
-n_choice_occasions_list <- files_in_folder2[grepl("^n_choice_occasions.*\\.feather$", files_in_folder2$name, ignore.case = TRUE), ]
-files_in_folder3 <- files_in_folder2[!grepl("^n_choice_occasions.*\\.feather$", files_in_folder2$name, ignore.case = TRUE), ]
+
+search_string<-glue("^n_choice_occasions{new_insert}.*\\.feather$")
+
+n_choice_occasions_list <- files_in_folder2[grepl(search_string, files_in_folder2$name, ignore.case = TRUE), ]
+files_in_folder3 <- files_in_folder2[!grepl(search_string, files_in_folder2$name, ignore.case = TRUE), ]
 
 walk2(
   n_choice_occasions_list$id,
@@ -67,9 +81,13 @@ walk2(
 ######################################################
 # Get all the "proj_catch_draws_new" files
 ######################################################
-proj_catch_draws_list <- files_in_folder3[grepl("^proj_catch_draws.*\\.feather$", files_in_folder3$name, ignore.case = TRUE), ]
 
-files_in_folder4 <- files_in_folder3[!grepl("^proj_catch_draws.*\\.feather$", files_in_folder3$name, ignore.case = TRUE), ]
+search_string<-glue("^proj_catch_draws{new_insert}.*\\.feather$")
+
+
+proj_catch_draws_list <- files_in_folder3[grepl(search_string, files_in_folder3$name, ignore.case = TRUE), ]
+
+files_in_folder4 <- files_in_folder3[!grepl(search_string, files_in_folder3$name, ignore.case = TRUE), ]
 
 walk2(
   proj_catch_draws_list$id,
@@ -83,9 +101,12 @@ walk2(
 ######################################################
 # Get all the "directed_trips_calibration" files
 ######################################################
-directed_trips_calibration_list <- files_in_folder[grepl("^directed_trips_calibration.*\\.feather$", files_in_folder$name, ignore.case = TRUE), ]
 
-files_in_folder5 <- files_in_folder4[!grepl("^directed_trips_calibration.*\\.feather$", files_in_folder4$name, ignore.case = TRUE), ]
+search_string<-glue("^directed_trips_calibration{new_insert}.*\\.feather$")
+
+directed_trips_calibration_list <- files_in_folder[grepl(search_string, files_in_folder$name, ignore.case = TRUE), ]
+
+files_in_folder5 <- files_in_folder4[!grepl(search_string, files_in_folder4$name, ignore.case = TRUE), ]
 
 walk2(
   directed_trips_calibration_list$id,
@@ -101,8 +122,10 @@ walk2(
 ######################################################
 # Get all the "proj_year_calendar_adjustments" files
 ######################################################
-proj_year_calendar_adjustments_list <- files_in_folder5[grepl("^proj_year_calendar_adjustments.*\\.csv$", files_in_folder5$name, ignore.case = TRUE), ]
-files_in_folder6 <- files_in_folder5[!grepl("^proj_year_calendar_adjustments.*\\.csv$", files_in_folder5$name, ignore.case = TRUE), ]
+search_string<-glue("^proj_year_calendar_adjustments{new_insert}.*\\.csv$")
+
+proj_year_calendar_adjustments_list <- files_in_folder5[grepl(search_string, files_in_folder5$name, ignore.case = TRUE), ]
+files_in_folder6 <- files_in_folder5[!grepl(search_string, files_in_folder5$name, ignore.case = TRUE), ]
 
 
 
