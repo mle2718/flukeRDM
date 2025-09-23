@@ -31,39 +31,128 @@ files_in_folder <- drive_ls(flukeRDM)
 
 # There are alot of files.  This will copy them all to "Data". It WILL overwrite.
 # It is not recursive
+# Split the files list into  "base_outcomes" and everything else
+base_outcomes_list <- files_in_folder[grepl("^base_outcomes.*\\.feather$", files_in_folder$name, ignore.case = TRUE), ]
+
+files_in_folder2 <- files_in_folder[!grepl("^base_outcomes.*\\.feather$", files_in_folder$name, ignore.case = TRUE), ]
+
+
+
 walk2(
-  files_in_folder$id,
-  files_in_folder$name,
+  base_outcomes_list$id,
+  base_outcomes_list$name,
   ~ drive_download(
     file = .x,
    path = here("Data",.y),
    overwrite = TRUE
   )
 )
+######################################################
+# Get all the "n_choice_occasions" files
+######################################################
+n_choice_occasions_list <- files_in_folder2[grepl("^n_choice_occasions.*\\.feather$", files_in_folder2$name, ignore.case = TRUE), ]
+files_in_folder3 <- files_in_folder2[!grepl("^n_choice_occasions.*\\.feather$", files_in_folder2$name, ignore.case = TRUE), ]
+
+walk2(
+  n_choice_occasions_list$id,
+  n_choice_occasions_list$name,
+  ~ drive_download(
+    file = .x,
+    path = here("Data",.y),
+    overwrite = TRUE
+  )
+)
+
+
+######################################################
+# Get all the "proj_catch_draws_new" files
+######################################################
+proj_catch_draws_list <- files_in_folder3[grepl("^proj_catch_draws.*\\.feather$", files_in_folder3$name, ignore.case = TRUE), ]
+
+files_in_folder4 <- files_in_folder3[!grepl("^proj_catch_draws.*\\.feather$", files_in_folder3$name, ignore.case = TRUE), ]
+
+walk2(
+  proj_catch_draws_list$id,
+  proj_catch_draws_list$name,
+  ~ drive_download(
+    file = .x,
+    path = here("Data",.y),
+    overwrite = TRUE
+  )
+)
+######################################################
+# Get all the "directed_trips_calibration" files
+######################################################
+directed_trips_calibration_list <- files_in_folder[grepl("^directed_trips_calibration.*\\.feather$", files_in_folder$name, ignore.case = TRUE), ]
+
+files_in_folder5 <- files_in_folder4[!grepl("^directed_trips_calibration.*\\.feather$", files_in_folder4$name, ignore.case = TRUE), ]
+
+walk2(
+  directed_trips_calibration_list$id,
+  directed_trips_calibration_list$name,
+  ~ drive_download(
+    file = .x,
+    path = here("Data",.y),
+    overwrite = TRUE
+  )
+)
+
+
+######################################################
+# Get all the "proj_year_calendar_adjustments" files
+######################################################
+proj_year_calendar_adjustments_list <- files_in_folder5[grepl("^proj_year_calendar_adjustments.*\\.csv$", files_in_folder5$name, ignore.case = TRUE), ]
+files_in_folder6 <- files_in_folder5[!grepl("^proj_year_calendar_adjustments.*\\.csv$", files_in_folder5$name, ignore.case = TRUE), ]
 
 
 
-# For testing purpose, here is some code to filter 
-# 
-# # This should get files that match the pattern 1?.feather (that is 10.feather, 11.feather, ..., 19.feather). It will NOT match 1.feather or 100.feather
+walk2(
+  proj_year_calendar_adjustments_list$id,
+  proj_year_calendar_adjustments_list$name,
+  ~ drive_download(
+    file = .x,
+    path = here("Data",.y),
+    overwrite = TRUE
+  )
+)
 
-# files_in_folder2 <- files_in_folder[grepl("^.*1.\\.feather$", files_in_folder$name, ignore.case = TRUE), ]
-# 
-# 
-# # This will pull all the Massachusetts feathers
-# files_in_folder2 <- files_in_folder[grepl("^.*MA.*\\.feather$", files_in_folder$name, ignore.case = TRUE), ]
-# 
-# # There are alot of files.  This will copy them all to "Data". It will not overwrite.
-# walk2(
-#   files_in_folder2$id,
-#   files_in_folder2$name,
-#   ~ drive_download(
-#     file = .x,
-#     path = here("Data",.y),
-#     overwrite = FALSE
-#   )
-# )
-# 
+
+
+
+# # Get all the miscellaneous files
+#    calibrated_model_stats_new.rds, projected_catch_at_length_new.csv, 
+#    SQ_weight_per_catch.xlsx, L_W_Conversion.csv
+
+m1 <- files_in_folder6[grepl("^calibrated_model_stats_new*.\\.rds$", files_in_folder6$name, ignore.case = TRUE), ]
+files_in_folder7 <- files_in_folder6[!grepl("^calibrated_model_stats_new*\\.rds$", files_in_folder6$name, ignore.case = TRUE), ]
+
+m2 <- files_in_folder7[grepl("^projected_catch_at_length.*\\.csv$", files_in_folder7$name, ignore.case = TRUE), ]
+files_in_folder7 <- files_in_folder7[!grepl("^projected_catch_at_length.*\\.csv$", files_in_folder7$name, ignore.case = TRUE), ]
+
+m3 <- files_in_folder7[grepl("^SQ_weight_per_catch\\.xlsx$", files_in_folder7$name, ignore.case = TRUE), ]
+files_in_folder7 <- files_in_folder7[!grepl("^SQ_weight_per_catch*\\.csv$", files_in_folder7$name, ignore.case = TRUE), ]
+
+m4 <- files_in_folder7[grepl("^L_W_Conversion\\.csv$", files_in_folder7$name, ignore.case = TRUE), ]
+
+
+#Hopefully files_in_folder7 is empty. It might not be, if there are files left, keep adding them. If there are directories, then continue onwards
+files_in_folder7 <- files_in_folder7[!grepl("^L_W_Conversion*\\.csv$", files_in_folder7$name, ignore.case = TRUE), ]
+
+miscellaneous<-rbind(m1,m2,m3,m4)
+
+
+
+walk2(
+  miscellaneous$id,
+  miscellaneous$name,
+  ~ drive_download(
+    file = .x,
+    path = here("Data",.y),
+    overwrite = TRUE
+  )
+)
+
+
 
 
 
@@ -153,7 +242,7 @@ subfolder_list<-c("a_projected_catch_draws","aa_L_W_conversion","aaa_catch_weigh
 
 for (k in 1:length(subfolder_list)) {
   subfolder_name <- subfolder_list[k]
-  subfolder <- files_in_folder %>% 
+  subfolder <- files_in_folder7 %>% 
      filter(name == subfolder_name)
   
   if (nrow(subfolder) > 0) {
