@@ -3481,11 +3481,11 @@ server <- function(input, output, session) {
   perc_changes <- function(){
     perc_changes <- outputs() %>% 
       dplyr::filter(stringr::str_detect(filename, "SQ")) %>% 
-      dplyr::group_by(state,filename, category, mode, keep_release, number_weight) %>%
+      dplyr::group_by(state,filename, metric, mode, species) %>%
       dplyr::summarise(value = median(value)) %>% 
-      dplyr::mutate(pca_reqs = dplyr::case_when(state == "MA" & category == "sf" ~ .1, TRUE ~ .1), 
-                    pca_reqs = dplyr::case_when(state == "MA" & category == "bsb" ~ .1, TRUE ~ pca_reqs), 
-                    pca_reqs = dplyr::case_when(state == "MA" & category == "scup" ~ .1, TRUE ~ pca_reqs))
+      dplyr::mutate(pca_reqs = dplyr::case_when(species == "sf" ~ .1, TRUE ~ .1), 
+                    pca_reqs = dplyr::case_when(species == "bsb" ~ .1, TRUE ~ pca_reqs), 
+                    pca_reqs = dplyr::case_when(species == "scup" ~ .1, TRUE ~ pca_reqs))
   }
   
   
@@ -3500,19 +3500,17 @@ server <- function(input, output, session) {
   output$summary_rhl_fig<- plotly::renderPlotly({
     
     ref_pct <- outputs() %>% #all_data %>%
-      dplyr::filter(number_weight == "weight" &
-                      keep_release == "keep" & mode == "all modes" & model == "SQ") %>%
+      dplyr::filter(metric == "keep_weight" & mode == "all modes" & model == "SQ") %>%
       dplyr::mutate(ref_value = value) %>%
-      dplyr::select(filename, category, state, draw, ref_value)
+      dplyr::select(filename, species, state, draw, ref_value)
     
     harv <- outputs() %>% #all_data %>%
-      dplyr::filter(number_weight == "weight" &
-                      keep_release == "keep" & mode == "all modes") %>%
-      dplyr::left_join(ref_pct, by = join_by(category,  state, draw)) %>%
-      dplyr::mutate(pct_diff = (value - ref_value) / ref_value * 100) %>%
-      dplyr::group_by(state,filename.x, category, keep_release, number_weight) %>%
+      dplyr::filter(metric == "keep_weight" & mode == "all modes") %>%
+      dplyr::left_join(ref_pct, by = join_by(species,  state, draw)) %>%
+      dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1) * 100) %>%
+      dplyr::group_by(state,filename.x, species, metric) %>%
       dplyr::summarise(median_pct_diff = median(pct_diff)) %>%
-      tidyr::pivot_wider(names_from = category, values_from = median_pct_diff)
+      tidyr::pivot_wider(names_from = species, values_from = median_pct_diff)
     
     
     harv2 <- harv %>%
@@ -3524,6 +3522,8 @@ server <- function(input, output, session) {
       ggplot2::facet_wrap(~ state) +
       ggplot2::labs(title = "SF vs BSB Harvest Limits by state",x = "Black Sea Bass RHL",y = "Summer Flounder RHL") +
       #ggplot2::scale_color_gradient2( low = "blue", mid = "gray", high = "red",  midpoint = 0, limits = c(-10, 10)) + 
+      ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
+      ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::theme_bw()
     
     fig<- plotly::ggplotly(harv2) %>%
@@ -3534,19 +3534,17 @@ server <- function(input, output, session) {
   output$summary_percdiff_table <- DT::renderDT({
     
     ref_pct <- outputs() %>% #all_data %>%
-      dplyr::filter(number_weight == "weight" &
-                      keep_release == "keep" & mode == "all modes" & model == "SQ") %>%
+      dplyr::filter(metric == "keep_weight" &  mode == "all modes" & model == "SQ") %>%
       dplyr::mutate(ref_value = value) %>%
-      dplyr::select(filename, category, state, draw, ref_value)
+      dplyr::select(filename, species, state, draw, ref_value)
     
     harv <- outputs() %>% #all_data %>%
-      dplyr::filter(number_weight == "weight" &
-                      keep_release == "keep" & mode == "all modes") %>%
-      dplyr::left_join(ref_pct, by = join_by(category,  state, draw)) %>%
-      dplyr::mutate(pct_diff = (value - ref_value) / ref_value * 100) %>%
-      dplyr::group_by(state,filename.x, category, keep_release, number_weight) %>%
+      dplyr::filter(metric == "keep_weight" & mode == "all modes") %>%
+      dplyr::left_join(ref_pct, by = join_by(species,  state, draw)) %>%
+      dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1)  * 100) %>%
+      dplyr::group_by(state,filename.x, species, metric) %>%
       dplyr::summarise(median_pct_diff = median(pct_diff)) %>%
-      tidyr::pivot_wider(names_from = category, values_from = median_pct_diff)
+      tidyr::pivot_wider(names_from = species, values_from = median_pct_diff)
     
     tab<- harv %>% 
       dplyr::mutate(bsb_ok  = abs(bsb)  <= bsb_percent_change,
@@ -3555,7 +3553,7 @@ server <- function(input, output, session) {
       dplyr::rowwise() %>%
       dplyr::mutate(ok_count = paste0(sum(c_across(c(bsb_ok, scup_ok, sf_ok))), "/3")) %>%
       dplyr::ungroup()%>%
-      dplyr::select( -keep_release, -number_weight,  -bsb_ok ,-scup_ok, -sf_ok) %>%
+      dplyr::select( -metric,  -bsb_ok ,-scup_ok, -sf_ok) %>%
       mutate(
         bsb  = sprintf("%.2f", bsb),
         scup = sprintf("%.2f", scup),
@@ -3595,28 +3593,26 @@ server <- function(input, output, session) {
     # Reference values (SQ model only)
     ref_pct <- data %>%
       dplyr::filter(
-        number_weight == "weight",
-        keep_release == "keep",
+        metric == "keep_weight",
         mode == "all modes",
         model == "SQ",
         state == state_name
       ) %>%
       dplyr::mutate(ref_value = value) %>%
-      dplyr::select(filename, category, state, draw, ref_value)
+      dplyr::select(filename, species, state, draw, ref_value)
     
     # Percent difference vs reference
     harv <- data %>%
       dplyr::filter(
-        number_weight == "weight",
-        keep_release == "keep",
+        metric == "keep_weight",
         mode == "all modes",
         state == state_name
       ) %>%
-      dplyr::left_join(ref_pct, by = dplyr::join_by(category, state, draw)) %>%
-      dplyr::mutate(pct_diff = (value - ref_value) / ref_value * 100) %>%
-      dplyr::group_by(state, filename.x, category, keep_release, number_weight) %>%
+      dplyr::left_join(ref_pct, by = dplyr::join_by(species, state, draw)) %>%
+      dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1)  * 100) %>%
+      dplyr::group_by(state, filename.x, species, metric) %>%
       dplyr::summarise(median_pct_diff = median(pct_diff), .groups = "drop") %>%
-      tidyr::pivot_wider(names_from = category, values_from = median_pct_diff)
+      tidyr::pivot_wider(names_from = species, values_from = median_pct_diff)
     
     # Static ggplot
     harv2 <- harv %>%
@@ -3628,6 +3624,8 @@ server <- function(input, output, session) {
         x = "Black Sea Bass RHL",
         y = "Summer Flounder RHL"
       ) +
+      ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
+      ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::theme_bw()
     
     # Convert to plotly
@@ -3639,23 +3637,21 @@ server <- function(input, output, session) {
   
   cv_fig <- function(data, state_name){
     ref_pct <- data %>% 
-      dplyr::filter(number_weight == "weight" & state == state_name &
-                      keep_release == "keep" & mode == "all modes" & model == "SQ") %>%
+      dplyr::filter(state == state_name & metric == "keep_weight"& mode == "all modes" & model == "SQ") %>%
       dplyr::mutate(ref_value = value) %>%
-      dplyr::select(filename, category, state, draw, ref_value)
+      dplyr::select(filename, species, state, draw, ref_value)
     
     harv <- data %>% #all_data %>%
-      dplyr::filter(number_weight == "weight" & state == state_name &
-                      keep_release == "keep" & mode == "all modes") %>%
-      dplyr::left_join(ref_pct, by = join_by(category,  state, draw)) %>%
-      dplyr::mutate(pct_diff = (value - ref_value) / ref_value * 100) %>%
-      dplyr::group_by(state,filename.x, category, keep_release, number_weight) %>%
+      dplyr::filter( state == state_name & metric == "keep_weight" & mode == "all modes") %>%
+      dplyr::left_join(ref_pct, by = join_by(species,  state, draw)) %>%
+      dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1)  * 100) %>%
+      dplyr::group_by(state,filename.x, species, metric) %>%
       dplyr::summarise(median_pct_diff = median(pct_diff)) %>%
       dplyr::rename(filename = filename.x)
     #tidyr::pivot_wider(names_from = category, values_from = median_pct_diff)
     
     welfare <-  data %>% 
-      dplyr::filter(category %in% c("CV"),
+      dplyr::filter(metric %in% c("CV"),
                     state == state_name,
                     mode == "all modes") %>%
       # dplyr::group_by( filename, category, draw) %>%
@@ -3674,7 +3670,9 @@ server <- function(input, output, session) {
       ggplot2::ylab("Angler Satisfaction ($M)")+
       ggplot2::xlab("Percent difference of Harvest from SQ")+
       ggplot2::theme(legend.position = "none")+
-      ggplot2::facet_wrap(.~category)+
+      ggplot2::facet_wrap(.~species)+
+      ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
+      ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::theme_bw()
     
     fig<- plotly::ggplotly(p1) %>%
@@ -3687,33 +3685,31 @@ server <- function(input, output, session) {
     # Reference values (SQ model only)
     ref_pct <- data %>%
       dplyr::filter(
-        number_weight == "weight",
+        metric == "keep_weight",
         state == state_name,
-        keep_release == "keep",
         mode == "all modes",
         model == "SQ"
       ) %>%
       dplyr::mutate(ref_value = value) %>%
-      dplyr::select(filename, category, state, draw, ref_value)
+      dplyr::select(filename, species, state, draw, ref_value)
     
     # Harvest percent difference
     harv <- data %>%
       dplyr::filter(
-        number_weight == "weight",
+        metric == "keep_weight",
         state == state_name,
-        keep_release == "keep",
         mode == "all modes"
       ) %>%
-      dplyr::left_join(ref_pct, by = dplyr::join_by(category, state, draw)) %>%
-      dplyr::mutate(pct_diff = (value - ref_value) / ref_value * 100) %>%
-      dplyr::group_by(state, filename.x, category, keep_release, number_weight) %>%
+      dplyr::left_join(ref_pct, by = dplyr::join_by(species, state, draw)) %>%
+      dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1)  * 100) %>%
+      dplyr::group_by(state, filename.x, species, metric) %>%
       dplyr::summarise(median_pct_diff = median(pct_diff), .groups = "drop") %>%
       dplyr::rename(filename = filename.x)
     
     # Trips data
     trips <- data %>%
       dplyr::filter(
-        category %in% c("predicted trips"),
+        metric %in% c("predicted trips"),
         state == state_name,
         mode == "all modes"
       ) %>%
@@ -3731,7 +3727,9 @@ server <- function(input, output, session) {
       ggplot2::ylab("Predicted trips (N) millions") +
       ggplot2::xlab("Percent difference of Harvest from SQ") +
       ggplot2::theme(legend.position = "none") +
-      ggplot2::facet_wrap(. ~ category) +
+      ggplot2::facet_wrap(. ~ species) +
+      ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
+      ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::theme_bw()
     
     # Convert to plotly
@@ -3746,40 +3744,37 @@ server <- function(input, output, session) {
     # Reference values (SQ model only, keep only)
     ref_pct <- data %>%
       dplyr::filter(
-        number_weight == "weight",
+        metric == "keep_weight",
         state == state_name,
-        keep_release == "keep",
         mode == "all modes",
         model == "SQ"
       ) %>%
       dplyr::mutate(ref_value = value) %>%
-      dplyr::select(filename, category, state, draw, ref_value)
+      dplyr::select(filename, species, state, draw, ref_value)
     
     # Harvest percent difference
     harv <- data %>%
       dplyr::filter(
-        number_weight == "weight",
+        metric == "keep_weight",
         state == state_name,
-        keep_release == "keep",
         mode == "all modes"
       ) %>%
-      dplyr::left_join(ref_pct, by = dplyr::join_by(category, state, draw)) %>%
-      dplyr::mutate(pct_diff = (value - ref_value) / ref_value * 100) %>%
-      dplyr::group_by(state, filename.x, category, number_weight) %>%
+      dplyr::left_join(ref_pct, by = dplyr::join_by(species, state, draw)) %>%
+      dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1)  * 100) %>%
+      dplyr::group_by(state, filename.x, species, metric) %>%
       dplyr::summarise(median_keep_pct_diff = median(pct_diff), .groups = "drop") %>%
       dplyr::rename(filename = filename.x)
     
     # Discards
     disc <- data %>%
       dplyr::filter(
-        number_weight == "weight",
+        metric == "release_weight",
         state == state_name,
-        keep_release == "release",
         mode == "all modes"
       ) %>%
-      dplyr::group_by(state, filename, category, number_weight) %>%
+      dplyr::group_by(state, filename, species) %>%
       dplyr::summarise(median_rel_weight = median(value), .groups = "drop") %>%
-      dplyr::left_join(harv, by = c("state", "filename", "category", "number_weight")) %>% 
+      dplyr::left_join(harv, by = c("state", "filename", "species")) %>% 
       dplyr::mutate(median_rel_weight = median_rel_weight/1000000)
     
     # Static plot
@@ -3791,7 +3786,9 @@ server <- function(input, output, session) {
       ggplot2::ylab("Discards (million lbs)") +
       ggplot2::xlab("Percent difference of Harvest from SQ") +
       ggplot2::theme(legend.position = "none") +
-      ggplot2::facet_wrap(. ~ category) +
+      ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
+      ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
+      ggplot2::facet_wrap(. ~ species) +
       ggplot2::theme_bw()
     
     # Convert to plotly
