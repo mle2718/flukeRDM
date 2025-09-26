@@ -339,6 +339,29 @@ gen nal=pop_naa*prop_smoothed
 
 collapse (sum) nal, by(draw species state length)
 
+preserve
+gen nal_24_1000=nal/1000
+gen length_bin = floor(length/5)*5   // groups of 5
+collapse (sum) nal_24_1000, by(draw state species length_bin)
+tempfile nal_2024
+save `nal_2024', replace
+restore
+/*
+gen nal_1000=nal/1000
+graph box nal_1000 if species=="bsb" & state=="CT", over(length, label(labsize(vsmall))) title("2024 numbers-at-length, BSB North") 
+graph export "$figure_cd/bsb_north_nal_2024.png", as(png) replace
+
+graph box nal_1000 if species=="bsb" & state=="MD", over(length, label(labsize(vsmall))) title("2024 numbers-at-length, BSB South") 
+graph export "$figure_cd/bsb_south_nal_2024.png", as(png) replace
+
+graph box nal_1000 if species=="scup" & state=="NY", over(length, label(labsize(vsmall))) title("2024 numbers-at-length, Scup") 
+graph export "$figure_cd/scup_nal_2024.png", as(png) replace
+
+graph box nal_1000 if species=="sf" & state=="NY", over(length, label(labsize(vsmall))) title("2024 numbers-at-length, SF") 
+graph export "$figure_cd/sf_nal_2024.png", as(png) replace
+drop nal_1000
+*/
+
 order draw state species length nal
 sort draw state species length nal
 
@@ -566,6 +589,55 @@ order draw state species length nal
 sort draw state species length nal
 rename nal nal_2026
 rename length length3 
+
+/*
+gen nal_1000=nal_2026/1000
+graph box nal_1000 if species=="bsb" & state=="CT", over(length, label(labsize(vsmall))) title("2026 numbers-at-length, BSB North") 
+graph export "$figure_cd/bsb_north_nal_2024.png", as(png) replace
+
+graph box nal_1000 if species=="bsb" & state=="MD", over(length, label(labsize(vsmall))) title("2026 numbers-at-length, BSB South") 
+graph export "$figure_cd/bsb_south_nal_2024.png", as(png) replace
+
+graph box nal_1000 if species=="scup" & state=="NY", over(length, label(labsize(vsmall))) title("2026 numbers-at-length, Scup") 
+graph export "$figure_cd/scup_nal_2024.png", as(png) replace
+
+graph box nal_1000 if species=="sf" & state=="NY", over(length, label(labsize(vsmall))) title("2026 numbers-at-length, SF") 
+graph export "$figure_cd/sf_nal_2026.png", as(png) replace
+drop nal_1000
+*/
+
+/*
+* to create figures comparing number-at-length for 2024 vs 2026:
+gen nal_26_1000=nal_2026/1000
+gen length_bin = floor(length/5)*5   // groups of 5
+collapse (sum) nal_26_1000, by(draw state species length_bin)
+merge 1:1 draw state species length_bin using `nal_2024'
+reshape long nal_, i(length_bin draw state species) j(year) string
+replace year="2024" if year=="24_1000"
+replace year="2026" if year=="26_1000"
+destring year, replace
+
+graph box nal_ if species=="bsb" & state=="CT", over(year, label(labsize(vsmall))) over(length_bin, label(labsize(vsmall)))  ///
+asyvars  box(1, color(navy)) box(2, color(maroon)) title("numbers-at-length, BSB North") ///
+    legend(position(bottom) rows(1))
+graph export "$figure_cd/bsb_north_nal_2024_2026.png", as(png) replace
+
+graph box nal_ if species=="bsb" & state=="MD", over(year, label(labsize(vsmall))) over(length_bin, label(labsize(vsmall)))  ///
+asyvars  box(1, color(navy)) box(2, color(maroon)) title("numbers-at-length, BSB South") ///
+    legend(position(bottom) rows(1))
+graph export "$figure_cd/bsb_south_nal_2024_2026.png", as(png) replace
+
+graph box nal_ if species=="scup" & state=="NY", over(year, label(labsize(vsmall))) over(length_bin, label(labsize(vsmall)))  ///
+asyvars  box(1, color(navy)) box(2, color(maroon)) title("numbers-at-length, Scup") ///
+    legend(position(bottom) rows(1))
+graph export "$figure_cd/scup_nal_2024_2026.png", as(png) replace
+
+graph box nal_ if species=="sf" & state=="NY", over(year, label(labsize(vsmall))) over(length_bin, label(labsize(vsmall)))  ///
+asyvars  box(1, color(navy)) box(2, color(maroon)) title("numbers-at-length, SF") ///
+    legend(position(bottom) rows(1))
+graph export "$figure_cd/sf_nal_2024_2026.png", as(png) replace
+*/
+
 
 *3) 
 merge 1:1 draw state species length3 using `ql', keep(3) nogen
