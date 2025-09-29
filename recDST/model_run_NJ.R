@@ -172,7 +172,7 @@ directed_trips<- directed_trips %>%
 #future::plan(future::multisession, workers = 36)
 future::plan(future::multisession, workers = 25)
 get_predictions_out<- function(x){
-#for(x in 1:3){
+#for(x in 1:25){
   
   print(x)
   

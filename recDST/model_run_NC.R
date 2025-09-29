@@ -150,7 +150,7 @@ directed_trips<- directed_trips %>%
 #future::plan(future::multisession, workers = 36)
 future::plan(future::multisession, workers = 25)
 get_predictions_out<- function(x){
-#for(x in 1:3){
+#for(x in 1:25){
   
   print(x)
   
@@ -266,7 +266,7 @@ get_predictions_out<- function(x){
   source(here::here("Code/sim/predict_rec_catch_functions.R"))
   source(here::here("Code/sim/predict_rec_catch.R"))
   
-  test<- predict_rec_catch(st = "MA", dr = x,
+  test<- predict_rec_catch(st = "NC", dr = x,
                            directed_trips = directed_trips2, 
                            catch_data = catch_data, 
                            sf_size_data = sf_size_data2,

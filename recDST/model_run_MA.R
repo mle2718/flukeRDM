@@ -110,11 +110,11 @@ directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trip
 
 #   readr::write_csv(directed_trips, file = here::here(paste0("output/MA_directed_trips_", Run_Name, ".csv")))
 
-    predictions_out10 <- data.frame()
+    #predictions_out10 <- data.frame()
     #future::plan(future::multisession, workers = 36)
     future::plan(future::multisession, workers = 25)
   get_predictions_out<- function(x){
-    #for(x in 1:3){
+    #for(x in 1:25){
       
       print(x)
       
@@ -250,7 +250,7 @@ directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trip
       # 
       # #regs <- # Input table will be used to fill out regs in DT
       # 
-      # predictions_out10<- predictions_out10 %>% rbind(test)
+       #predictions_out10<- predictions_out10 %>% rbind(test)
     }
     
     
