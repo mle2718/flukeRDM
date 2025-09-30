@@ -20,11 +20,11 @@ spec:
       spec:
         restartPolicy: Never
         # Tolerations / node selection (adjust to your large node pool)
-        # tolerations:
-        #   - key: "sku"
-        #     operator: "Equal"
-        #     value: "fx"
-        #     effect: "NoSchedule"
+        tolerations:
+          - key: "sku"
+            operator: "Equal"
+            value: "model"
+            effect: "NoSchedule"
         containers:
           - name: runner
             image: ${RUNNER_IMAGE}
@@ -47,11 +47,11 @@ spec:
                     key: accountName
             resources:
               requests:
-                cpu: "1"
-                memory: "2Gi"
+                cpu: "44"
+                memory: "300Gi"
               limits:
-                cpu: "8"
-                memory: "64Gi"
+                cpu: "800"
+                memory: "10000Gi"
             volumeMounts:
               - name: app-share
                 mountPath: /srv/rdmtool/saved_regs

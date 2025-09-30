@@ -33,6 +33,7 @@ RUN install2.r -e -s \
     openssl \
     uuid \
     plotly \
+    feather \
     DT
 
 WORKDIR /srv/rdmtool
@@ -40,8 +41,8 @@ WORKDIR /srv/rdmtool
 # Copy model scripts (assuming relative paths from repo root when building)
 # These paths may need adjustment depending where build context is executed
 COPY recDST/ ./recDST/
-COPY rdmtool/Run_Model.R ./
-COPY RDMdeployment/keda/consume_and_run.sh /app/consume_and_run.sh
+COPY Run_Model.R ./
+COPY keda/consume_and_run.sh /app/consume_and_run.sh
 RUN chmod +x /app/consume_and_run.sh
 
 ENV PATH="/usr/local/bin:$PATH"

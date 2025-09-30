@@ -2,10 +2,10 @@
 ### Injest run name and run model
 
 # Rscript Run_Model.R Run_Name
-
+start_time <- Sys.time()
 library(magrittr)
 library(data.table)
-args = "SQ"
+#args = "SQ"
 
 args <- commandArgs(trailingOnly = TRUE)
 
@@ -84,11 +84,26 @@ if(any(grepl("va", saved_regs$input))){
   source(here::here("recDST/model_run_VA.R"))
 }
 
-## North Carolina
+# North Carolina
 if(any(grepl("nc", saved_regs$input))){
-  
+
   save_regs <- saved_regs %>%
     dplyr::filter(grepl("nc", saved_regs$input))
-  
+
   source(here::here("recDST/model_run_NC.R"))
 }
+
+
+end_time <- Sys.time()
+
+print(end_time - start_time)
+
+
+
+
+
+
+
+
+
+
