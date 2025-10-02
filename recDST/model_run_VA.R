@@ -151,11 +151,11 @@ directed_trips<- directed_trips %>%
     scup_min_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(SCUPvaPR_seas2_op) & date_adj <= lubridate::yday(SCUPvaPR_seas2_cl) ~ as.numeric(SCUPvaPR_2_len) * 2.54, TRUE ~ scup_min_y2),
     scup_min_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SCUPvaSH_seas2_op) & date_adj <= lubridate::yday(SCUPvaSH_seas2_cl) ~ as.numeric(SCUPvaSH_2_len) * 2.54, TRUE ~ scup_min_y2))
 
-#predictions_out10 <- data.frame()
+predictions_out10 <- data.frame()
 #future::plan(future::multisession, workers = 36)
-future::plan(future::multisession, workers = 25)
-get_predictions_out<- function(x){
-#for(x in 1:25){
+#future::plan(future::multisession, workers = 25)
+#get_predictions_out<- function(x){
+for(x in 1:25){
   
   print(x)
   
@@ -291,7 +291,7 @@ get_predictions_out<- function(x){
   
   #regs <- # Input table will be used to fill out regs in DT
   
-  #predictions_out10<- predictions_out10 %>% rbind(test) 
+  predictions_out10<- predictions_out10 %>% rbind(test) 
 }
 
 
@@ -302,7 +302,7 @@ print("out of loop")
 # use furrr package to parallelize the get_predictions_out function 100 times
 # This will spit out a dataframe with 100 predictions 
 #predictions_out10<- furrr::future_map_dfr(1:100, ~get_predictions_out(.), .id = "draw")
-predictions_out10<- furrr::future_map_dfr(1:25, ~get_predictions_out(.), .id = "draw")
+#predictions_out10<- furrr::future_map_dfr(1:25, ~get_predictions_out(.), .id = "draw")
 
 #readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
 readr::write_csv(predictions_out10, file = here::here(paste0("output/output_VA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
