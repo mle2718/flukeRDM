@@ -52,7 +52,7 @@ global projection_year "(year==2025 & inlist(wave, 1, 2, 3)) | (year==2024) | (y
 
 global calibration_catch_per_trip_years "(year==2024 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2023 & inlist(wave, 6)) | (year==2023 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2022 & inlist(wave, 6))"
 
-global sq_weight_per_fish_years "(year==2024 & inlist(wave, 1, 2, 3, 4, 5, 6))" //ADJUST THIS AFTER MRIP DATA RELEASE
+global sq_weight_per_fish_years "(year==2024 & inlist(wave, 1, 2, 3, 4, 5, 6))" 
 
 global calibration_start_date td(01jan2024)
 global calibration_end_date td(31dec2024)

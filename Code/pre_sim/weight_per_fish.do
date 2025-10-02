@@ -385,7 +385,7 @@ drop if tot_wt_harv==0
 drop if total_harv_n==0
 drop _merge se
 
-replace  tot_wt_harv=tot_wt_harv/2.20462 //translate to pounds
+replace  tot_wt_harv=tot_wt_harv*2.20462 //translate to pounds
 gen avg_wt_harv=tot_wt_harv/total_harv_n
 
 tempfile harv
