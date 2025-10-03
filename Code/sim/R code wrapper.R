@@ -314,22 +314,14 @@ for(s in statez) {
 
 ##################### STEP 3 #####################
 #Run the projection algorithm. This algorithm pulls in population-adjusted catch-at-length distributions and allocates 
-#fish discarded as harvest or vice versa in proportion to how they were allocated in the calibration. So for example, if in the 
-#Step 2 we find that for draw 10 in the pr_closed domain, we needed to allocated fish discarded as harvest for 40% of choice occasions, 
-#then in draw 10 projection of the pr_closed domain, we will also allocate fish discarded as harvest for 40% of the choice occasions. 
+#fish discarded as harvest or vice versa in proportion to how they were allocated in the calibration. 
 
-#New files needed:
-#projected_CaL_cod_hadd_cm.csv - stock-adjusted catch-at-length
-#calibration_comparison.rds - gives the proportions of trips to allocate harvest as release or vice versa
-#costs_MODE_SEASON.feather - gives baseline variables and baseline catch levels. These are held constant in the projections. 
-
-source(file.path(code_cd, "predict_rec_catch_season3_new1.R"))
-
-#Save the output
-write_xlsx(output2, file.path(output_data_cd, "model_results.xlsx"))
+source(file.path(code_cd, "predict_rec_catch_data_read.R"))
+source(file.path(code_cd, "predict_rec_catch_data_functions.R"))
+source(file.path(code_cd, "predict_rec_catch.R"))
 
 #Output files: 
-# RDM_predictions.xlsx - output by mode, season, and draw
+# predictions.xlsx - output by mode, season, and draw
 
 
 

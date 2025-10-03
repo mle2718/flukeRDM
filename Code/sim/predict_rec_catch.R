@@ -88,6 +88,8 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   # Join the result with scup data on domain2
   trip_data <- merge(trip_data_a, scup_trip_data, by = "domain2", all = TRUE)
   
+  trip_data[is.na(trip_data)] <- 0
+  
   # sf_catch_check<-sum(sf_trip_data$tot_keep_sf_new+sf_trip_data$tot_rel_sf_new)
   # bsb_catch_check<-sum(bsb_trip_data$tot_keep_bsb_new+bsb_trip_data$tot_rel_bsb_new)
   # scup_catch_check<-sum(scup_trip_data$tot_keep_scup_new+scup_trip_data$tot_rel_scup_new)
