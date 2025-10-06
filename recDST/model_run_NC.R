@@ -164,7 +164,8 @@ for(x in 1:25){
   
   calendar_adjustments <- readr::read_csv(
     file.path(here::here(paste0("Data/proj_year_calendar_adjustments_new_NC.csv"))), show_col_types = FALSE) %>%
-    dplyr::filter( draw==x)
+    dplyr::filter(draw == x) %>% 
+    dplyr::select(-dtrip, -dtrip_y2, -state.x, -state.y, -draw)
   
   base_outcomes0 <- list()
   n_choice_occasions0 <- list()

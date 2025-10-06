@@ -5,10 +5,10 @@ Run_Name <- args[1]
 
 saved_regs<- read.csv(here::here(paste0("saved_regs/regs_", Run_Name, ".csv")))
 
-for (a in seq_len(nrow(save_regs))) {
+for (a in seq_len(nrow(saved_regs))) {
   # Extract name and value
-  obj_name <- save_regs$input[a]
-  obj_value <- save_regs$value[a]
+  obj_name <- saved_regs$input[a]
+  obj_value <- saved_regs$value[a]
   
   # Assign to object in the environment
   assign(obj_name, obj_value)
@@ -146,7 +146,9 @@ for(x in 1:25){
     dplyr::left_join(directed_trips2, by=c("mode", "date", "draw")) 
   
   calendar_adjustments <- readr::read_csv(
-    file.path(here::here(paste0("Data/proj_year_calendar_adjustments_new_RI.csv"))), show_col_types = FALSE) 
+    file.path(here::here(paste0("Data/proj_year_calendar_adjustments_new_RI.csv"))), show_col_types = FALSE) %>% 
+    dplyr::filter(draw == x) %>% 
+    dplyr::select(-dtrip, -dtrip_y2, -state.x, -state.y, -draw)
   
   
   base_outcomes0 <- list()
