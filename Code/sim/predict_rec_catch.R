@@ -395,8 +395,8 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     value.name = "value"
   )
   
-  model_output1_long[, metric := fifelse(metric == "change_CS", "CV",
-                                         fifelse(metric == "n_trips_alt", "predicted trips", "metric"))]
+  model_output1_long[, metric := data.table::fifelse(metric == "change_CS", "CV",
+                                                     data.table::fifelse(metric == "n_trips_alt", "predicted trips", "metric"))]
   model_output1_long$species<-"NA"
 
   
@@ -427,7 +427,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   )
   
   ## Split Var into keep_release, species, length
-  length_data1[, c("keep_release", "species", "length") := tstrsplit(Var, "_", fixed = TRUE)]
+  length_data1[, c("keep_release", "species", "length") := data.table::tstrsplit(Var, "_", fixed = TRUE)]
   length_data1[, length := as.numeric(length)]
   
   ## Join with l_w_conversion
@@ -435,7 +435,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   length_data1 <- l_w_conversion[length_data1, on = .(month, species)]
   
   ## Compute weight
-  length_data1[, weight := fcase(
+  length_data1[, weight := data.table::fcase(
     species == "scup", exp(ln_a + b * log(length)),
     species %chin% c("sf", "bsb"), a * length^b,
     default = NA_real_
@@ -445,24 +445,24 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   length_data1[, weight := weight * 2.20462262185]
   
   ## Totals
-  length_data1[, keep_weight := fifelse(keep_release == "keep", 
+  length_data1[, keep_weight := data.table::fifelse(keep_release == "keep", 
                                         number_at_length * weight, 
                                         0)]
   
-  length_data1[, release_weight := fifelse(keep_release == "release", 
+  length_data1[, release_weight := data.table::fifelse(keep_release == "release", 
                                            number_at_length * weight, 
                                            0)]
   
-  length_data1[, keep_numbers := fifelse(keep_release == "keep", 
+  length_data1[, keep_numbers := data.table::fifelse(keep_release == "keep", 
                                         number_at_length, 
                                         0)]
   
-  length_data1[, release_numbers := fifelse(keep_release == "release", 
+  length_data1[, release_numbers := data.table::fifelse(keep_release == "release", 
                                            number_at_length, 
                                            0)]
   
   ## Discard mortality weight
-  length_data1[, discmort_weight := fcase(
+  length_data1[, discmort_weight := data.table::fcase(
     keep_release == "release" & species == "sf", 0.10 * number_at_length * weight,
     keep_release == "release" & species == "scup", 0.15 * number_at_length * weight,
     keep_release == "release" & species == "bsb", 0.15 * number_at_length * weight,
@@ -470,7 +470,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   )]
   
   ## Discard mortality numbers
-  length_data1[, discmort_number := fcase(
+  length_data1[, discmort_number := data.table::fcase(
     keep_release == "release" & species == "sf", 0.10 * number_at_length,
     keep_release == "release" & species == "scup", 0.15 * number_at_length,
     keep_release == "release" & species == "bsb", 0.15 * number_at_length,
