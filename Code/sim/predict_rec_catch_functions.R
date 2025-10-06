@@ -3,7 +3,7 @@
 
 
 ########## summer flounder ##############
-simulate_mode_sf <- function(md, calib_lookup, sf_size_data) {
+simulate_mode_sf <- function(md, calib_lookup, sf_size_data, catch_data) {
 
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
@@ -169,7 +169,7 @@ if (sf_catch_check_md != 0) {
 }
 
 ########## black sea bass ##############
-simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data) {
+simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data, catch_data) {
   
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
@@ -335,7 +335,7 @@ simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data) {
 }
 
 ########## scup ##############
-simulate_mode_scup <- function(md, calib_lookup, scup_size_data) {
+simulate_mode_scup <- function(md, calib_lookup, scup_size_data, catch_data) {
   
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
