@@ -8,12 +8,12 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
                               calendar_adjustments, base_outcomes){
   
   #Convert key data frames to data.table format early:
-  setDT(directed_trips)
-  setDT(catch_data)
-  setDT(calib_comparison)
-  setDT(sf_size_data)
-  setDT(bsb_size_data)
-  setDT(scup_size_data)
+  data.table::setDT(directed_trips)
+  data.table::setDT(catch_data)
+  data.table::setDT(calib_comparison)
+  data.table::setDT(sf_size_data)
+  data.table::setDT(bsb_size_data)
+  data.table::setDT(scup_size_data)
   
   #Set up constants (unchanged):
   mode_draw <- c("sh", "pr", "fh")
@@ -29,8 +29,8 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
       names_glue = "{.value}_{species}"
     )
   
-  setDT(calib_lookup)
-  setkey(calib_lookup, mode)
+  data.table::setDT(calib_lookup)
+  data.table::setkey(calib_lookup, mode)
   
   ## Run for all modes + aggregate  - summer flounder 
   results_list <- lapply(mode_draw, simulate_mode_sf, calib_lookup = calib_lookup,
@@ -430,7 +430,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   length_data1[, length := as.numeric(length)]
   
   ## Join with l_w_conversion
-  setDT(l_w_conversion)
+  data.table::setDT(l_w_conversion)
   length_data1 <- l_w_conversion[length_data1, on = .(month, species)]
   
   ## Compute weight
