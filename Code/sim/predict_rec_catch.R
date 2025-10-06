@@ -36,12 +36,12 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   results_list <- lapply(mode_draw, simulate_mode_sf, calib_lookup = calib_lookup,
                          sf_size_data = sf_size_data, catch_data = catch_data)
   
-  sf_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data"))
+  sf_trip_data <- data.table::rbindlist(lapply(results_list, `[[`, "trip_data"))
   data.table::setkey(sf_trip_data, domain2)
   
-  zero_catch_sf <- rbindlist(lapply(results_list, `[[`, "zero_catch"))
+  zero_catch_sf <- data.table::rbindlist(lapply(results_list, `[[`, "zero_catch"))
   
-  size_data_sf <- rbindlist(lapply(results_list, `[[`, "size_data"), fill=TRUE)
+  size_data_sf <- data.table::rbindlist(lapply(results_list, `[[`, "size_data"), fill=TRUE)
   
   # Replace NA=0 in all columns
   size_data_sf <- size_data_sf %>%
@@ -51,14 +51,14 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   results_list <- lapply(mode_draw, simulate_mode_bsb, calib_lookup = calib_lookup, 
                           bsb_size_data = bsb_size_data, catch_data = catch_data)
   
-  bsb_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
+  bsb_trip_data <- data.table::rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
     dplyr::select(-date, -mode, -catch_draw, -tripid)
   
   data.table::setkey(bsb_trip_data, domain2)
   
-  zero_catch_bsb <- rbindlist(lapply(results_list, `[[`, "zero_catch"))
+  zero_catch_bsb <- data.table::rbindlist(lapply(results_list, `[[`, "zero_catch"))
   
-  size_data_bsb <- rbindlist(lapply(results_list, `[[`, "size_data"), fill=TRUE)
+  size_data_bsb <- data.table::rbindlist(lapply(results_list, `[[`, "size_data"), fill=TRUE)
   
   # Replace NA=0 in all columns
   size_data_bsb <- size_data_bsb %>%
@@ -68,14 +68,14 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   results_list <- lapply(mode_draw, simulate_mode_scup, calib_lookup = calib_lookup, 
                           scup_size_data = scup_size_data, catch_data = catch_data)
   
-  scup_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
+  scup_trip_data <- data.table::rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
     dplyr::select(-date, -mode, -catch_draw, -tripid)
   
   data.table::setkey(scup_trip_data, domain2)
   
-  zero_catch_scup <- rbindlist(lapply(results_list, `[[`, "zero_catch"))
+  zero_catch_scup <- data.table::rbindlist(lapply(results_list, `[[`, "zero_catch"))
 
-  size_data_scup <- rbindlist(lapply(results_list, `[[`, "size_data"), fill=TRUE)
+  size_data_scup <- data.table::rbindlist(lapply(results_list, `[[`, "size_data"), fill=TRUE)
   
   # Replace NA=0 in all columns
   size_data_scup <- size_data_scup %>%
@@ -386,7 +386,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   ]
   
   # Combine and reshape
-  model_output1 <- rbindlist(list(aggregate_trip_data_mode, aggregate_trip_data_allmodes), use.names=TRUE)
+  model_output1 <- data.table::rbindlist(list(aggregate_trip_data_mode, aggregate_trip_data_allmodes), use.names=TRUE)
   model_output1_long <- melt(
     model_output1,
     id.vars = c("mode"),   # keep these as identifiers
@@ -508,13 +508,13 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   length_data_long_all[, mode := "all modes"]
   
   ## Final bind
-  length_output <- rbindlist(list(length_data_long_all, length_data_long) ,
+  length_output <- data.table::rbindlist(list(length_data_long_all, length_data_long) ,
     use.names = TRUE,
     fill = TRUE
   )
   
   
-  predictions <- rbindlist(
+  predictions <- data.table::rbindlist(
     list(length_output, model_output1_long),
     use.names = TRUE,
     fill = TRUE) %>% 
