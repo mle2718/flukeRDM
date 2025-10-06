@@ -387,7 +387,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   # Combine and reshape
   model_output1 <- data.table::rbindlist(list(aggregate_trip_data_mode, aggregate_trip_data_allmodes), use.names=TRUE)
-  model_output1_long <- melt(
+  model_output1_long <- data.table::melt(
     model_output1,
     id.vars = c("mode"),   # keep these as identifiers
     measure.vars = c("change_CS", "n_trips_alt"),
@@ -419,7 +419,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
                                .SDcols = pattern_vars]
   
   ## MELT to long
-  length_data1 <- melt(
+  length_data1 <- data.table::melt(
     length_data1,
     id.vars = c("month", "mode"),
     variable.name = "Var",
@@ -488,7 +488,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   ), by = .(species, mode)]
   
 
-  length_data_long <- melt(
+  length_data_long <- data.table::melt(
     length_data1,
     id.vars = c("species", "mode"),   # keep these as identifiers
     measure.vars = c("keep_numbers", "release_numbers",
