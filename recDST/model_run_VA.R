@@ -5,10 +5,10 @@ Run_Name <- args[1]
 
 saved_regs<- read.csv(here::here(paste0("saved_regs/regs_", Run_Name, ".csv")))
 
-for (a in seq_len(nrow(save_regs))) {
+for (a in seq_len(nrow(saved_regs))) {
   # Extract name and value
-  obj_name <- save_regs$input[a]
-  obj_value <- save_regs$value[a]
+  obj_name <- saved_regs$input[a]
+  obj_value <- saved_regs$value[a]
   
   # Assign to object in the environment
   assign(obj_name, obj_value)
@@ -153,9 +153,9 @@ directed_trips<- directed_trips %>%
 
 predictions_out10 <- data.frame()
 #future::plan(future::multisession, workers = 36)
-#future::plan(future::multisession, workers = 25)
-#get_predictions_out<- function(x){
-for(x in 1:25){
+future::plan(future::multisession, workers = 25)
+get_predictions_out<- function(x){
+#for(x in 1:25){
   
   print(x)
   
@@ -292,7 +292,7 @@ for(x in 1:25){
   
   #regs <- # Input table will be used to fill out regs in DT
   
-  predictions_out10<- predictions_out10 %>% rbind(test) 
+  #predictions_out10<- predictions_out10 %>% rbind(test) 
 }
 
 
@@ -303,7 +303,7 @@ print("out of loop")
 # use furrr package to parallelize the get_predictions_out function 100 times
 # This will spit out a dataframe with 100 predictions 
 #predictions_out10<- furrr::future_map_dfr(1:100, ~get_predictions_out(.), .id = "draw")
-#predictions_out10<- furrr::future_map_dfr(1:25, ~get_predictions_out(.), .id = "draw")
+predictions_out10<- furrr::future_map_dfr(1:25, ~get_predictions_out(.), .id = "draw")
 
 #readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
 readr::write_csv(predictions_out10, file = here::here(paste0("output/output_VA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
