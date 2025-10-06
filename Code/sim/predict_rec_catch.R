@@ -9,7 +9,9 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   #Convert key data frames to data.table format early:
   data.table::setDT(directed_trips)
+  print("before catch data in predict")
   data.table::setDT(catch_data)
+  print("after catch data in predict")
   data.table::setDT(calib_comparison)
   data.table::setDT(sf_size_data)
   data.table::setDT(bsb_size_data)

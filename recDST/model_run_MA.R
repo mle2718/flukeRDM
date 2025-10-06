@@ -125,6 +125,7 @@ get_predictions_out<- function(x){
       
       catch_data <- feather::read_feather(file.path(data_path, paste0("proj_catch_draws_MA", "_", x,".feather"))) %>% 
         dplyr::left_join(directed_trips2, by=c("mode", "date", "draw")) 
+      print("catch data read in")
       
       calendar_adjustments <- readr::read_csv(
         file.path(here::here(paste0("Data/proj_year_calendar_adjustments_new_MA.csv"))), show_col_types = FALSE) %>% 
