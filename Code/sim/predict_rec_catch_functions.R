@@ -75,7 +75,7 @@ if (sf_catch_check_md != 0) {
     
     n_to_keep <- round(prop_sublegal_kept_sf * nrow(sublegal_keeps))
     sublegal_keeps[, uniform := runif(.N)]
-    setorder(sublegal_keeps, uniform)
+    data.table::setorder(sublegal_keeps, uniform)
     sublegal_keeps[, fishid2 := .I]
     sublegal_keeps[, `:=`(
       keep = as.integer(fishid2 <= n_to_keep),
@@ -103,7 +103,7 @@ if (sf_catch_check_md != 0) {
       n_to_release <- round(prop_legal_rel_sf * nrow(kept))
       
       kept[, uniform := runif(.N)]
-      setorder(kept, uniform)
+      data.table::setorder(kept, uniform)
       kept[, fishid2 := .I]
       kept[, `:=`(
         release = as.integer(fishid2 <= n_to_release),
@@ -242,7 +242,7 @@ simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data, catch_data) {
     
     n_to_keep <- round(prop_sublegal_kept_bsb * nrow(sublegal_keeps))
     sublegal_keeps[, uniform := runif(.N)]
-    setorder(sublegal_keeps, uniform)
+    data.table::setorder(sublegal_keeps, uniform)
     sublegal_keeps[, fishid2 := .I]
     sublegal_keeps[, `:=`(
       keep = as.integer(fishid2 <= n_to_keep),
@@ -270,7 +270,7 @@ simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data, catch_data) {
       n_to_release <- round(prop_legal_rel_bsb * nrow(kept))
       
       kept[, uniform := runif(.N)]
-      setorder(kept, uniform)
+      data.table::setorder(kept, uniform)
       kept[, fishid2 := .I]
       kept[, `:=`(
         release = as.integer(fishid2 <= n_to_release),
@@ -409,7 +409,7 @@ simulate_mode_scup <- function(md, calib_lookup, scup_size_data, catch_data) {
     
     n_to_keep <- round(prop_sublegal_kept_scup * nrow(sublegal_keeps))
     sublegal_keeps[, uniform := runif(.N)]
-    setorder(sublegal_keeps, uniform)
+    data.table::setorder(sublegal_keeps, uniform)
     sublegal_keeps[, fishid2 := .I]
     sublegal_keeps[, `:=`(
       keep = as.integer(fishid2 <= n_to_keep),
@@ -437,7 +437,7 @@ simulate_mode_scup <- function(md, calib_lookup, scup_size_data, catch_data) {
       n_to_release <- round(prop_legal_rel_scup * nrow(kept))
       
       kept[, uniform := runif(.N)]
-      setorder(kept, uniform)
+      data.table::setorder(kept, uniform)
       kept[, fishid2 := .I]
       kept[, `:=`(
         release = as.integer(fishid2 <= n_to_release),
