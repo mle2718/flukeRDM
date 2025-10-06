@@ -7,6 +7,8 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
                               l_w_conversion, calib_comparison, n_choice_occasions, 
                               calendar_adjustments, base_outcomes){
   
+  library(data.table)
+  
   #Convert key data frames to data.table format early:
   data.table::setDT(directed_trips)
   data.table::setDT(catch_data)
