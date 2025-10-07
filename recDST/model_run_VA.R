@@ -5,10 +5,10 @@ Run_Name <- args[1]
 
 saved_regs<- read.csv(here::here(paste0("saved_regs/regs_", Run_Name, ".csv")))
 
-for (a in seq_len(nrow(save_regs))) {
+for (a in seq_len(nrow(saved_regs))) {
   # Extract name and value
-  obj_name <- save_regs$input[a]
-  obj_value <- save_regs$value[a]
+  obj_name <- saved_regs$input[a]
+  obj_value <- saved_regs$value[a]
   
   # Assign to object in the environment
   assign(obj_name, obj_value)
@@ -151,7 +151,7 @@ directed_trips<- directed_trips %>%
     scup_min_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(SCUPvaPR_seas2_op) & date_adj <= lubridate::yday(SCUPvaPR_seas2_cl) ~ as.numeric(SCUPvaPR_2_len) * 2.54, TRUE ~ scup_min_y2),
     scup_min_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SCUPvaSH_seas2_op) & date_adj <= lubridate::yday(SCUPvaSH_seas2_cl) ~ as.numeric(SCUPvaSH_2_len) * 2.54, TRUE ~ scup_min_y2))
 
-#predictions_out10 <- data.frame()
+predictions_out10 <- data.frame()
 #future::plan(future::multisession, workers = 36)
 future::plan(future::multisession, workers = 25)
 get_predictions_out<- function(x){
@@ -169,7 +169,8 @@ get_predictions_out<- function(x){
   
   calendar_adjustments <- readr::read_csv(
     file.path(here::here(paste0("Data/proj_year_calendar_adjustments_new_VA.csv"))), show_col_types = FALSE) %>%
-    dplyr::filter( draw==x)
+    dplyr::filter(draw == x) %>% 
+    dplyr::select(-dtrip, -dtrip_y2, -state.x, -state.y, -draw)
   
   
   base_outcomes0 <- list()

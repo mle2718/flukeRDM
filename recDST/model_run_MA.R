@@ -6,10 +6,10 @@ Run_Name <- args[1]
 
 saved_regs<- read.csv(here::here(paste0("saved_regs/regs_", Run_Name, ".csv")))
 
-for (a in seq_len(nrow(save_regs))) {
+for (a in seq_len(nrow(saved_regs))) {
   # Extract name and value
-  obj_name <- save_regs$input[a]
-  obj_value <- save_regs$value[a]
+  obj_name <- saved_regs$input[a]
+  obj_value <- saved_regs$value[a]
   
   # Assign to object in the environment
   assign(obj_name, obj_value)
@@ -110,10 +110,10 @@ directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trip
 
 #   readr::write_csv(directed_trips, file = here::here(paste0("output/MA_directed_trips_", Run_Name, ".csv")))
 
-    #predictions_out10 <- data.frame()
+    predictions_out10 <- data.frame()
     #future::plan(future::multisession, workers = 36)
-    future::plan(future::multisession, workers = 25)
-  get_predictions_out<- function(x){
+future::plan(future::multisession, workers = 25)
+get_predictions_out<- function(x){
     #for(x in 1:25){
       
       print(x)
@@ -125,10 +125,12 @@ directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trip
       
       catch_data <- feather::read_feather(file.path(data_path, paste0("proj_catch_draws_MA", "_", x,".feather"))) %>% 
         dplyr::left_join(directed_trips2, by=c("mode", "date", "draw")) 
+      print("catch data read in")
       
       calendar_adjustments <- readr::read_csv(
         file.path(here::here(paste0("Data/proj_year_calendar_adjustments_new_MA.csv"))), show_col_types = FALSE) %>% 
-        dplyr::filter(draw == x)
+        dplyr::filter(draw == x) %>% 
+        dplyr::select(-dtrip, -dtrip_y2, -state.x, -state.y, -draw)
       
       
       base_outcomes0 <- list()
@@ -250,7 +252,7 @@ directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trip
       # 
       # #regs <- # Input table will be used to fill out regs in DT
       # 
-       #predictions_out10<- predictions_out10 %>% rbind(test)
+      # predictions_out10<- predictions_out10 %>% rbind(test)
     }
     
     

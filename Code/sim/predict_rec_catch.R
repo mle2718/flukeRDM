@@ -7,13 +7,15 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
                               l_w_conversion, calib_comparison, n_choice_occasions, 
                               calendar_adjustments, base_outcomes){
   
+  library(data.table)
+  
   #Convert key data frames to data.table format early:
-  setDT(directed_trips)
-  setDT(catch_data)
-  setDT(calib_comparison)
-  setDT(sf_size_data)
-  setDT(bsb_size_data)
-  setDT(scup_size_data)
+  data.table::setDT(directed_trips)
+  data.table::setDT(catch_data)
+  data.table::setDT(calib_comparison)
+  data.table::setDT(sf_size_data)
+  data.table::setDT(bsb_size_data)
+  data.table::setDT(scup_size_data)
   
   #Set up constants (unchanged):
   mode_draw <- c("sh", "pr", "fh")
@@ -29,19 +31,19 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
       names_glue = "{.value}_{species}"
     )
   
-  setDT(calib_lookup)
-  setkey(calib_lookup, mode)
+  data.table::setDT(calib_lookup)
+  data.table::setkey(calib_lookup, mode)
   
   ## Run for all modes + aggregate  - summer flounder 
   results_list <- lapply(mode_draw, simulate_mode_sf, calib_lookup = calib_lookup,
-                         sf_size_data = sf_size_data)
+                         sf_size_data = sf_size_data, catch_data = catch_data)
   
-  sf_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data"))
+  sf_trip_data <- data.table::rbindlist(lapply(results_list, `[[`, "trip_data"))
   data.table::setkey(sf_trip_data, domain2)
   
-  zero_catch_sf <- rbindlist(lapply(results_list, `[[`, "zero_catch"))
+  zero_catch_sf <- data.table::rbindlist(lapply(results_list, `[[`, "zero_catch"))
   
-  size_data_sf <- rbindlist(lapply(results_list, `[[`, "size_data"), fill=TRUE)
+  size_data_sf <- data.table::rbindlist(lapply(results_list, `[[`, "size_data"), fill=TRUE)
   
   # Replace NA=0 in all columns
   size_data_sf <- size_data_sf %>%
@@ -49,16 +51,16 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
 
   ## Run for all modes + aggregate  - black sea bass 
   results_list <- lapply(mode_draw, simulate_mode_bsb, calib_lookup = calib_lookup, 
-                          bsb_size_data = bsb_size_data)
+                          bsb_size_data = bsb_size_data, catch_data = catch_data)
   
-  bsb_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
+  bsb_trip_data <- data.table::rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
     dplyr::select(-date, -mode, -catch_draw, -tripid)
   
   data.table::setkey(bsb_trip_data, domain2)
   
-  zero_catch_bsb <- rbindlist(lapply(results_list, `[[`, "zero_catch"))
+  zero_catch_bsb <- data.table::rbindlist(lapply(results_list, `[[`, "zero_catch"))
   
-  size_data_bsb <- rbindlist(lapply(results_list, `[[`, "size_data"), fill=TRUE)
+  size_data_bsb <- data.table::rbindlist(lapply(results_list, `[[`, "size_data"), fill=TRUE)
   
   # Replace NA=0 in all columns
   size_data_bsb <- size_data_bsb %>%
@@ -66,16 +68,16 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   ## Run for all modes + aggregate  - scup 
   results_list <- lapply(mode_draw, simulate_mode_scup, calib_lookup = calib_lookup, 
-                          scup_size_data = scup_size_data)
+                          scup_size_data = scup_size_data, catch_data = catch_data)
   
-  scup_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
+  scup_trip_data <- data.table::rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
     dplyr::select(-date, -mode, -catch_draw, -tripid)
   
   data.table::setkey(scup_trip_data, domain2)
   
-  zero_catch_scup <- rbindlist(lapply(results_list, `[[`, "zero_catch"))
+  zero_catch_scup <- data.table::rbindlist(lapply(results_list, `[[`, "zero_catch"))
 
-  size_data_scup <- rbindlist(lapply(results_list, `[[`, "size_data"), fill=TRUE)
+  size_data_scup <- data.table::rbindlist(lapply(results_list, `[[`, "size_data"), fill=TRUE)
   
   # Replace NA=0 in all columns
   size_data_scup <- size_data_scup %>%
@@ -194,10 +196,11 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   trip_data[, domain2 := NULL]
   
+  print("before remove catch_data")
   rm(sf_trip_data, scup_trip_data, bsb_trip_data, 
      size_data_sf, size_data_bsb,size_data_scup, 
      base_outcomes, catch_data)
-
+  print("after remove catch_data")
   #trip_data$NJ_dummy<-case_when(s=="NJ"~1, TRUE~0)
   
   # compute utility/choice probabilites/welfare
@@ -385,8 +388,8 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   ]
   
   # Combine and reshape
-  model_output1 <- rbindlist(list(aggregate_trip_data_mode, aggregate_trip_data_allmodes), use.names=TRUE)
-  model_output1_long <- melt(
+  model_output1 <- data.table::rbindlist(list(aggregate_trip_data_mode, aggregate_trip_data_allmodes), use.names=TRUE)
+  model_output1_long <- data.table::melt(
     model_output1,
     id.vars = c("mode"),   # keep these as identifiers
     measure.vars = c("change_CS", "n_trips_alt"),
@@ -394,8 +397,8 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     value.name = "value"
   )
   
-  model_output1_long[, metric := fifelse(metric == "change_CS", "CV",
-                                         fifelse(metric == "n_trips_alt", "predicted trips", "metric"))]
+  model_output1_long[, metric := data.table::fifelse(metric == "change_CS", "CV",
+                                                     data.table::fifelse(metric == "n_trips_alt", "predicted trips", "metric"))]
   model_output1_long$species<-"NA"
 
   
@@ -418,7 +421,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
                                .SDcols = pattern_vars]
   
   ## MELT to long
-  length_data1 <- melt(
+  length_data1 <- data.table::melt(
     length_data1,
     id.vars = c("month", "mode"),
     variable.name = "Var",
@@ -426,15 +429,15 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   )
   
   ## Split Var into keep_release, species, length
-  length_data1[, c("keep_release", "species", "length") := tstrsplit(Var, "_", fixed = TRUE)]
+  length_data1[, c("keep_release", "species", "length") := data.table::tstrsplit(Var, "_", fixed = TRUE)]
   length_data1[, length := as.numeric(length)]
   
   ## Join with l_w_conversion
-  setDT(l_w_conversion)
+  data.table::setDT(l_w_conversion)
   length_data1 <- l_w_conversion[length_data1, on = .(month, species)]
   
   ## Compute weight
-  length_data1[, weight := fcase(
+  length_data1[, weight := data.table::fcase(
     species == "scup", exp(ln_a + b * log(length)),
     species %chin% c("sf", "bsb"), a * length^b,
     default = NA_real_
@@ -444,24 +447,24 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   length_data1[, weight := weight * 2.20462262185]
   
   ## Totals
-  length_data1[, keep_weight := fifelse(keep_release == "keep", 
+  length_data1[, keep_weight := data.table::fifelse(keep_release == "keep", 
                                         number_at_length * weight, 
                                         0)]
   
-  length_data1[, release_weight := fifelse(keep_release == "release", 
+  length_data1[, release_weight := data.table::fifelse(keep_release == "release", 
                                            number_at_length * weight, 
                                            0)]
   
-  length_data1[, keep_numbers := fifelse(keep_release == "keep", 
+  length_data1[, keep_numbers := data.table::fifelse(keep_release == "keep", 
                                         number_at_length, 
                                         0)]
   
-  length_data1[, release_numbers := fifelse(keep_release == "release", 
+  length_data1[, release_numbers := data.table::fifelse(keep_release == "release", 
                                            number_at_length, 
                                            0)]
   
   ## Discard mortality weight
-  length_data1[, discmort_weight := fcase(
+  length_data1[, discmort_weight := data.table::fcase(
     keep_release == "release" & species == "sf", 0.10 * number_at_length * weight,
     keep_release == "release" & species == "scup", 0.15 * number_at_length * weight,
     keep_release == "release" & species == "bsb", 0.15 * number_at_length * weight,
@@ -469,7 +472,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   )]
   
   ## Discard mortality numbers
-  length_data1[, discmort_number := fcase(
+  length_data1[, discmort_number := data.table::fcase(
     keep_release == "release" & species == "sf", 0.10 * number_at_length,
     keep_release == "release" & species == "scup", 0.15 * number_at_length,
     keep_release == "release" & species == "bsb", 0.15 * number_at_length,
@@ -487,7 +490,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   ), by = .(species, mode)]
   
 
-  length_data_long <- melt(
+  length_data_long <- data.table::melt(
     length_data1,
     id.vars = c("species", "mode"),   # keep these as identifiers
     measure.vars = c("keep_numbers", "release_numbers",
@@ -507,13 +510,13 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   length_data_long_all[, mode := "all modes"]
   
   ## Final bind
-  length_output <- rbindlist(list(length_data_long_all, length_data_long) ,
+  length_output <- data.table::rbindlist(list(length_data_long_all, length_data_long) ,
     use.names = TRUE,
     fill = TRUE
   )
   
   
-  predictions <- rbindlist(
+  predictions <- data.table::rbindlist(
     list(length_output, model_output1_long),
     use.names = TRUE,
     fill = TRUE) %>% 

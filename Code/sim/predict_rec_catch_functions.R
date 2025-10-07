@@ -3,7 +3,7 @@
 
 
 ########## summer flounder ##############
-simulate_mode_sf <- function(md, calib_lookup, sf_size_data) {
+simulate_mode_sf <- function(md, calib_lookup, sf_size_data, catch_data) {
 
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
@@ -75,7 +75,7 @@ if (sf_catch_check_md != 0) {
     
     n_to_keep <- round(prop_sublegal_kept_sf * nrow(sublegal_keeps))
     sublegal_keeps[, uniform := runif(.N)]
-    setorder(sublegal_keeps, uniform)
+    data.table::setorder(sublegal_keeps, uniform)
     sublegal_keeps[, fishid2 := .I]
     sublegal_keeps[, `:=`(
       keep = as.integer(fishid2 <= n_to_keep),
@@ -90,7 +90,7 @@ if (sf_catch_check_md != 0) {
     cols_to_drop_base <- intersect(names(base), "subl_harv_indicator")
     base[, (cols_to_drop_base) := NULL]
     
-    sf_catch_data <- rbindlist(list(sublegal_keeps, base), use.names = TRUE, fill = TRUE)
+    sf_catch_data <- data.table::rbindlist(list(sublegal_keeps, base), use.names = TRUE, fill = TRUE)
   }
   
   # --- Reallocate keep to rel ---
@@ -103,7 +103,7 @@ if (sf_catch_check_md != 0) {
       n_to_release <- round(prop_legal_rel_sf * nrow(kept))
       
       kept[, uniform := runif(.N)]
-      setorder(kept, uniform)
+      data.table::setorder(kept, uniform)
       kept[, fishid2 := .I]
       kept[, `:=`(
         release = as.integer(fishid2 <= n_to_release),
@@ -111,7 +111,7 @@ if (sf_catch_check_md != 0) {
       )]
       kept[, `:=`(uniform = NULL, fishid2 = NULL)]
       
-      sf_catch_data <- rbindlist(list(kept, base), use.names = TRUE)
+      sf_catch_data <- data.table::rbindlist(list(kept, base), use.names = TRUE)
     }
   }
   
@@ -155,7 +155,7 @@ if (sf_catch_check_md != 0) {
   zero_catch <- catch_data_md[sf_cat == 0, .(date, catch_draw, tripid, mode)]
   zero_catch[, `:=`(tot_keep_sf_new = 0L, tot_rel_sf_new = 0L)]
   
-  trip_data <- rbindlist(list(trip_summary, zero_catch))
+  trip_data <- data.table::rbindlist(list(trip_summary, zero_catch))
   trip_data[, domain2 := paste0(date, "_", mode, "_", catch_draw, "_", tripid)]
   
   output_list<- list(
@@ -169,7 +169,7 @@ if (sf_catch_check_md != 0) {
 }
 
 ########## black sea bass ##############
-simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data) {
+simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data, catch_data) {
   
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
@@ -242,7 +242,7 @@ simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data) {
     
     n_to_keep <- round(prop_sublegal_kept_bsb * nrow(sublegal_keeps))
     sublegal_keeps[, uniform := runif(.N)]
-    setorder(sublegal_keeps, uniform)
+    data.table::setorder(sublegal_keeps, uniform)
     sublegal_keeps[, fishid2 := .I]
     sublegal_keeps[, `:=`(
       keep = as.integer(fishid2 <= n_to_keep),
@@ -257,7 +257,7 @@ simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data) {
     cols_to_drop_base <- intersect(names(base), "subl_harv_indicator")
     base[, (cols_to_drop_base) := NULL]
     
-    bsb_catch_data <- rbindlist(list(sublegal_keeps, base), use.names = TRUE, fill = TRUE)
+    bsb_catch_data <- data.table::rbindlist(list(sublegal_keeps, base), use.names = TRUE, fill = TRUE)
   }
   
   # --- Reallocate keep to rel ---
@@ -270,7 +270,7 @@ simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data) {
       n_to_release <- round(prop_legal_rel_bsb * nrow(kept))
       
       kept[, uniform := runif(.N)]
-      setorder(kept, uniform)
+      data.table::setorder(kept, uniform)
       kept[, fishid2 := .I]
       kept[, `:=`(
         release = as.integer(fishid2 <= n_to_release),
@@ -278,7 +278,7 @@ simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data) {
       )]
       kept[, `:=`(uniform = NULL, fishid2 = NULL)]
       
-      bsb_catch_data <- rbindlist(list(kept, base), use.names = TRUE)
+      bsb_catch_data <- data.table::rbindlist(list(kept, base), use.names = TRUE)
     }
   }
   
@@ -322,7 +322,7 @@ simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data) {
   zero_catch <- catch_data_md[bsb_cat == 0, .(date, catch_draw, tripid, mode)]
   zero_catch[, `:=`(tot_keep_bsb_new = 0L, tot_rel_bsb_new = 0L)]
   
-  trip_data <- rbindlist(list(trip_summary, zero_catch))
+  trip_data <- data.table::rbindlist(list(trip_summary, zero_catch))
   trip_data[, domain2 := paste0(date, "_", mode, "_", catch_draw, "_", tripid)]
   
   output_list<-list(
@@ -335,7 +335,7 @@ simulate_mode_bsb <- function(md, calib_lookup, bsb_size_data) {
 }
 
 ########## scup ##############
-simulate_mode_scup <- function(md, calib_lookup, scup_size_data) {
+simulate_mode_scup <- function(md, calib_lookup, scup_size_data, catch_data) {
   
   # Extract calibration parameters
   calib_row <- calib_lookup[mode == md]
@@ -409,7 +409,7 @@ simulate_mode_scup <- function(md, calib_lookup, scup_size_data) {
     
     n_to_keep <- round(prop_sublegal_kept_scup * nrow(sublegal_keeps))
     sublegal_keeps[, uniform := runif(.N)]
-    setorder(sublegal_keeps, uniform)
+    data.table::setorder(sublegal_keeps, uniform)
     sublegal_keeps[, fishid2 := .I]
     sublegal_keeps[, `:=`(
       keep = as.integer(fishid2 <= n_to_keep),
@@ -424,7 +424,7 @@ simulate_mode_scup <- function(md, calib_lookup, scup_size_data) {
     cols_to_drop_base <- intersect(names(base), "subl_harv_indicator")
     base[, (cols_to_drop_base) := NULL]
     
-    scup_catch_data <- rbindlist(list(sublegal_keeps, base), use.names = TRUE, fill = TRUE)
+    scup_catch_data <- data.table::rbindlist(list(sublegal_keeps, base), use.names = TRUE, fill = TRUE)
   }
   
   # --- Reallocate keep to rel ---
@@ -437,7 +437,7 @@ simulate_mode_scup <- function(md, calib_lookup, scup_size_data) {
       n_to_release <- round(prop_legal_rel_scup * nrow(kept))
       
       kept[, uniform := runif(.N)]
-      setorder(kept, uniform)
+      data.table::setorder(kept, uniform)
       kept[, fishid2 := .I]
       kept[, `:=`(
         release = as.integer(fishid2 <= n_to_release),
@@ -445,7 +445,7 @@ simulate_mode_scup <- function(md, calib_lookup, scup_size_data) {
       )]
       kept[, `:=`(uniform = NULL, fishid2 = NULL)]
       
-      scup_catch_data <- rbindlist(list(kept, base), use.names = TRUE)
+      scup_catch_data <- data.table::rbindlist(list(kept, base), use.names = TRUE)
     }
   }
   
@@ -489,7 +489,7 @@ simulate_mode_scup <- function(md, calib_lookup, scup_size_data) {
   zero_catch <- catch_data_md[scup_cat == 0, .(date, catch_draw, tripid, mode)]
   zero_catch[, `:=`(tot_keep_scup_new = 0L, tot_rel_scup_new = 0L)]
   
-  trip_data <- rbindlist(list(trip_summary, zero_catch))
+  trip_data <- data.table::rbindlist(list(trip_summary, zero_catch))
   trip_data[, domain2 := paste0(date, "_", mode, "_", catch_draw, "_", tripid)]
   
   output_list<-list(
