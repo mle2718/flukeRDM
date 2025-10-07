@@ -43,12 +43,12 @@ simulate_mode_sf <- function(md, calib_lookup, sf_size_data, catch_data) {
       tot_keep_sf_new = numeric(0),
       tot_rel_sf_new = numeric(0))
     
-    return<- list(
+    return(list(
       trip_data = catch_data_md[, .(date, catch_draw, tripid, mode,
                                     tot_keep_sf_new = 0L, tot_rel_sf_new = 0L,
                                     domain2 = paste0(date, "_", mode, "_", catch_draw, "_", tripid))],
       zero_catch = zero_catch, 
-      size_data=size_data)
+      size_data=size_data))
   }
 if (sf_catch_check_md != 0) {
     
