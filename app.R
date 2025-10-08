@@ -3009,7 +3009,7 @@ server <- function(input, output, session) {
     
     switch(input$BSB_VA_input_type, 
            "All Modes Combined" = div(rlang::exec(sliderInput,inputId = "BSBva_seas1", label =" Season 1",
-                                                  value=c(as.Date("05-15","%m-%d"),as.Date("07-06","%m-%d")), 
+                                                  value=c(as.Date("05-15","%m-%d"),as.Date("07-15","%m-%d")), 
                                                   !!!date_slider_defaults),
                                       fluidRow(
                                         column(4,
@@ -3020,7 +3020,7 @@ server <- function(input, output, session) {
                                                            min = 11, max = 18, value = 13, step = .5))), 
                                       
                                       rlang::exec(sliderInput, inputId= "BSBva_seas2", label =" Season 2",
-                                                  value=c(as.Date("08-09","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                  value=c(as.Date("07-27","%m-%d"),as.Date("12-31","%m-%d")), 
                                                   !!!date_slider_defaults),
                                       fluidRow(
                                         column(4,
@@ -3030,7 +3030,7 @@ server <- function(input, output, session) {
                                                rlang::exec(sliderInput, inputId= "BSBva_2_len", label ="Min Length",
                                                            min = 11, max = 18, value = 13, step = .5)))), 
            "Separated By Mode" = div(rlang::exec(sliderInput,inputId = "BSBvaFH_seas1", label ="For Hire  Season 1",
-                                                 value=c(as.Date("05-15","%m-%d"),as.Date("07-06","%m-%d")), 
+                                                 value=c(as.Date("05-15","%m-%d"),as.Date("07-15","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
@@ -3040,7 +3040,7 @@ server <- function(input, output, session) {
                                               rlang::exec(sliderInput, inputId= "BSBvaFH_1_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
                                      rlang::exec(sliderInput, inputId= "BSBvaPR_seas1", label ="Private  Season 1",
-                                                 value=c(as.Date("05-15","%m-%d"),as.Date("07-06","%m-%d")), 
+                                                 value=c(as.Date("05-15","%m-%d"),as.Date("07-15","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
@@ -3050,7 +3050,7 @@ server <- function(input, output, session) {
                                               rlang::exec(sliderInput, inputId= "BSBvaPR_1_len", label ="Min Length",
                                                           min = 11, max = 18, value = 15, step = .5))) ,
                                      rlang::exec(sliderInput, inputId= "BSBvaSH_seas1", label ="Shore  Season 1",
-                                                 value=c(as.Date("05-15","%m-%d"),as.Date("07-06","%m-%d")), 
+                                                 value=c(as.Date("05-15","%m-%d"),as.Date("07-15","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
@@ -3062,7 +3062,7 @@ server <- function(input, output, session) {
                                      
                                      
                                      rlang::exec(sliderInput, inputId= "BSBvaFH_seas2", label ="For Hire  Season 2",
-                                                 value=c(as.Date("08-09","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 value=c(as.Date("07-27","%m-%d"),as.Date("12-31","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
@@ -3072,7 +3072,7 @@ server <- function(input, output, session) {
                                               rlang::exec(sliderInput, inputId= "BSBvaFH_2_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
                                      rlang::exec(sliderInput, inputId= "BSBvaPR_seas2", label ="Private  Season 2",
-                                                 value=c(as.Date("08-09","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 value=c(as.Date("07-27","%m-%d"),as.Date("12-31","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
@@ -3082,7 +3082,7 @@ server <- function(input, output, session) {
                                               rlang::exec(sliderInput, inputId= "BSBvaPR_2_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
                                      rlang::exec(sliderInput, inputId= "BSBvaSH_seas2", label ="Shore  Season 2",
-                                                 value=c(as.Date("08-09","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 value=c(as.Date("07-27","%m-%d"),as.Date("12-31","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
