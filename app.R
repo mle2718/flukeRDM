@@ -4804,7 +4804,7 @@ server <- function(input, output, session) {
       
       
       if(input$BSB_NC_input_type == "All Modes Combined"){
-        bsbNCgs <- data.frame(run_name = c(Run_Name()),
+        bsbNCregs <- data.frame(run_name = c(Run_Name()),
                               state = c("NC"),
                               input =  c("BSBnc_seas1_op", "BSBnc_seas1_cl", "BSBnc_1_bag", "BSBnc_1_len", 
                                          "BSBnc_seas2_op", "BSBnc_seas2_cl", "BSBnc_2_bag", "BSBnc_2_len", 
