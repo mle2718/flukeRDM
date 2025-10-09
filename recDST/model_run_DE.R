@@ -50,6 +50,7 @@ directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trip
   dplyr::mutate(date_adj = lubridate::dmy(date), 
                 date_adj = lubridate::yday(date_adj))
 
+
 if (exists("SFde_seas1_op")) {
   directed_trips<- directed_trips %>%
     dplyr::mutate(#Summer Flounder
@@ -154,6 +155,7 @@ directed_trips<- directed_trips %>%
     scup_min_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SCUPdeFH_seas2_op) & date_adj <= lubridate::yday(SCUPdeFH_seas2_cl) ~ as.numeric(SCUPdeFH_2_len) * 2.54, TRUE ~ scup_min_y2),
     scup_min_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(SCUPdePR_seas2_op) & date_adj <= lubridate::yday(SCUPdePR_seas2_cl) ~ as.numeric(SCUPdePR_2_len) * 2.54, TRUE ~ scup_min_y2),
     scup_min_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SCUPdeSH_seas2_op) & date_adj <= lubridate::yday(SCUPdeSH_seas2_cl) ~ as.numeric(SCUPdeSH_2_len) * 2.54, TRUE ~ scup_min_y2))
+
 
 
 predictions_out10 <- data.frame()
