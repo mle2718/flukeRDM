@@ -51,7 +51,8 @@ directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trip
   dplyr::select(mode, date, draw, bsb_bag, bsb_min, fluke_bag,fluke_min, scup_bag, scup_min,
                 bsb_bag_y2, bsb_min_y2, fluke_bag_y2,fluke_min_y2, scup_bag_y2, scup_min_y2) %>% 
   dplyr::mutate(date_adj = lubridate::dmy(date), 
-                date_adj = lubridate::yday(date_adj))  %>%
+                date_adj = lubridate::yday(date_adj), 
+                date_adj = dplyr::case_when(date_adj > 60 ~ date_adj -1, TRUE ~ date_adj))  %>%
   dplyr::mutate(
     fluke_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SFmaFH_seas1_op) & date_adj <= lubridate::yday(SFmaFH_seas1_cl) ~ as.numeric(SFmaFH_1_bag), TRUE ~ 0),
     fluke_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SFmaFH_seas2_op) & date_adj <= lubridate::yday(SFmaFH_seas2_cl) ~ as.numeric(SFmaFH_2_bag), TRUE ~ fluke_bag_y2),
