@@ -51,7 +51,8 @@ directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trip
   dplyr::select(mode, date, draw, bsb_bag, bsb_min, fluke_bag,fluke_min, scup_bag, scup_min,
                 bsb_bag_y2, bsb_min_y2, fluke_bag_y2,fluke_min_y2, scup_bag_y2, scup_min_y2) %>% 
   dplyr::mutate(date_adj = lubridate::dmy(date), 
-                date_adj = lubridate::yday(date_adj))  %>%
+                date_adj = lubridate::yday(date_adj), 
+                date_adj = dplyr::case_when(date_adj > 60 ~ date_adj -1, TRUE ~ date_adj))  %>%
   dplyr::mutate(
     fluke_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SFmaFH_seas1_op) & date_adj <= lubridate::yday(SFmaFH_seas1_cl) ~ as.numeric(SFmaFH_1_bag), TRUE ~ 0),
     fluke_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SFmaFH_seas2_op) & date_adj <= lubridate::yday(SFmaFH_seas2_cl) ~ as.numeric(SFmaFH_2_bag), TRUE ~ fluke_bag_y2),
@@ -262,8 +263,8 @@ get_predictions_out<- function(x){
     
     # use furrr package to parallelize the get_predictions_out function 100 times
     # This will spit out a dataframe with 100 predictions 
-    #predictions_out10<- furrr::future_map_dfr(1:100, ~get_predictions_out(.), .id = "draw")
-    predictions_out10<- furrr::future_map_dfr(1:25, ~get_predictions_out(.), .id = "draw")
+    predictions_out10<- furrr::future_map_dfr(1:100, ~get_predictions_out(.), .id = "draw")
+    #predictions_out10<- furrr::future_map_dfr(1:25, ~get_predictions_out(.), .id = "draw")
     
     #readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
     readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))

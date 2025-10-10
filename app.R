@@ -2193,7 +2193,7 @@ server <- function(input, output, session) {
       return()
     
     switch(input$SF_DE_input_type, 
-           "All Modes Combined" = div(rlang::exec(sliderInput,inputId = "SFde_seas1", label =" Season 1",
+           "All Modes Combined" = div(rlang::exec(sliderInput,inputId = "SFde_seas1", label ="Season 1",
                                                   value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
                                                   !!!date_slider_defaults),
                                       fluidRow(
@@ -2553,13 +2553,12 @@ server <- function(input, output, session) {
   
   
   ############## MD breakout by mode ############################
-  
   output$SFmdMode <- renderUI({
     if (is.null(input$SF_MD_input_type))
       return()
     
     switch(input$SF_MD_input_type, 
-           "All Modes Combined" = div(rlang::exec(sliderInput,inputId = "SFmd_seas1", label =" Season 1",
+           "All Modes Combined" = div(rlang::exec(sliderInput,inputId = "SFmd_seas1", label ="Season 1",
                                                   value=c(as.Date("01-01","%m-%d"),as.Date("05-31","%m-%d")), 
                                                   !!!date_slider_defaults),
                                       fluidRow(
@@ -2609,6 +2608,7 @@ server <- function(input, output, session) {
                                        column(6,
                                               rlang::exec(sliderInput, inputId= "SFmdSH_1_len", label ="Min Length",
                                                           min = 14, max = 21, value = 16, step = .5))), 
+                                     
                                      rlang::exec(sliderInput, inputId= "SFmdFH_seas2", label ="For Hire  Season 2",
                                                  value=c(as.Date("06-01","%m-%d"),as.Date("12-31","%m-%d")), 
                                                  !!!date_slider_defaults),
@@ -2638,10 +2638,8 @@ server <- function(input, output, session) {
                                                            min = 0, max = 100, value = 4)),
                                        column(6,
                                               rlang::exec(sliderInput, inputId= "SFmdSH_2_len", label ="Min Length",
-                                                          min = 14, max = 21, value = 17.5, step = .5)))
-           ))
+                                                          min = 14, max = 21, value = 17.5, step = .5)))))
   })
-  
   
   output$BSBmdMode <- renderUI({
     if (is.null(input$BSB_MD_input_type))
@@ -3009,7 +3007,7 @@ server <- function(input, output, session) {
     
     switch(input$BSB_VA_input_type, 
            "All Modes Combined" = div(rlang::exec(sliderInput,inputId = "BSBva_seas1", label =" Season 1",
-                                                  value=c(as.Date("05-15","%m-%d"),as.Date("07-06","%m-%d")), 
+                                                  value=c(as.Date("05-15","%m-%d"),as.Date("07-15","%m-%d")), 
                                                   !!!date_slider_defaults),
                                       fluidRow(
                                         column(4,
@@ -3020,7 +3018,7 @@ server <- function(input, output, session) {
                                                            min = 11, max = 18, value = 13, step = .5))), 
                                       
                                       rlang::exec(sliderInput, inputId= "BSBva_seas2", label =" Season 2",
-                                                  value=c(as.Date("08-09","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                  value=c(as.Date("07-27","%m-%d"),as.Date("12-31","%m-%d")), 
                                                   !!!date_slider_defaults),
                                       fluidRow(
                                         column(4,
@@ -3030,7 +3028,7 @@ server <- function(input, output, session) {
                                                rlang::exec(sliderInput, inputId= "BSBva_2_len", label ="Min Length",
                                                            min = 11, max = 18, value = 13, step = .5)))), 
            "Separated By Mode" = div(rlang::exec(sliderInput,inputId = "BSBvaFH_seas1", label ="For Hire  Season 1",
-                                                 value=c(as.Date("05-15","%m-%d"),as.Date("07-06","%m-%d")), 
+                                                 value=c(as.Date("05-15","%m-%d"),as.Date("07-15","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
@@ -3040,7 +3038,7 @@ server <- function(input, output, session) {
                                               rlang::exec(sliderInput, inputId= "BSBvaFH_1_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
                                      rlang::exec(sliderInput, inputId= "BSBvaPR_seas1", label ="Private  Season 1",
-                                                 value=c(as.Date("05-15","%m-%d"),as.Date("07-06","%m-%d")), 
+                                                 value=c(as.Date("05-15","%m-%d"),as.Date("07-15","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
@@ -3050,7 +3048,7 @@ server <- function(input, output, session) {
                                               rlang::exec(sliderInput, inputId= "BSBvaPR_1_len", label ="Min Length",
                                                           min = 11, max = 18, value = 15, step = .5))) ,
                                      rlang::exec(sliderInput, inputId= "BSBvaSH_seas1", label ="Shore  Season 1",
-                                                 value=c(as.Date("05-15","%m-%d"),as.Date("07-06","%m-%d")), 
+                                                 value=c(as.Date("05-15","%m-%d"),as.Date("07-15","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
@@ -3062,7 +3060,7 @@ server <- function(input, output, session) {
                                      
                                      
                                      rlang::exec(sliderInput, inputId= "BSBvaFH_seas2", label ="For Hire  Season 2",
-                                                 value=c(as.Date("08-09","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 value=c(as.Date("07-27","%m-%d"),as.Date("12-31","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
@@ -3072,7 +3070,7 @@ server <- function(input, output, session) {
                                               rlang::exec(sliderInput, inputId= "BSBvaFH_2_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
                                      rlang::exec(sliderInput, inputId= "BSBvaPR_seas2", label ="Private  Season 2",
-                                                 value=c(as.Date("08-09","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 value=c(as.Date("07-27","%m-%d"),as.Date("12-31","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
@@ -3082,7 +3080,7 @@ server <- function(input, output, session) {
                                               rlang::exec(sliderInput, inputId= "BSBvaPR_2_len", label ="Min Length",
                                                           min = 11, max = 18, value = 13, step = .5))) ,
                                      rlang::exec(sliderInput, inputId= "BSBvaSH_seas2", label ="Shore  Season 2",
-                                                 value=c(as.Date("08-09","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 value=c(as.Date("07-27","%m-%d"),as.Date("12-31","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
@@ -4566,7 +4564,7 @@ server <- function(input, output, session) {
     }
     
     if(any("MD" == input$state)){
-      if(input$SF_MD_input_type == "All Momds Combined"){
+      if(input$SF_MD_input_type == "All Modes Combined"){
         sfMDregs <- data.frame(run_name = c(Run_Name()),
                                state = c("MD"),
                                input =  c("SFmd_seas1_op", "SFmd_seas1_cl", "SFmd_1_bag", "SFmd_1_len", 
@@ -4603,7 +4601,7 @@ server <- function(input, output, session) {
       }
       
       
-      if(input$BSB_MD_input_type == "All Momds Combined"){
+      if(input$BSB_MD_input_type == "All Modes Combined"){
         bsbMDregs <- data.frame(run_name = c(Run_Name()), 
                                 state = c("MD"),
                                 input =  c("BSBmd_seas1_op", "BSBmd_seas1_cl", "BSBmd_1_bag", "BSBmd_1_len", 
@@ -4640,7 +4638,7 @@ server <- function(input, output, session) {
       }
       
       
-      if(input$SCUP_MD_input_type == "All Momds Combined"){
+      if(input$SCUP_MD_input_type == "All Modes Combined"){
         scupMDregs <- data.frame(run_name = c(Run_Name()), 
                                  state = c("MD"),
                                  input =  c("SCUPmd_seas1_op", "SCUPmd_seas1_cl", "SCUPmd_1_bag", "SCUPmd_1_len", 
@@ -4671,7 +4669,7 @@ server <- function(input, output, session) {
     }
     
     if(any("VA" == input$state)){
-      if(input$SF_VA_input_type == "All Movas Combined"){
+      if(input$SF_VA_input_type == "All Modes Combined"){
         sfVAregs <- data.frame(run_name = c(Run_Name()), 
                                state = c("VA"),
                                input =  c("SFva_seas1_op", "SFva_seas1_cl", "SFva_1_bag", "SFva_1_len", 
@@ -4708,7 +4706,7 @@ server <- function(input, output, session) {
       }
       
       
-      if(input$BSB_VA_input_type == "All Movas Combined"){
+      if(input$BSB_VA_input_type == "All Modes Combined"){
         bsbVAregs <- data.frame(run_name = c(Run_Name()), 
                                 state = c("VA"),
                                 input =  c("BSBva_seas1_op", "BSBva_seas1_cl", "BSBva_1_bag", "BSBva_1_len", 
@@ -4745,7 +4743,7 @@ server <- function(input, output, session) {
       }
       
       
-      if(input$SCUP_VA_input_type == "All Movas Combined"){
+      if(input$SCUP_VA_input_type == "All Modes Combined"){
         scupVAregs <- data.frame(run_name = c(Run_Name()), 
                                  state = c("VA"),
                                  input =  c("SCUPva_seas1_op", "SCUPva_seas1_cl", "SCUPva_1_bag", "SCUPva_1_len", 
@@ -4776,7 +4774,7 @@ server <- function(input, output, session) {
     }
     
     if(any("NC" == input$state)){
-      if(input$SF_NC_input_type == "All Moncs Combined"){
+      if(input$SF_NC_input_type == "All Modes Combined"){
         sfNCregs <- data.frame(run_name = c(Run_Name()), 
                                state = c("NC"),
                                input =  c("SFnc_seas1_op", "SFnc_seas1_cl", "SFnc_1_bag", "SFnc_1_len",  
@@ -4805,8 +4803,8 @@ server <- function(input, output, session) {
       }
       
       
-      if(input$BSB_NC_input_type == "All Moncs Combined"){
-        bsbNCgs <- data.frame(run_name = c(Run_Name()),
+      if(input$BSB_NC_input_type == "All Modes Combined"){
+        bsbNCregs <- data.frame(run_name = c(Run_Name()),
                               state = c("NC"),
                               input =  c("BSBnc_seas1_op", "BSBnc_seas1_cl", "BSBnc_1_bag", "BSBnc_1_len", 
                                          "BSBnc_seas2_op", "BSBnc_seas2_cl", "BSBnc_2_bag", "BSBnc_2_len", 
@@ -4842,7 +4840,7 @@ server <- function(input, output, session) {
       }
       
       
-      if(input$SCUP_NC_input_type == "All Moncs Combined"){
+      if(input$SCUP_NC_input_type == "All Modes Combined"){
         scupNCregs <- data.frame(run_name = c(Run_Name()), 
                                  state = c("NC"),
                                  input =  c("SCUPnc_seas1_op", "SCUPnc_seas1_cl", "SCUPnc_1_bag", "SCUPnc_1_len", 
