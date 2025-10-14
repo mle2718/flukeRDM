@@ -18,6 +18,8 @@ print("start model_CT")
 state1 = "CT"
 predictions_all = list()
 
+data_path <- here::here("Data/")
+
 size_data <- readr::read_csv(file.path(here::here("Data"), "projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
   dplyr::filter(state == "CT")
 
