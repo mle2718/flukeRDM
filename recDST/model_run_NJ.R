@@ -197,7 +197,7 @@ get_predictions_out<- function(x){
   for (md in mode_draw) {
     
     # pull trip outcomes from the calibration year
-    base_outcomes0[[md]]<-readr::read_csv(file.path(here::here(paste0("Data/base_outcomes_new_NJ_", md, "_", x, ".CSV")))) %>% 
+    base_outcomes0[[md]]<-readr::read_csv(file.path(here::here(paste0("Data/base_outcomes_new_NJ_", x, "_", md, ".CSV")))) %>% 
       data.table::as.data.table()
     
     base_outcomes0[[md]]<-base_outcomes0[[md]] %>% 
