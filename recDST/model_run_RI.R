@@ -159,7 +159,7 @@ get_predictions_out<- function(x){
   for (md in mode_draw) {
     
     # pull trip outcomes from the calibration year
-    base_outcomes0[[md]]<-feather::read_feather(file.path(data_path, paste0("base_outcomes_new_RI_", md, "_", x, ".feather"))) %>% 
+    ase_outcomes0[[md]]<-readr::read_csv(file.path(here::here(paste0("Data/base_outcomes_new_RI_", x, "_", md, ".CSV")))) %>% 
       data.table::as.data.table()
     
     base_outcomes0[[md]]<-base_outcomes0[[md]] %>% 
