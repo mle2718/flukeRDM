@@ -336,6 +336,12 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     dplyr::mutate(n_choice_occasions=n_choice_occasions0*expansion_factor,
                   expand=n_choice_occasions/ndraws) 
   
+  
+  #retain expansion factors by strata to multiply with length data 
+  expansion_factors<-mean_trip_data %>% 
+    dplyr::select("date_parsed","mode", "tripid", "expand", "probA")
+  
+  
   # Expand outcomes for projection year
   list_names <- c("tot_keep_sf_new",   "tot_rel_sf_new",  "tot_cat_sf_new", 
                   "tot_keep_bsb_new",  "tot_rel_bsb_new", "tot_cat_bsb_new",  
@@ -349,10 +355,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     .[,as.vector(all_vars) := lapply(.SD, function(x) x * expand), .SDcols = all_vars] %>%
     .[]
   
-  #retain expansion factors by strata to multiply with length data 
-  expansion_factors<-mean_trip_data %>% 
-    dplyr::select("date_parsed","mode", "tripid", "expand")
-  
+
   #process length data 
   pattern_vars <- grep("^keep_(sf_|bsb_|scup_)[0-9.]*$|^release_(sf_|bsb_|scup_)[0-9.]*$", 
                        names(length_data), value = TRUE)
@@ -363,9 +366,10 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   length_data<-length_data %>% 
       dplyr::right_join(expansion_factors, b=c("date_parsed","mode", "tripid"))
 
+  # mulitply length data first by the average probability, then by the expansion factor
   length_data <- length_data %>%
     data.table::as.data.table() %>%
-    .[,as.vector(pattern_vars) := lapply(.SD, function(x) x * expand), .SDcols = pattern_vars] %>%
+    .[,as.vector(pattern_vars) := lapply(.SD, function(x) x * probA * expand), .SDcols = pattern_vars] %>%
     .[]  
   
   ## Compute welfare and predicted trips
