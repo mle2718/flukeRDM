@@ -163,7 +163,6 @@ get_predictions_out<- function(x){
       data.table::as.data.table()
     
     base_outcomes0[[md]]<-base_outcomes0[[md]] %>% 
-      dplyr::select(-domain2) %>% 
       dplyr::mutate(date_parsed=lubridate::dmy(date)) %>% 
       dplyr::select(-date)
     
