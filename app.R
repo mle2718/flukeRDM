@@ -3465,22 +3465,23 @@ server <- function(input, output, session) {
   
   
   
-  
   outputs <- function(){
     flist <- list.files(path = here::here("output/"), pattern = "\\.csv$", full.names = TRUE)
     
+    read_cols<-c("metric","species","value", "mode","state","draw","model")
+    read_cols_types<-c("c","c","d","c","c","i","c")
     all_data <- flist %>%
       set_names(flist) %>%  # Optional: keep file names for reference
-      purrr::map_dfr(readr::read_csv, .id = "filename") %>% 
+      purrr::map_dfr(readr::read_csv, .id = "filename", col_select=all_of(read_cols), col_types=read_cols_types) %>% 
       dplyr::mutate(filename = stringr::str_extract(filename, "(?<=output_).+?(?=_202)"))
-    
+    return(all_data)
   }
   
   perc_changes <- function(){
-    perc_changes <- outputs() %>% 
+    perc_changes <- all_data %>% 
       dplyr::filter(stringr::str_detect(filename, "SQ")) %>% 
       dplyr::group_by(state,filename, metric, mode, species) %>%
-      dplyr::summarise(value = median(value)) %>% 
+      dplyr::summarise(value = round(median(value),2)) %>% 
       dplyr::mutate(pca_reqs = dplyr::case_when(species == "sf" ~ .1, TRUE ~ .1), 
                     pca_reqs = dplyr::case_when(species == "bsb" ~ .1, TRUE ~ pca_reqs), 
                     pca_reqs = dplyr::case_when(species == "scup" ~ .1, TRUE ~ pca_reqs))
@@ -3494,31 +3495,40 @@ server <- function(input, output, session) {
       purrr::map_dfr(readr::read_csv)
   }
   
+  # get all_data
+  all_data<-outputs()
+  
   # Summary
   output$summary_rhl_fig<- plotly::renderPlotly({
     
-    ref_pct <- outputs() %>% #all_data %>%
+    ref_pct <- all_data %>% #all_data %>%
       dplyr::filter(metric == "keep_weight" & mode == "all modes" & model == "SQ") %>%
       dplyr::mutate(ref_value = value) %>%
       dplyr::select(filename, species, state, draw, ref_value)
     
-    harv <- outputs() %>% #all_data %>%
+    harv <- all_data %>% #all_data %>%
       dplyr::filter(metric == "keep_weight" & mode == "all modes") %>%
       dplyr::left_join(ref_pct, by = join_by(species,  state, draw)) %>%
       dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1) * 100) %>%
       dplyr::group_by(state,filename.x, species, metric) %>%
-      dplyr::summarise(median_pct_diff = median(pct_diff)) %>%
-      tidyr::pivot_wider(names_from = species, values_from = median_pct_diff)
+      dplyr::summarise(median_pct_diff = round(median(pct_diff), 2)) %>%
+      tidyr::pivot_wider(names_from = species, values_from = median_pct_diff) %>% 
+      dplyr::rename(Run_Name = filename.x)
     
     
     harv2 <- harv %>%
-      ggplot2::ggplot(ggplot2::aes(x = bsb, y = sf, label = filename.x, color = scup)) +
+      ggplot2::ggplot(ggplot2::aes(x = bsb, y = sf, label = Run_Name, color = scup)) +
       ggplot2::geom_point( size = 3) +
       ggplot2::geom_text(color = "black", vjust = -0.5, size = 3) +
       #ggplot2::geom_hline(data = pca_sf, ggplot2::aes(yintercept = pca_reqs), color = "black")+
       #ggplot2::geom_vline(data = pca_bsb, ggplot2::aes(xintercept = pca_reqs), color = "black", linetype = "dashed")+
       ggplot2::facet_wrap(~ state) +
-      ggplot2::labs(title = "SF vs BSB Harvest Limits by state",x = "Black Sea Bass RHL",y = "Summer Flounder RHL") +
+      ggplot2::scale_x_continuous(labels = function(x) format(round(x, 2), nsmall = 0)) +
+      ggplot2::scale_y_continuous(labels = function(x) format(round(x, 2), nsmall = 0)) + 
+      ggplot2::labs(title = "Percentage change in SF (vertical) and BSB (horizontal) Recreational Harvest By State",
+                    x = "Change in BSB Harvest(%)",
+                    y = "Change in SF Harvest (%)",
+                    color="Change in Scup\nharvest (%)") +
       #ggplot2::scale_color_gradient2( low = "blue", mid = "gray", high = "red",  midpoint = 0, limits = c(-10, 10)) + 
       ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
@@ -3531,17 +3541,17 @@ server <- function(input, output, session) {
   
   output$summary_percdiff_table <- DT::renderDT({
     
-    ref_pct <- outputs() %>% #all_data %>%
+    ref_pct <- all_data %>% #all_data %>%
       dplyr::filter(metric == "keep_weight" &  mode == "all modes" & model == "SQ") %>%
       dplyr::mutate(ref_value = value) %>%
       dplyr::select(filename, species, state, draw, ref_value)
     
-    harv <- outputs() %>% #all_data %>%
+    harv <- all_data %>% #all_data %>%
       dplyr::filter(metric == "keep_weight" & mode == "all modes") %>%
       dplyr::left_join(ref_pct, by = join_by(species,  state, draw)) %>%
       dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1)  * 100) %>%
       dplyr::group_by(state,filename.x, species, metric) %>%
-      dplyr::summarise(median_pct_diff = median(pct_diff)) %>%
+      dplyr::summarise(median_pct_diff = round(median(pct_diff),2)) %>%
       tidyr::pivot_wider(names_from = species, values_from = median_pct_diff)
     
     tab<- harv %>% 
@@ -3553,12 +3563,12 @@ server <- function(input, output, session) {
       dplyr::ungroup()%>%
       dplyr::select( -metric,  -bsb_ok ,-scup_ok, -sf_ok) %>%
       mutate(
-        bsb  = sprintf("%.2f", bsb),
-        scup = sprintf("%.2f", scup),
-        sf   = sprintf("%.2f", sf)
+        bsb  = paste0(sprintf("%.2f", bsb),"%"),
+        scup = paste0(sprintf("%.2f", scup),"%"),
+        sf   = paste0(sprintf("%.2f", sf),"%")
       ) %>% 
       dplyr::rename(State = state, `Run Name` = filename.x,
-                    BSB = bsb, Scup = scup, SF = sf, `Below RHL` = ok_count)
+                    `BSB Change`= bsb, `Scup Change`= scup, `SF Change` = sf, `Below RHL` = ok_count)
     
     tab
   })
@@ -3609,19 +3619,20 @@ server <- function(input, output, session) {
       dplyr::left_join(ref_pct, by = dplyr::join_by(species, state, draw)) %>%
       dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1)  * 100) %>%
       dplyr::group_by(state, filename.x, species, metric) %>%
-      dplyr::summarise(median_pct_diff = median(pct_diff), .groups = "drop") %>%
-      tidyr::pivot_wider(names_from = species, values_from = median_pct_diff)
+      dplyr::summarise(median_pct_diff = round(median(pct_diff),2), .groups = "drop") %>%
+      tidyr::pivot_wider(names_from = species, values_from = median_pct_diff) %>% 
+      dplyr::rename(Run_Name = filename.x)
     
     # Static ggplot
     harv2 <- harv %>%
-      ggplot2::ggplot(ggplot2::aes(x = bsb, y = sf, label = filename.x, color = scup)) +
-      ggplot2::geom_point(color = "steelblue", size = 3) +
+      ggplot2::ggplot(ggplot2::aes(x = bsb, y = sf, label = Run_Name, color = scup)) +
+      ggplot2::geom_point(size = 3) +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::labs(
-        title = paste("SF vs BSB Harvest Limits in", state_name),
-        x = "Black Sea Bass RHL",
-        y = "Summer Flounder RHL"
-      ) +
+        title = paste("Percentage change in SF (vertical) and BSB (horizontal) Recreational Harvest in", state_name),
+        x = "Change in BSB Harvest(%)",
+        y = "Change in SF Harvest (%)",
+        color="Change in Scup\nharvest (%)") +
       ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::theme_bw()
@@ -3644,7 +3655,7 @@ server <- function(input, output, session) {
       dplyr::left_join(ref_pct, by = join_by(species,  state, draw)) %>%
       dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1)  * 100) %>%
       dplyr::group_by(state,filename.x, species, metric) %>%
-      dplyr::summarise(median_pct_diff = median(pct_diff)) %>%
+      dplyr::summarise(median_pct_diff = round(median(pct_diff),2)) %>%
       dplyr::rename(filename = filename.x)
     #tidyr::pivot_wider(names_from = category, values_from = median_pct_diff)
     
@@ -3656,7 +3667,7 @@ server <- function(input, output, session) {
       # dplyr::summarise(Value = sum(as.numeric(value))) %>%
       dplyr::group_by(filename) %>%
       dplyr::mutate(value = value/1000000) %>% 
-      dplyr::summarise(CV = median(value),
+      dplyr::summarise(CV = round(median(value),2),
                        ci_lower = quantile(value, 0.05),
                        ci_upper = quantile(value, 0.95)) %>%
       left_join(harv)
@@ -3666,7 +3677,7 @@ server <- function(input, output, session) {
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::ggtitle("Angler Satisfaction")+
       ggplot2::ylab("Angler Satisfaction ($M)")+
-      ggplot2::xlab("Percent difference of Harvest from SQ")+
+      ggplot2::xlab("Change in Harvest from SQ (%)")+
       ggplot2::theme(legend.position = "none")+
       ggplot2::facet_wrap(.~species)+
       ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
@@ -3701,8 +3712,8 @@ server <- function(input, output, session) {
       dplyr::left_join(ref_pct, by = dplyr::join_by(species, state, draw)) %>%
       dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1)  * 100) %>%
       dplyr::group_by(state, filename.x, species, metric) %>%
-      dplyr::summarise(median_pct_diff = median(pct_diff), .groups = "drop") %>%
-      dplyr::rename(filename = filename.x)
+      dplyr::summarise(median_pct_diff = round(median(pct_diff),2), .groups = "drop") %>%
+      dplyr::rename(Run_Name = filename.x)
     
     # Trips data
     trips <- data %>%
@@ -3713,17 +3724,18 @@ server <- function(input, output, session) {
       ) %>%
       dplyr::group_by(filename) %>%
       dplyr::summarise(trips = median(value), .groups = "drop") %>%
-      dplyr::left_join(harv, by = "filename") %>% 
-      dplyr::mutate(trips = trips/1000000)
+      dplyr::rename(Run_Name = filename) %>% 
+      dplyr::left_join(harv, by = "Run_Name") %>% 
+      dplyr::mutate(trips = round(trips/1000000,2))
     
     # Static plot
     p1 <- trips %>%
-      ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = trips, label = filename)) +
+      ggplot2::ggplot(ggplot2::aes(x = median_pct_diff, y = trips, label = Run_Name)) +
       ggplot2::geom_point() +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::ggtitle(paste("Number of Trips in", state_name)) +
       ggplot2::ylab("Predicted trips (N) millions") +
-      ggplot2::xlab("Percent difference of Harvest from SQ") +
+      ggplot2::xlab("Change in Harvest from SQ (%)")+
       ggplot2::theme(legend.position = "none") +
       ggplot2::facet_wrap(. ~ species) +
       ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
@@ -3760,8 +3772,8 @@ server <- function(input, output, session) {
       dplyr::left_join(ref_pct, by = dplyr::join_by(species, state, draw)) %>%
       dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1)  * 100) %>%
       dplyr::group_by(state, filename.x, species, metric) %>%
-      dplyr::summarise(median_keep_pct_diff = median(pct_diff), .groups = "drop") %>%
-      dplyr::rename(filename = filename.x)
+      dplyr::summarise(median_keep_pct_diff = round(median(pct_diff),2), .groups = "drop") %>%
+      dplyr::rename(Run_Name = filename.x)
     
     # Discards
     disc <- data %>%
@@ -3772,17 +3784,18 @@ server <- function(input, output, session) {
       ) %>%
       dplyr::group_by(state, filename, species) %>%
       dplyr::summarise(median_rel_weight = median(value), .groups = "drop") %>%
-      dplyr::left_join(harv, by = c("state", "filename", "species")) %>% 
-      dplyr::mutate(median_rel_weight = median_rel_weight/1000000)
+      dplyr::rename(Run_Name = filename) %>% 
+      dplyr::left_join(harv, by = c("state", "Run_Name", "species")) %>% 
+      dplyr::mutate(median_rel_weight = round(median_rel_weight/1000000,2))
     
     # Static plot
     p1 <- disc %>%
-      ggplot2::ggplot(ggplot2::aes(x = median_keep_pct_diff, y = median_rel_weight, label = filename)) +
+      ggplot2::ggplot(ggplot2::aes(x = median_keep_pct_diff, y = median_rel_weight, label = Run_Name)) +
       ggplot2::geom_point() +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::ggtitle(paste("Discards in", state_name)) +
       ggplot2::ylab("Discards (million lbs)") +
-      ggplot2::xlab("Percent difference of Harvest from SQ") +
+      ggplot2::xlab("Change in Harvest from SQ (%)")+
       ggplot2::theme(legend.position = "none") +
       ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
