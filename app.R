@@ -3496,17 +3496,17 @@ server <- function(input, output, session) {
   }
   
   # get all_data
-  all_data<-outputs()
+  #all_data<-outputs()
   
   # Summary
   output$summary_rhl_fig<- plotly::renderPlotly({
     
-    ref_pct <- all_data %>% #all_data %>%
+    ref_pct <- outputs() %>% #all_data %>%
       dplyr::filter(metric == "keep_weight" & mode == "all modes" & model == "SQ") %>%
       dplyr::mutate(ref_value = value) %>%
       dplyr::select(filename, species, state, draw, ref_value)
     
-    harv <- all_data %>% #all_data %>%
+    harv <- outputs() %>% #all_data %>%
       dplyr::filter(metric == "keep_weight" & mode == "all modes") %>%
       dplyr::left_join(ref_pct, by = join_by(species,  state, draw)) %>%
       dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1) * 100) %>%
@@ -3541,12 +3541,12 @@ server <- function(input, output, session) {
   
   output$summary_percdiff_table <- DT::renderDT({
     
-    ref_pct <- all_data %>% #all_data %>%
+    ref_pct <- outputs() %>% #all_data %>%
       dplyr::filter(metric == "keep_weight" &  mode == "all modes" & model == "SQ") %>%
       dplyr::mutate(ref_value = value) %>%
       dplyr::select(filename, species, state, draw, ref_value)
     
-    harv <- all_data %>% #all_data %>%
+    harv <- outputs() %>% #all_data %>%
       dplyr::filter(metric == "keep_weight" & mode == "all modes") %>%
       dplyr::left_join(ref_pct, by = join_by(species,  state, draw)) %>%
       dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1)  * 100) %>%
