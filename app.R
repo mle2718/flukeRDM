@@ -3478,7 +3478,7 @@ server <- function(input, output, session) {
   }
   
   perc_changes <- function(){
-    perc_changes <- all_data %>% 
+    perc_changes <- outputs() %>% #all_data %>% 
       dplyr::filter(stringr::str_detect(filename, "SQ")) %>% 
       dplyr::group_by(state,filename, metric, mode, species) %>%
       dplyr::summarise(value = round(median(value),2)) %>% 
