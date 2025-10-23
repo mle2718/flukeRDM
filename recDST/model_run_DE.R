@@ -188,7 +188,7 @@ get_predictions_out<- function(x){
   for (md in mode_draw) {
     
     # pull trip outcomes from the calibration year
-    base_outcomes0[[md]]<-readr::read_csv(file.path(here::here(paste0("Data/base_outcomes_new_DE_", x, "_", md, ".CSV")))) %>% 
+    base_outcomes0[[md]]<-read.csv(file.path(here::here(paste0("Data/base_outcomes_new_DE_", x, "_", md, ".CSV")))) %>% 
       data.table::as.data.table()
     
     base_outcomes0[[md]]<-base_outcomes0[[md]] %>% 
@@ -309,7 +309,7 @@ print("out of loop")
 
 # use furrr package to parallelize the get_predictions_out function 100 times
 # This will spit out a dataframe with 100 predictions 
-predictions_out10<- furrr::future_map_dfr(1:100, ~get_predictions_out(.), .id = "draw")
+predictions_out10<- furrr::future_map_dfr(22:24, ~get_predictions_out(.), .id = "draw")
 #predictions_out10<- furrr::future_map_dfr(1:25, ~get_predictions_out(.), .id = "draw")
 
 #readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
