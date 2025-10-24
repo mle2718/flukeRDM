@@ -128,11 +128,11 @@ directed_trips<- directed_trips %>%
     scup_bag_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SCUPriSH_seas2_op) & date_adj <= lubridate::yday(SCUPriSH_seas2_cl) ~ as.numeric(SCUPriSH_2_bag), TRUE ~ scup_bag_y2),
     scup_min_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SCUPriSH_seas2_op) & date_adj <= lubridate::yday(SCUPriSH_seas2_cl) ~ as.numeric(SCUPriSH_2_len) * 2.54, TRUE ~ scup_min_y2))
 
-print(directed_trips)
+#print(directed_trips)
 
 predictions_out10 <- data.frame()
 #future::plan(future::multisession, workers = 36)
-future::plan(future::multisession, workers = 25)
+future::plan(future::multisession, workers = 100)
 get_predictions_out<- function(x){
 #for(x in 1:25){
   
@@ -159,8 +159,8 @@ get_predictions_out<- function(x){
   for (md in mode_draw) {
     
     # pull trip outcomes from the calibration year
-    base_outcomes0[[md]]<-readr::read_csv(file.path(here::here(paste0("Data/base_outcomes_new_RI_", x, "_", md, ".CSV")))) %>% 
-      data.table::as.data.table()
+    base_outcomes0[[md]]<-read.csv(file.path(here::here(paste0("Data/base_outcomes_new_RI_", x, "_", md, ".CSV")))) #%>% 
+      #data.table::as.data.table()
     
     base_outcomes0[[md]]<-base_outcomes0[[md]] %>% 
       dplyr::mutate(date_parsed=lubridate::dmy(date)) %>% 
