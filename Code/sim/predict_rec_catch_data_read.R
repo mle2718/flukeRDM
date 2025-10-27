@@ -101,7 +101,14 @@ library(magrittr)
     base_outcomes<-base_outcomes %>% 
       dplyr::arrange(date_parsed, mode, tripid, catch_draw)
     
+    ##code correction 10/24
+    check_n_choice_occasions <- n_choice_occasions %>% 
+      dplyr::select(date_parsed, mode) %>%
+      dplyr::distinct() 
     
+    base_outcomes<-base_outcomes %>% 
+      dplyr::right_join(check_n_choice_occasions, by=c("date_parsed", "mode"))
+    ###end code correction 10/24
     
  
     # Pull in calibration comparison information about trip-level harvest/discard re-allocations 

@@ -192,7 +192,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   length_data[, date_parsed := lubridate::dmy(date)][, date := NULL]
   
   # Merge
-  trip_data <- trip_data[base_outcomes, on = .(date_parsed, mode, tripid, catch_draw), nomatch = 0]
+  trip_data <- trip_data[base_outcomes, on = .(date_parsed, mode, tripid, catch_draw), nomatch = 0L]
   
   trip_data[, domain2 := NULL]
   
@@ -290,7 +290,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   # Calculate change consumer surplus 
   mean_trip_data[, `:=`(
-    change_CS = CS_alt - CS_base
+    CV = CS_alt - CS_base
   )]
   
   # Get rid of things we don't need.
@@ -301,7 +301,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
                   -"cost", -"age", -"total_trips_12", -"catch_draw", -"group_index", 
                   -"log_sum_alt", -"log_sum_base", -"tot_keep_sf_base",  -"tot_rel_sf_base",  -"tot_cat_sf_base", 
                   -"tot_keep_bsb_base",  -"tot_rel_bsb_base", -"tot_cat_bsb_base",  
-                  -"tot_keep_scup_base",-"tot_rel_scup_base",  -"tot_cat_scup_base", -"prob0") 
+                  -"tot_keep_scup_base",-"tot_rel_scup_base",  -"tot_cat_scup_base") 
   
   all_vars<-c()
   all_vars <- names(mean_trip_data)[!names(mean_trip_data) %in% c("date_parsed","mode", "tripid")]
@@ -349,7 +349,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   list_names <- c("tot_keep_sf_new",   "tot_rel_sf_new",  "tot_cat_sf_new", 
                   "tot_keep_bsb_new",  "tot_rel_bsb_new", "tot_cat_bsb_new",  
                   "tot_keep_scup_new","tot_rel_scup_new",  "tot_cat_scup_new", 
-                  "probA", "change_CS")
+                  "probA", "CV", "prob0")
   
   all_vars <- c(list_names)
   
@@ -378,11 +378,11 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   ## Compute welfare and predicted trips
   # Aggregate by mode
   mean_trip_data <- mean_trip_data %>%
-    dplyr::rename(n_trips_alt = probA)
+    dplyr::rename(predicted_trips = probA, base_trips = prob0)
   
   # Ensure mean_trip_data is a data.table
   data.table::setDT(mean_trip_data)
-  list_names <- c("change_CS","n_trips_alt")
+  list_names <- c("CV","predicted_trips", "base_trips")
   
   aggregate_trip_data_mode <- mean_trip_data[, lapply(.SD, sum), by = .(mode), .SDcols = list_names]
   
@@ -396,15 +396,36 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   model_output1_long <- data.table::melt(
     model_output1,
     id.vars = c("mode"),   # keep these as identifiers
-    measure.vars = c("change_CS", "n_trips_alt"),
+    measure.vars = c("CV", "predicted_trips", "base_trips"),
     variable.name = "metric",
     value.name = "value"
   )
   
   model_output1_long[, metric := data.table::fifelse(metric == "change_CS", "CV",
                                                      data.table::fifelse(metric == "n_trips_alt", "predicted trips", "metric"))]
-  model_output1_long$species<-"NA"
 
+
+  model_output1_long$species<-"NA"
+  
+  model_output1_long_base<-model_output1_long %>% 
+    dplyr::filter(metric=="base_trips") %>% 
+    dplyr::select(mode, value, species) %>% 
+    dplyr::rename(value_base=value) 
+  
+  model_output1_long_new<-model_output1_long %>% 
+    dplyr::filter(metric=="predicted_trips") %>% 
+    dplyr::select(mode, value, species) %>% 
+    dplyr::rename(value_new=value) %>% 
+    dplyr::left_join(model_output1_long_base, by=c("mode", "species")) %>% 
+    dplyr::mutate(additional_trips=value_new-value_base) %>% 
+    dplyr::mutate(metric="additional_trips") %>% 
+    dplyr::select(metric, mode, additional_trips, species) %>% 
+    dplyr::rename(value=additional_trips)
+  
+  model_output1_long <- model_output1_long %>% 
+    dplyr::bind_rows(model_output1_long_new)
+    
+  
   
   ## Compute catch weight estimates
   # Process length-frequency data
