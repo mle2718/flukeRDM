@@ -251,6 +251,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   mean_trip_data <- trip_data %>% data.table::data.table() %>% 
     .[, group_index := .GRP, by = .(date_parsed, mode, catch_draw, tripid)]
   
+  rm(trip_data)
   # expand the data to create two alternatives, representing the alternatives available in choice survey
   mean_trip_data <- mean_trip_data %>%
     dplyr::mutate(n_alt = rep(2,nrow(.))) %>%
@@ -391,6 +392,8 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     , mode := "all modes"
   ]
   
+  rm(mean_trip_data)
+  
   # Combine and reshape
   model_output1 <- data.table::rbindlist(list(aggregate_trip_data_mode, aggregate_trip_data_allmodes), use.names=TRUE)
   model_output1_long <- data.table::melt(
@@ -440,6 +443,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   length_data1 <- length_data[, .SD, .SDcols = c("date_parsed", "mode", pattern_vars)]
   length_data1[, month := lubridate::month(date_parsed)]
   
+  rm(length_data)
   ## Aggregate sums by mode + month
   length_data1 <- length_data1[, lapply(.SD, sum), 
                                by = .(mode, month), 
@@ -525,6 +529,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     value.name = "value"
   )
   
+  rm(length_data1)
   ## Remove NAs
   length_data_long <- length_data_long[!is.na(value)]
   
