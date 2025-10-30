@@ -26,4 +26,5 @@ RUN install2.r -e -s \
     future \
     furrr \
     rlang \
+    plotly \
     && chown -R shiny:shiny /srv/rdmtool
