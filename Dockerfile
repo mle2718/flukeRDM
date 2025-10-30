@@ -28,4 +28,5 @@ RUN install2.r -e -s \
     rlang \
     plotly \
     DT \
+    uuid \
     && chown -R shiny:shiny /srv/rdmtool
