@@ -407,7 +407,11 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   model_output1_long[, metric := data.table::fifelse(metric == "change_CS", "CV",
                                                      data.table::fifelse(metric == "n_trips_alt", "predicted trips", "metric"))]
 
-
+  model_output1_long[, metric := as.character(metric)]
+  model_output1_long[, metric := fifelse(metric == "change_CS", "CV",
+                        fifelse(metric == "n_trips_alt", "predicted_trips", metric))
+  ]
+  
   model_output1_long$species<-"NA"
   
   model_output1_long_base<-model_output1_long %>% 
@@ -539,12 +543,12 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   length_data_long_all[, mode := "all modes"]
   
+  
   ## Final bind
   length_output <- data.table::rbindlist(list(length_data_long_all, length_data_long) ,
     use.names = TRUE,
     fill = TRUE
   )
-  
   
   predictions <- data.table::rbindlist(
     list(length_output, model_output1_long),
