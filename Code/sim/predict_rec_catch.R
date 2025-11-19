@@ -405,7 +405,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   )
   
   model_output1_long[, metric := data.table::fifelse(metric == "change_CS", "CV",
-                                                     data.table::fifelse(metric == "n_trips_alt", "predicted trips", "metric"))]
+                                                     data.table::fifelse(metric == "n_trips_alt", "predicted trips", as.character(metric)))]
 
   model_output1_long[, metric := as.character(metric)]
   model_output1_long[, metric := fifelse(metric == "change_CS", "CV",
@@ -556,8 +556,6 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     fill = TRUE) %>% 
     dplyr::mutate(state = st, draw=dr)
   
-  predictions<-predictions %>% 
-    dplyr::mutate(state=st, draw=dr)
   
   print("Finished predict_rec_catch")
 
