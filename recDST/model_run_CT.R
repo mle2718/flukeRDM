@@ -3,7 +3,7 @@
 ##############################
 
 # INDICATOR
-data.table::setDTthreads(threads = 1)
+
 
 Run_Name <- args[1]
 
@@ -282,7 +282,14 @@ start_time <- Sys.time()
 
 # use furrr package to parallelize the get_predictions_out function 100 times
 # This will spit out a dataframe with 100 predictions 
-predictions_out10<- furrr::future_map_dfr(1:100, ~get_predictions_out(.), .id = "draw")
+predictions_out10<- furrr::future_map_dfr(
+  1:100,
+  ~{
+    data.table::setDTthreads(1)
+    get_predictions_out(.x)
+  },
+  .id = "draw"
+)
 #predictions_out10<- furrr::future_map_dfr(1:25, ~get_predictions_out(.), .id = "draw")
 
 #readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
