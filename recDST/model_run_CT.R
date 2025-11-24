@@ -3,7 +3,7 @@
 ##############################
 
 # INDICATOR
-
+data.table::setDTthreads(threads = 1)
 
 Run_Name <- args[1]
 
