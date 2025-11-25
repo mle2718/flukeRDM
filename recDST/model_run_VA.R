@@ -1,9 +1,8 @@
+
 ##############################
 ### VA Rec model run  ########
 ##############################
 Run_Name <- args[1]
-
-
 
 saved_regs<- read.csv(here::here(paste0("saved_regs/regs_", Run_Name, ".csv")))
 
@@ -24,7 +23,7 @@ data_path <- here::here("Data/")
 
 
 #### Read in size data ####
-size_data <- readr::read_csv(file.path(here::here("Data"), "projected_catch_at_length_new_extra.csv"), show_col_types = FALSE)  %>% 
+size_data <- readr::read_csv(file.path(here::here("Data"), "projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
   dplyr::filter(state == "VA")
 
 sf_size_data <- size_data %>% 
@@ -45,7 +44,7 @@ l_w_conversion <- readr::read_csv(file.path(data_path, "L_W_Conversion.csv"), sh
   dplyr::filter(state=="VA")
 
 #### directed trips ####
-directed_trips<-readr::read_csv(file.path(data_path, paste0("directed_trips_calibration_new1_VA.csv"))) %>% 
+directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trips_calibration_new_VA.feather"))) %>% 
   tibble::tibble() %>%
   dplyr::select(mode, date, draw, bsb_bag, bsb_min, fluke_bag,fluke_min, scup_bag, scup_min,
                 bsb_bag_y2, bsb_min_y2, fluke_bag_y2,fluke_min_y2, scup_bag_y2, scup_min_y2) %>% 
@@ -158,7 +157,7 @@ predictions_out10 <- data.frame()
 #future::plan(future::multisession, workers = 36)
 future::plan(future::multisession, workers = 34)
 get_predictions_out<- function(x){
-#for(x in 1:25){
+  #for(x in 1:25){
   
   print(x)
   
@@ -167,10 +166,7 @@ get_predictions_out<- function(x){
   # dplyr::mutate(day = stringr::str_extract(day, "^\\d{2}"), 
   #               period2 = paste0(month24, "-", day, "-", mode))
   
-  catch_data <- feather::read_feather(file.path(data_path, paste0("proj_catch_draws_VA", "_", x,".feather"))) %>%
-    dplyr::mutate(draw = if_else(draw == 101, 53, draw), 
-                  draw = if_else(draw == 102, 54, draw), 
-                  draw = if_else(draw == 103, 55, draw)) %>% 
+  catch_data <- feather::read_feather(file.path(data_path, paste0("proj_catch_draws_VA", "_", x,".feather"))) %>% 
     dplyr::left_join(directed_trips2, by=c("mode", "date", "draw")) 
   
   calendar_adjustments <- readr::read_csv(
@@ -307,16 +303,15 @@ print("out of loop")
 
 # use furrr package to parallelize the get_predictions_out function 100 times
 # This will spit out a dataframe with 100 predictions 
-#predictions_out10<- furrr::future_map_dfr(c(1:52, 55:100), ~get_predictions_out(.), .id = "draw")
+#predictions_out10<- furrr::future_map_dfr(c(50:55), ~get_predictions_out(.), .id = "draw")
 predictions_out10<- furrr::future_map_dfr(
-  c(1:52, 55:100),
+  c(50:55),
   ~{
     data.table::setDTthreads(1)
     get_predictions_out(.x)
   },
   .id = "draw"
 )
-#predictions_out10<- furrr::future_map_dfr(c(53:55), ~get_predictions_out(.), .id = "draw")
 #predictions_out10<- furrr::future_map_dfr(1:25, ~get_predictions_out(.), .id = "draw")
 
 #readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
