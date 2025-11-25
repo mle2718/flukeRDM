@@ -169,7 +169,7 @@ get_predictions_out<- function(x){
   # dplyr::mutate(day = stringr::str_extract(day, "^\\d{2}"), 
   #               period2 = paste0(month24, "-", day, "-", mode))
   
-  catch_data <- read.csv(file.path(data_path, paste0("proj_catch_draws_VA", "_", x,".csv"))) %>% 
+  catch_data <- read.csv(file.path(data_path, paste0("proj_catch_draws_VA",  x,".csv"))) %>% 
     dplyr::left_join(directed_trips2, by=c("mode", "date", "draw")) 
   
   calendar_adjustments <- readr::read_csv(
