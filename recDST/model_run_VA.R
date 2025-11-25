@@ -3,7 +3,9 @@
 ### VA Rec model run  ########
 ##############################
 Run_Name <- args[1]
+
 start_time <- Sys.time()
+
 saved_regs<- read.csv(here::here(paste0("saved_regs/regs_", Run_Name, ".csv")))
 
 for (a in seq_len(nrow(saved_regs))) {
