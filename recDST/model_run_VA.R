@@ -63,7 +63,7 @@ if (exists("SFva_seas1_op")) {
       fluke_bag_y2=dplyr::case_when(date_adj >= lubridate::yday(SFva_seas2_op) & date_adj <= lubridate::yday(SFva_seas2_cl) ~ as.numeric(SFva_2_bag), TRUE ~ fluke_bag_y2), 
       fluke_min_y2=dplyr::case_when(date_adj >= lubridate::yday(SFva_seas2_op) & date_adj <= lubridate::yday(SFva_seas2_cl) ~ as.numeric(SFva_2_len) * 2.54, TRUE ~ fluke_min_y2))
 
-  } else {
+} else {
   directed_trips<- directed_trips %>%
     dplyr::mutate(
       fluke_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SFvaFH_seas1_op) & date_adj <= lubridate::yday(SFvaFH_seas1_cl) ~ as.numeric(SFvaFH_1_bag), TRUE ~ 0), 
