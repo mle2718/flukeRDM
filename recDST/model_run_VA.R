@@ -44,7 +44,7 @@ l_w_conversion <- readr::read_csv(file.path(data_path, "L_W_Conversion.csv"), sh
   dplyr::filter(state=="VA")
 
 #### directed trips ####
-directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trips_calibration_new_VA.feather"))) %>% 
+directed_trips<-readr::read_csv(file.path(data_path, paste0("directed_trips_calibration_new_VA.csv"))) %>% 
   tibble::tibble() %>%
   dplyr::select(mode, date, draw, bsb_bag, bsb_min, fluke_bag,fluke_min, scup_bag, scup_min,
                 bsb_bag_y2, bsb_min_y2, fluke_bag_y2,fluke_min_y2, scup_bag_y2, scup_min_y2) %>% 
