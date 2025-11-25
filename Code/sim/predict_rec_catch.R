@@ -298,6 +298,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   mean_trip_data <- mean_trip_data %>% 
     dplyr::filter(alt==1) %>% 
     dplyr::select(-matches("beta")) %>% 
+    dplyr::select(-dplyr::any_of("i.domain2")) %>% 
     dplyr::select(-"alt", -"opt_out", -"vA" , -"v0",-"exp_v0", -"exp_vA", 
                   -"cost", -"age", -"total_trips_12", -"catch_draw", -"group_index", 
                   -"log_sum_alt", -"log_sum_base", -"tot_keep_sf_base",  -"tot_rel_sf_base",  -"tot_cat_sf_base", 
@@ -306,7 +307,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   all_vars<-c()
   all_vars <- names(mean_trip_data)[!names(mean_trip_data) %in% c("date_parsed","mode", "tripid")]
-  
+
   #all_vars
   # average outcomes across draws
   mean_trip_data<-mean_trip_data  %>% data.table::as.data.table() %>%
