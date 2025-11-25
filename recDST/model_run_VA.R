@@ -4,8 +4,7 @@
 Run_Name <- args[1]
 
 
-library(magrittr)
-Run_Name = "SQ"
+
 saved_regs<- read.csv(here::here(paste0("saved_regs/regs_", Run_Name, ".csv")))
 
 for (a in seq_len(nrow(saved_regs))) {
@@ -157,7 +156,7 @@ directed_trips<- directed_trips %>%
 
 predictions_out10 <- data.frame()
 #future::plan(future::multisession, workers = 36)
-future::plan(future::multisession, workers = 5)
+future::plan(future::multisession, workers = 34)
 get_predictions_out<- function(x){
 #for(x in 1:25){
   
@@ -308,7 +307,15 @@ print("out of loop")
 
 # use furrr package to parallelize the get_predictions_out function 100 times
 # This will spit out a dataframe with 100 predictions 
-predictions_out10<- furrr::future_map_dfr(c(1:52, 55:100), ~get_predictions_out(.), .id = "draw")
+#predictions_out10<- furrr::future_map_dfr(c(1:52, 55:100), ~get_predictions_out(.), .id = "draw")
+predictions_out10<- furrr::future_map_dfr(
+  c(1:52, 55:100),
+  ~{
+    data.table::setDTthreads(1)
+    get_predictions_out(.x)
+  },
+  .id = "draw"
+)
 #predictions_out10<- furrr::future_map_dfr(c(53:55), ~get_predictions_out(.), .id = "draw")
 #predictions_out10<- furrr::future_map_dfr(1:25, ~get_predictions_out(.), .id = "draw")
 
