@@ -190,7 +190,7 @@ get_predictions_out<- function(x){
       dplyr::select(-date)
     
     # pull in data on the number of choice occasions per mode-day
-    n_choice_occasions0[[md]]<-read.csv(file.path(here::here(paste0("Data/n_choice_occasions_new_VA_", md, "_", x, ".csv"))))  
+    n_choice_occasions0[[md]]<-feather::read_feather(file.path(here::here(paste0("Data/n_choice_occasions_new_VA_", md, "_", x, ".feather"))))  
     n_choice_occasions0[[md]]<-n_choice_occasions0[[md]] %>% 
       dplyr::mutate(date_parsed=lubridate::dmy(date)) %>% 
       dplyr::select(-date)
