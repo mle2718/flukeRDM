@@ -3,9 +3,10 @@
 ### VA Rec model run  ########
 ##############################
 Run_Name <- args[1]
-
 start_time <- Sys.time()
 
+library(magrittr)
+Run_Name = "SQ"
 saved_regs<- read.csv(here::here(paste0("saved_regs/regs_", Run_Name, ".csv")))
 
 for (a in seq_len(nrow(saved_regs))) {
@@ -46,7 +47,7 @@ l_w_conversion <- readr::read_csv(file.path(data_path, "L_W_Conversion.csv"), sh
   dplyr::filter(state=="VA")
 
 #### directed trips ####
-directed_trips<-readr::read_csv(file.path(data_path, paste0("directed_trips_calibration_new_VA.csv"))) %>% 
+directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trips_calibration_new_VA.feather"))) %>% 
   tibble::tibble() %>%
   dplyr::select(mode, date, draw, bsb_bag, bsb_min, fluke_bag,fluke_min, scup_bag, scup_min,
                 bsb_bag_y2, bsb_min_y2, fluke_bag_y2,fluke_min_y2, scup_bag_y2, scup_min_y2) %>% 
@@ -168,7 +169,7 @@ get_predictions_out<- function(x){
   # dplyr::mutate(day = stringr::str_extract(day, "^\\d{2}"), 
   #               period2 = paste0(month24, "-", day, "-", mode))
   
-  catch_data <- feather::read_feather(file.path(data_path, paste0("proj_catch_draws_VA", "_", x,".feather"))) %>% 
+  catch_data <- read.csv(file.path(data_path, paste0("proj_catch_draws_VA", "_", x,".csv"))) %>% 
     dplyr::left_join(directed_trips2, by=c("mode", "date", "draw")) 
   
   calendar_adjustments <- readr::read_csv(
