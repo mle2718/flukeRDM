@@ -3,7 +3,7 @@
 ### VA Rec model run  ########
 ##############################
 Run_Name <- args[1]
-
+start_time <- Sys.time()
 saved_regs<- read.csv(here::here(paste0("saved_regs/regs_", Run_Name, ".csv")))
 
 for (a in seq_len(nrow(saved_regs))) {
@@ -317,7 +317,7 @@ predictions_out10<- furrr::future_map_dfr(
 #readr::write_csv(predictions_out10, file = here::here(paste0("output/output_MA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
 readr::write_csv(predictions_out10, file = here::here(paste0("output/output_VA_", Run_Name, "_", format(Sys.time(), "%Y%m%d_%H%M%S"),  ".csv")))
 
-
+# add change
 end_time <- Sys.time()
 
 print(end_time - start_time)
