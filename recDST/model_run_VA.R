@@ -309,7 +309,7 @@ print("out of loop")
 # This will spit out a dataframe with 100 predictions 
 #predictions_out10<- furrr::future_map_dfr(c(50:55), ~get_predictions_out(.), .id = "draw")
 predictions_out10<- furrr::future_map_dfr(
-  c(50:60),
+  c(50:55, 57:60),
   ~{
     data.table::setDTthreads(1)
     get_predictions_out(.x)
