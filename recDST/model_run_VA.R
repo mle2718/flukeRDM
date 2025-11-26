@@ -5,8 +5,7 @@
 Run_Name <- args[1]
 start_time <- Sys.time()
 # # 
-# library(magrittr)
-# Run_Name = "SQ"
+
 saved_regs<- read.csv(here::here(paste0("saved_regs/regs_", Run_Name, ".csv")))
 
 for (a in seq_len(nrow(saved_regs))) {
@@ -309,7 +308,7 @@ print("out of loop")
 # This will spit out a dataframe with 100 predictions 
 #predictions_out10<- furrr::future_map_dfr(c(50:55), ~get_predictions_out(.), .id = "draw")
 predictions_out10<- furrr::future_map_dfr(
-  c(50:55, 57:60),
+  c(1:100),
   ~{
     data.table::setDTthreads(1)
     get_predictions_out(.x)
