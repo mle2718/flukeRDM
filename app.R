@@ -3512,26 +3512,19 @@ server <- function(input, output, session) {
       dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1) * 100) %>%
       dplyr::group_by(state,filename.x, species, metric) %>%
       dplyr::summarise(median_pct_diff = round(median(pct_diff), 2)) %>%
-      tidyr::pivot_wider(names_from = species, values_from = median_pct_diff) %>% 
+      #tidyr::pivot_wider(names_from = species, values_from = median_pct_diff) %>% 
       dplyr::rename(Run_Name = filename.x)
     
     
     harv2 <- harv %>%
-      ggplot2::ggplot(ggplot2::aes(x = bsb, y = sf, label = Run_Name, color = scup)) +
-      ggplot2::geom_point( size = 3) +
-      ggplot2::geom_text(color = "black", vjust = -0.5, size = 3) +
-      #ggplot2::geom_hline(data = pca_sf, ggplot2::aes(yintercept = pca_reqs), color = "black")+
-      #ggplot2::geom_vline(data = pca_bsb, ggplot2::aes(xintercept = pca_reqs), color = "black", linetype = "dashed")+
+      ggplot2::ggplot(ggplot2::aes(x = species, y = median_pct_diff, label = Run_Name)) +
+      ggplot2::geom_point( size = 2) +
+      ggplot2::geom_text(color = "black", hjust = -0.25, size = 2) +
       ggplot2::facet_wrap(~ state) +
-      ggplot2::scale_x_continuous(labels = function(x) format(round(x, 2), nsmall = 0)) +
-      ggplot2::scale_y_continuous(labels = function(x) format(round(x, 2), nsmall = 0)) + 
-      ggplot2::labs(title = "Percentage change in SF (vertical) and BSB (horizontal) Recreational Harvest By State",
-                    x = "Change in BSB Harvest(%)",
-                    y = "Change in SF Harvest (%)",
-                    color="Change in Scup\nharvest (%)") +
-      #ggplot2::scale_color_gradient2( low = "blue", mid = "gray", high = "red",  midpoint = 0, limits = c(-10, 10)) + 
-      ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
-      ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
+      ggplot2::labs(title = "Percentage change in Recreational Harvest By State",
+                    x = "",
+                    y = "Median % Change in Harvest") +
+      ggplot2::geom_hline(yintercept = 0)+
       ggplot2::theme_bw()
     
     fig<- plotly::ggplotly(harv2) %>%
@@ -3620,21 +3613,19 @@ server <- function(input, output, session) {
       dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1)  * 100) %>%
       dplyr::group_by(state, filename.x, species, metric) %>%
       dplyr::summarise(median_pct_diff = round(median(pct_diff),2), .groups = "drop") %>%
-      tidyr::pivot_wider(names_from = species, values_from = median_pct_diff) %>% 
+      #tidyr::pivot_wider(names_from = species, values_from = median_pct_diff) %>% 
       dplyr::rename(Run_Name = filename.x)
     
     # Static ggplot
     harv2 <- harv %>%
-      ggplot2::ggplot(ggplot2::aes(x = bsb, y = sf, label = Run_Name, color = scup)) +
-      ggplot2::geom_point(size = 3) +
-      ggplot2::geom_text(vjust = -0.5, size = 3) +
-      ggplot2::labs(
-        title = paste("Percentage change in SF (vertical) and BSB (horizontal) Recreational Harvest in", state_name),
-        x = "Change in BSB Harvest(%)",
-        y = "Change in SF Harvest (%)",
-        color="Change in Scup\nharvest (%)") +
-      ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
-      ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
+      ggplot2::ggplot(ggplot2::aes(x = species, y = median_pct_diff, label = Run_Name)) +
+      ggplot2::geom_point( size = 2) +
+      ggplot2::geom_text(color = "black", hjust = -0.25, size = 2) +
+      ggplot2::facet_wrap(~ state) +
+      ggplot2::labs(title = "Percentage change in Recreational Harvest By State",
+                    x = "",
+                    y = "Median % Change in Harvest") +
+      ggplot2::geom_hline(yintercept = 0)+
       ggplot2::theme_bw()
     
     # Convert to plotly
