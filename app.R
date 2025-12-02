@@ -3548,20 +3548,20 @@ server <- function(input, output, session) {
       tidyr::pivot_wider(names_from = species, values_from = median_pct_diff)
     
     tab<- harv %>% 
-      dplyr::mutate(bsb_ok  = abs(bsb)  <= bsb_percent_change,
-                    scup_ok = abs(scup) <= scup_percent_change,
-                    sf_ok   = abs(sf)   <= sf_percent_change) %>%
+      # dplyr::mutate(bsb_ok  = abs(bsb)  <= bsb_percent_change,
+      #               scup_ok = abs(scup) <= scup_percent_change,
+      #               sf_ok   = abs(sf)   <= sf_percent_change) %>%
       dplyr::rowwise() %>%
-      dplyr::mutate(ok_count = paste0(sum(c_across(c(bsb_ok, scup_ok, sf_ok))), "/3")) %>%
+      # dplyr::mutate(ok_count = paste0(sum(c_across(c(bsb_ok, scup_ok, sf_ok))), "/3")) %>%
       dplyr::ungroup()%>%
-      dplyr::select( -metric,  -bsb_ok ,-scup_ok, -sf_ok) %>%
+      dplyr::select( -metric) %>%
       mutate(
         bsb  = paste0(sprintf("%.2f", bsb),"%"),
         scup = paste0(sprintf("%.2f", scup),"%"),
         sf   = paste0(sprintf("%.2f", sf),"%")
       ) %>% 
       dplyr::rename(State = state, `Run Name` = filename.x,
-                    `BSB Change`= bsb, `Scup Change`= scup, `SF Change` = sf, `Below RHL` = ok_count)
+                    `BSB Median % Change`= bsb, `Scup Median % Change`= scup, `SF Median %Change` = sf)
     
     tab
   })
