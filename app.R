@@ -1719,40 +1719,40 @@ server <- function(input, output, session) {
                uiOutput("SCUPnjMode"),
                
                actionButton("SCUPNJaddSeason", "Add Season"), 
-               shinyjs::hidden( div(ID = "SCUPnjSeason2",
-                                    rlang::exec(sliderInput, inputId= "SCUPnjFH_seas2", label ="For Hire  Season 2",
+               shinyjs::hidden( div(ID = "SCUPnjSeason3",
+                                    rlang::exec(sliderInput, inputId= "SCUPnjFH_seas3", label ="For Hire  Season 3",
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
                                                 !!!date_slider_defaults),
                                     fluidRow(
                                       column(4,
-                                             numericInput(inputId = "SCUPnjFH_2_bag", label ="Bag Limit",
+                                             numericInput(inputId = "SCUPnjFH_3_bag", label ="Bag Limit",
                                                           min = 0, max = 100, value = 0)),
                                       column(6,
-                                             rlang::exec(sliderInput, inputId= "SCUPnjFH_2_len", label ="Min Length",
+                                             rlang::exec(sliderInput, inputId= "SCUPnjFH_3_len", label ="Min Length",
                                                          min = 8, max = 12, value = 10, step = .5))), 
-                                    rlang::exec(sliderInput, inputId= "SCUPnjPR_seas2", label ="Private  Season 2",
+                                    rlang::exec(sliderInput, inputId= "SCUPnjPR_seas3", label ="Private  Season 3",
                                                 
                                                 
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
                                                 !!!date_slider_defaults),
                                     fluidRow(
                                       column(4,
-                                             numericInput(inputId = "SCUPnjPR_2_bag", label ="Bag Limit",
+                                             numericInput(inputId = "SCUPnjPR_3_bag", label ="Bag Limit",
                                                           min = 0, max = 100, value = 0)),
                                       column(6,
-                                             rlang::exec(sliderInput, inputId= "SCUPnjPR_2_len", label ="Min Length",
+                                             rlang::exec(sliderInput, inputId= "SCUPnjPR_3_len", label ="Min Length",
                                                          min = 8, max = 12, value = 10, step = .5))), 
-                                    rlang::exec(sliderInput, inputId= "SCUPnjSH_seas2", label ="Shore  Season 2",
+                                    rlang::exec(sliderInput, inputId= "SCUPnjSH_seas3", label ="Shore  Season 3",
                                                 
                                                 
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
                                                 !!!date_slider_defaults),
                                     fluidRow(
                                       column(4,
-                                             numericInput(inputId = "SCUPnjSH_2_bag", label ="Bag Limit",
+                                             numericInput(inputId = "SCUPnjSH_3_bag", label ="Bag Limit",
                                                           min = 0, max = 100, value = 0)),
                                       column(6,
-                                             rlang::exec(sliderInput, inputId= "SCUPnjSH_2_len", label ="Min Length",
+                                             rlang::exec(sliderInput, inputId= "SCUPnjSH_3_len", label ="Min Length",
                                                          min = 8, max = 12, value = 10, step = .5)))))))
     }
     
@@ -1992,7 +1992,7 @@ server <- function(input, output, session) {
     switch(input$SCUP_NJ_input_type,
            
            "All Modes Combined" = div( rlang::exec(sliderInput, inputId = "SCUPnj_seas1", label =" Season 1",
-                                                   value=c(as.Date("08-01","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                   value=c(as.Date("01-01","%m-%d"),as.Date("06-30","%m-%d")), 
                                                    !!!date_slider_defaults),
                                        fluidRow(
                                          column(4,
@@ -2000,9 +2000,19 @@ server <- function(input, output, session) {
                                                              min = 0, max = 100, value = 30)),
                                          column(6,
                                                 rlang::exec(sliderInput, inputId= "SCUPnj_1_len", label ="Min Length",
+                                                            min = 8, max = 12, value = 10, step = .5))), 
+                                       rlang::exec(sliderInput, inputId = "SCUPnj_seas2", label =" Season 2",
+                                                   value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                   !!!date_slider_defaults),
+                                       fluidRow(
+                                         column(4,
+                                                numericInput(inputId = "SCUPnj_2_bag", label ="Bag Limit",
+                                                             min = 0, max = 100, value = 30)),
+                                         column(6,
+                                                rlang::exec(sliderInput, inputId= "SCUPnj_2_len", label ="Min Length",
                                                             min = 8, max = 12, value = 10, step = .5)))),
            "Separated By Mode" = div(rlang::exec(sliderInput, inputId = "SCUPnjFH_seas1", label ="For Hire  Season 1",
-                                                 value=c(as.Date("08-01","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 value=c(as.Date("01-01","%m-%d"),as.Date("06-30","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
@@ -2012,7 +2022,7 @@ server <- function(input, output, session) {
                                               rlang::exec(sliderInput, inputId= "SCUPnjFH_1_len", label ="Min Length",
                                                           min = 8, max = 12, value = 10, step = .5))), 
                                      rlang::exec(sliderInput, inputId= "SCUPnjPR_seas1", label ="Private  Season 1",
-                                                 value=c(as.Date("08-01","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 value=c(as.Date("01-01","%m-%d"),as.Date("06-30","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
@@ -2022,7 +2032,7 @@ server <- function(input, output, session) {
                                               rlang::exec(sliderInput, inputId= "SCUPnjPR_1_len", label ="Min Length",
                                                           min = 8, max = 12, value = 10, step = .5))), 
                                      rlang::exec(sliderInput, inputId= "SCUPnjSH_seas1", label ="Shore  Season 1",
-                                                 value=c(as.Date("08-01","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 value=c(as.Date("01-01","%m-%d"),as.Date("06-30","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
@@ -2030,6 +2040,40 @@ server <- function(input, output, session) {
                                                            min = 0, max = 100, value = 30)),
                                        column(6,
                                               rlang::exec(sliderInput, inputId= "SCUPnjSH_1_len", label ="Min Length",
+                                                          min = 8, max = 12, value = 10, step = .5))), 
+                                     
+                                     
+                                     
+                                     
+                                     rlang::exec(sliderInput, inputId = "SCUPnjFH_seas2", label ="For Hire  Season 2",
+                                                 value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 !!!date_slider_defaults),
+                                     fluidRow(
+                                       column(4,
+                                              numericInput(inputId = "SCUPnjFH_2_bag", label ="Bag Limit",
+                                                           min = 0, max = 100, value = 30)),
+                                       column(6,
+                                              rlang::exec(sliderInput, inputId= "SCUPnjFH_2_len", label ="Min Length",
+                                                          min = 8, max = 12, value = 10, step = .5))), 
+                                     rlang::exec(sliderInput, inputId= "SCUPnjPR_seas2", label ="Private  Season 2",
+                                                 value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 !!!date_slider_defaults),
+                                     fluidRow(
+                                       column(4,
+                                              numericInput(inputId = "SCUPnjPR_2_bag", label ="Bag Limit",
+                                                           min = 0, max = 100, value = 30)),
+                                       column(6,
+                                              rlang::exec(sliderInput, inputId= "SCUPnjPR_2_len", label ="Min Length",
+                                                          min = 8, max = 12, value = 10, step = .5))), 
+                                     rlang::exec(sliderInput, inputId= "SCUPnjSH_seas2", label ="Shore  Season 2",
+                                                 value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 !!!date_slider_defaults),
+                                     fluidRow(
+                                       column(4,
+                                              numericInput(inputId = "SCUPnjSH_2_bag", label ="Bag Limit",
+                                                           min = 0, max = 100, value = 30)),
+                                       column(6,
+                                              rlang::exec(sliderInput, inputId= "SCUPnjSH_2_len", label ="Min Length",
                                                           min = 8, max = 12, value = 10, step = .5)))))
   })
   
@@ -3548,11 +3592,7 @@ server <- function(input, output, session) {
       tidyr::pivot_wider(names_from = species, values_from = median_pct_diff)
     
     tab<- harv %>% 
-      # dplyr::mutate(bsb_ok  = abs(bsb)  <= bsb_percent_change,
-      #               scup_ok = abs(scup) <= scup_percent_change,
-      #               sf_ok   = abs(sf)   <= sf_percent_change) %>%
       dplyr::rowwise() %>%
-      # dplyr::mutate(ok_count = paste0(sum(c_across(c(bsb_ok, scup_ok, sf_ok))), "/3")) %>%
       dplyr::ungroup()%>%
       dplyr::select( -metric) %>%
       mutate(
@@ -3709,7 +3749,7 @@ server <- function(input, output, session) {
     # Trips data
     trips <- data %>%
       dplyr::filter(
-        metric %in% c("predicted trips"),
+        metric %in% c("predicted_trips"),
         state == state_name,
         mode == "all modes"
       ) %>%
@@ -3768,6 +3808,66 @@ server <- function(input, output, session) {
     
     # Discards
     disc <- data %>%
+      dplyr::filter(
+        metric == "release_weight",
+        state == state_name,
+        mode == "all modes"
+      ) %>%
+      dplyr::group_by(state, filename, species) %>%
+      dplyr::summarise(median_rel_weight = median(value), .groups = "drop") %>%
+      dplyr::rename(Run_Name = filename) %>% 
+      dplyr::left_join(harv, by = c("state", "Run_Name", "species")) %>% 
+      dplyr::mutate(median_rel_weight = round(median_rel_weight/1000000,2))
+    
+    # Static plot
+    p1 <- disc %>%
+      ggplot2::ggplot(ggplot2::aes(x = median_keep_pct_diff, y = median_rel_weight, label = Run_Name)) +
+      ggplot2::geom_point() +
+      ggplot2::geom_text(vjust = -0.5, size = 3) +
+      ggplot2::ggtitle(paste("Discards in", state_name)) +
+      ggplot2::ylab("Discards (million lbs)") +
+      ggplot2::xlab("Change in Harvest from SQ (%)")+
+      ggplot2::theme(legend.position = "none") +
+      ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
+      ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
+      ggplot2::facet_wrap(. ~ species, scales = "free") +
+      ggplot2::theme_bw()
+    
+    # Convert to plotly
+    fig <- plotly::ggplotly(p1) %>%
+      plotly::style(textposition = "top center")
+    
+    return(fig)
+  }
+  
+  totmort_fig<- function(data, state_name) {
+    
+    # Reference values (SQ model only, keep only)
+    ref_pct <- data %>%
+      dplyr::filter(
+        metric == "keep_weight",
+        state == state_name,
+        mode == "all modes",
+        model == "SQ"
+      ) %>%
+      dplyr::mutate(ref_value = value) %>%
+      dplyr::select(filename, species, state, draw, ref_value)
+    
+    # Harvest percent difference
+    harv <- data %>%
+      dplyr::filter(
+        metric == "keep_weight",
+        state == state_name,
+        mode == "all modes"
+      ) %>%
+      dplyr::left_join(ref_pct, by = dplyr::join_by(species, state, draw)) %>%
+      dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1)  * 100) %>%
+      dplyr::group_by(state, filename.x, species, metric) %>%
+      dplyr::summarise(median_keep_pct_diff = round(median(pct_diff),2), .groups = "drop") %>%
+      dplyr::rename(Run_Name = filename.x)
+    
+    # Discards
+    mort <- data %>%
       dplyr::filter(
         metric == "release_weight",
         state == state_name,
@@ -4436,7 +4536,7 @@ server <- function(input, output, session) {
                                             as.character(input$SCUPnjPR_seas3[1]), as.character(input$SCUPnjPR_seas3[2]), as.character(input$SCUPnjPR_3_bag), as.character(input$SCUPnjPR_3_len),
                                             as.character(input$SCUPnjSH_seas3[1]), as.character(input$SCUPnjSH_seas3[2]), as.character(input$SCUPnjSH_3_bag), as.character(input$SCUPnjSH_3_len)))
       }else{
-        scupbNJregs <-  data.frame(run_name = c(Run_Name()),
+        scupNJregs <-  data.frame(run_name = c(Run_Name()),
                                    state = c("NJ"),
                                    input =  c( "SCUPnjFH_seas1_op", "SCUPnjFH_seas1_cl", "SCUPnjFH_1_bag", "SCUPnjFH_1_len", 
                                                "SCUPnjPR_seas1_op", "SCUPnjPR_seas1_cl", "SCUPnjPR_1_bag", "SCUPnjPR_1_len",
