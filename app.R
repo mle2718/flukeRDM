@@ -4,6 +4,8 @@ library(shiny)
 library(shinyjs)
 library(dplyr)
 
+# Minor edit
+
 #### Start UI ####
 ui <- fluidPage(
   useShinyjs(),
@@ -203,7 +205,7 @@ server <- function(input, output, session) {
   shinyjs::onclick("BSBNJaddSeason",
                    shinyjs::toggle(id = "BSBnjSeason5", anim = TRUE))
   shinyjs::onclick("SCUPNJaddSeason",
-                   shinyjs::toggle(id = "SCUPnjSeason2", anim = TRUE))
+                   shinyjs::toggle(id = "SCUPnjSeason3", anim = TRUE))
   
   shinyjs::onclick("SFDEaddSeason",
                    shinyjs::toggle(id = "SFdeSeason3", anim = TRUE))
