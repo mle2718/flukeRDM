@@ -1,7 +1,7 @@
 ---
 title: "Coastwide Values"
 output: html_document
-date: "2025-12-01"
+date: ""
 ---
 
 ```{r setup, include=FALSE, warning = FALSE}
@@ -35,30 +35,30 @@ coastwide2<- coastwide %>% dplyr::group_by(metric, species, mode, draw, model) %
 
 
 ```{r pressure, echo=FALSE, warning = FALSE}
- ref_pct <- coastwide2 %>% #all_data %>%
-      dplyr::filter(metric == "keep_weight" & mode == "all modes" & model == "SQ") %>%
-      dplyr::mutate(ref_value = value) %>%
-      dplyr::select(model, species, draw, ref_value)
+ # ref_pct <- coastwide2 %>% #all_data %>%
+ #      dplyr::filter(metric == "keep_weight" & mode == "all modes" & model == "SQ") %>%
+ #      dplyr::mutate(ref_value = value) %>%
+ #      dplyr::select(model, species, draw, ref_value)
     
 harv <- coastwide2 %>% #all_data %>%
       dplyr::filter(metric == "keep_weight" & mode == "all modes") %>%
-      dplyr::left_join(ref_pct, by = join_by(species,   draw)) %>%
-      dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1) * 100) %>%
-      dplyr::group_by(model.x, species, metric) %>%
-      dplyr::summarise(median_pct_diff = round(median(pct_diff), 2)) %>%
-      tidyr::pivot_wider(names_from = species, values_from = median_pct_diff)    
+      # dplyr::left_join(ref_pct, by = join_by(species,   draw)) %>%
+      # dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1) * 100) %>%
+       dplyr::group_by(model, species, metric) %>%
+      dplyr::summarise(value = round(median(value), 0)) %>%
+      tidyr::pivot_wider(names_from = species, values_from = value)    
 
  tab<- harv %>% 
       dplyr::rowwise() %>%
       dplyr::ungroup()%>%
       dplyr::select( -metric) %>%
-      mutate(
-        bsb  = paste0(sprintf("%.2f", bsb),"%"),
-        scup = paste0(sprintf("%.2f", scup),"%"),
-        sf   = paste0(sprintf("%.2f", sf),"%")
-      ) %>% 
-      dplyr::rename( `Run Name` = model.x,
-                    `BSB Median percent change`= bsb, `Scup Median percent change`= scup, `SF Median percent change` = sf)
+      # mutate(
+      #   bsb  = paste0(sprintf("%.2f", bsb),"%"),
+      #   scup = paste0(sprintf("%.2f", scup),"%"),
+      #   sf   = paste0(sprintf("%.2f", sf),"%")
+      # ) %>% 
+      dplyr::rename( `Run Name` = model,
+                    `BSB Median harvest weight`= bsb, `Scup Median harvest weight`= scup, `SF Median harest weight` = sf)
     
 DT::datatable(
   tab,
