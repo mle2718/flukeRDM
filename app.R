@@ -19,67 +19,76 @@ ui <- fluidPage(
              ### Figure and table output by state
              tabsetPanel(
                tabPanel("MA", 
-                        shiny::h2("Massachusettes"),
+                        shiny::h2("Massachusetts"),
                         plotly::plotlyOutput(outputId = "ma_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "ma_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "ma_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "ma_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "ma_discards_fig"), # Disczrds)
+                        plotly::plotlyOutput(outputId = "ma_totmort_fig") # total mort
                ),
                tabPanel("RI", 
                         shiny::h2("Rhode Island"),
                         plotly::plotlyOutput(outputId = "ri_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "ri_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "ri_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "ri_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "ri_discards_fig"), # Disczrds)
+                        plotly::plotlyOutput(outputId = "ri_totmort_fig") # total mort
                ), 
                tabPanel("CT", 
                         shiny::h2("Connecticut"),
                         plotly::plotlyOutput(outputId = "ct_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "ct_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "ct_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "ct_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "ct_discards_fig"), # Disczrds)
+                        plotly::plotlyOutput(outputId = "ct_totmort_fig") # total mort
                ),
                tabPanel("NY", 
                         shiny::h2("New York"),
                         plotly::plotlyOutput(outputId = "ny_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "ny_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "ny_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "ny_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "ny_discards_fig"), # Disczrds)
+                        plotly::plotlyOutput(outputId = "ny_totmort_fig") # total mort
                ),
                tabPanel("NJ", 
                         shiny::h2("New Jersey"),
                         plotly::plotlyOutput(outputId = "nj_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "nj_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "nj_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "nj_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "nj_discards_fig"), # Disczrds)
+                        plotly::plotlyOutput(outputId = "nj_totmort_fig") # total mort
                ),
                tabPanel("DE", 
                         shiny::h2("Delaware"),
                         plotly::plotlyOutput(outputId = "de_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "de_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "de_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "de_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "de_discards_fig"), # Disczrds)
+                        plotly::plotlyOutput(outputId = "de_totmort_fig") # total mort
                ),
                tabPanel("MD", 
                         shiny::h2("Marlyand"),
                         plotly::plotlyOutput(outputId = "md_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "md_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "md_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "md_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "md_discards_fig"), # Disczrds)
+                        plotly::plotlyOutput(outputId = "md_totmort_fig") # total mort
                ),
                tabPanel("VA", 
                         shiny::h2("Virginia"),
                         plotly::plotlyOutput(outputId = "va_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "va_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "va_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "va_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "va_discards_fig"), # Disczrds)
+                        plotly::plotlyOutput(outputId = "va_totmort_fig") # total mort
                ),
                tabPanel("NC", 
                         shiny::h2("North Carolina"),
                         plotly::plotlyOutput(outputId = "nc_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "nc_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "nc_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "nc_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "nc_discards_fig"),  # Disczrds)
+                        plotly::plotlyOutput(outputId = "nc_totmort_fig") # total mort
                ), 
                tabPanel("Regulations", 
                         shiny::h2("Regulations"),
@@ -3873,28 +3882,30 @@ server <- function(input, output, session) {
     # Discards
     mort <- data %>%
       dplyr::filter(
-        metric == "release_weight",
+        metric %in% c("keep_weight", "release_weight"),
         state == state_name,
         mode == "all modes"
       ) %>%
-      dplyr::group_by(state, filename, species) %>%
-      dplyr::summarise(median_rel_weight = median(value), .groups = "drop") %>%
+      dplyr::group_by(state, filename, species, mode, draw, model) %>%
+      dplyr::summarise(mort = sum(value)) %>% 
+      dplyr::group_by(state, filename, species) %>% 
+      dplyr::summarise(median_rel_weight = median(mort), .groups = "drop") %>%
       dplyr::rename(Run_Name = filename) %>% 
       dplyr::left_join(harv, by = c("state", "Run_Name", "species")) %>% 
       dplyr::mutate(median_rel_weight = round(median_rel_weight/1000000,2))
     
     # Static plot
-    p1 <- disc %>%
+    p1 <- mort %>%
       ggplot2::ggplot(ggplot2::aes(x = median_keep_pct_diff, y = median_rel_weight, label = Run_Name)) +
       ggplot2::geom_point() +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
-      ggplot2::ggtitle(paste("Discards in", state_name)) +
-      ggplot2::ylab("Discards (million lbs)") +
+      ggplot2::ggtitle(paste("Total mortality in", state_name)) +
+      ggplot2::ylab("Total Mortality (million lbs)") +
       ggplot2::xlab("Change in Harvest from SQ (%)")+
       ggplot2::theme(legend.position = "none") +
       ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
-      ggplot2::facet_wrap(. ~ species) +
+      ggplot2::facet_wrap(. ~ species, scales = "free") +
       ggplot2::theme_bw()
     
     # Convert to plotly
@@ -3925,6 +3936,11 @@ server <- function(input, output, session) {
     discards_ma
   })
   
+  output$ma_totmort_fig <- plotly::renderPlotly({
+    mort_ma <- totmort_fig(outputs(), "MA")
+    mort_ma
+  })
+  
   ### RI
   output$ri_rhl_fig<- plotly::renderPlotly({
     rhl_ri <- rhl_fig(outputs(), "RI")
@@ -3944,6 +3960,11 @@ server <- function(input, output, session) {
   output$ri_discards_fig <- plotly::renderPlotly({
     discards_ri <- discards_fig(outputs(), "RI")
     discards_ri
+  })
+  
+  output$ri_totmort_fig <- plotly::renderPlotly({
+    mort_ri <- totmort_fig(outputs(), "RI")
+    mort_ri
   })
   
   ### CT
@@ -3967,6 +3988,11 @@ server <- function(input, output, session) {
     discards_ct
   })
   
+  output$ct_totmort_fig <- plotly::renderPlotly({
+    mort_ct <- totmort_fig(outputs(), "CT")
+    mort_ct
+  })
+  
   ### NY
   output$ny_rhl_fig<- plotly::renderPlotly({
     rhl_ny <- rhl_fig(outputs(), "NY")
@@ -3988,6 +4014,10 @@ server <- function(input, output, session) {
     discards_ny
   })
   
+  output$ny_totmort_fig <- plotly::renderPlotly({
+    mort_ny <- totmort_fig(outputs(), "NY")
+    mort_ny
+  })
   
   ### NJ
   output$nj_rhl_fig<- plotly::renderPlotly({
@@ -4008,6 +4038,11 @@ server <- function(input, output, session) {
   output$nj_discards_fig <- plotly::renderPlotly({
     discards_nj <- discards_fig(outputs(), "NJ")
     discards_nj
+  })
+  
+  output$nj_totmort_fig <- plotly::renderPlotly({
+    mort_nj <- totmort_fig(outputs(), "NJ")
+    mort_nj
   })
   
   ### DE
@@ -4031,6 +4066,11 @@ server <- function(input, output, session) {
     discards_de
   })
   
+  output$de_totmort_fig <- plotly::renderPlotly({
+    mort_de <- totmort_fig(outputs(), "DE")
+    mort_de
+  })
+  
   ### MD
   output$md_rhl_fig<- plotly::renderPlotly({
     rhl_md <- rhl_fig(outputs(), "MD")
@@ -4050,6 +4090,11 @@ server <- function(input, output, session) {
   output$md_discards_fig <- plotly::renderPlotly({
     discards_md <- discards_fig(outputs(), "MD")
     discards_md
+  })
+  
+  output$md_totmort_fig <- plotly::renderPlotly({
+    mort_md <- totmort_fig(outputs(), "MD")
+    mort_md
   })
   
   ### VA
@@ -4072,6 +4117,12 @@ server <- function(input, output, session) {
     discards_va <- discards_fig(outputs(), "VA")
     discards_va
   })
+  
+  output$va_totmort_fig <- plotly::renderPlotly({
+    mort_va <- totmort_fig(outputs(), "VA")
+    mort_va
+  })
+  
   ### NC
   output$nc_rhl_fig<- plotly::renderPlotly({
     rhl_nc <- rhl_fig(outputs(), "NC")
@@ -4091,6 +4142,11 @@ server <- function(input, output, session) {
   output$nc_discards_fig <- plotly::renderPlotly({
     discards_nc <- discards_fig(outputs(), "NC")
     discards_nc
+  })
+  
+  output$nc_totmort_fig <- plotly::renderPlotly({
+    mort_nc <- totmort_fig(outputs(), "NC")
+    mort_nc
   })
   
   ####  Storing Inputs for decoupled model ####
