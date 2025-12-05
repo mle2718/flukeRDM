@@ -1,0 +1,113 @@
+---
+title: "Coastwide Values"
+output: html_document
+date: ""
+---
+
+```{r setup, include=FALSE, warning = FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+
+library(dplyr)
+library(stringr)
+library(readr)
+library(purrr)
+library(tidyr)
+library(DT)
+## Read in coastwide folder 
+files <- list.files(path = here::here("output_coastwide/"), pattern = ".csv$", full.names = TRUE)
+
+coastwide <- files %>%
+  set_names(files) %>%  # Optional: keep file names for reference
+  purrr::map_dfr(readr::read_csv, .id = "filename") 
+
+
+## Sum all run 1,2,3...
+coastwide2<- coastwide %>% dplyr::group_by(metric, species, mode, draw, model) %>% 
+  dplyr::reframe(value = sum(value)) 
+
+```
+
+## Percent coastwide change
+
+
+```{r pressure, echo=FALSE, warning = FALSE}
+ # ref_pct <- coastwide2 %>% #all_data %>%
+ #      dplyr::filter(metric == "keep_weight" & mode == "all modes" & model == "SQ") %>%
+ #      dplyr::mutate(ref_value = value) %>%
+ #      dplyr::select(model, species, draw, ref_value)
+    
+harv <- coastwide2 %>% #all_data %>%
+      dplyr::filter(metric == "keep_weight" & mode == "all modes") %>%
+      # dplyr::left_join(ref_pct, by = join_by(species,   draw)) %>%
+      # dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1) * 100) %>%
+       dplyr::group_by(model, species, metric) %>%
+      dplyr::summarise(value = round(median(value), 0)) %>%
+      tidyr::pivot_wider(names_from = species, values_from = value)    
+
+ tab<- harv %>% 
+      dplyr::rowwise() %>%
+      dplyr::ungroup()%>%
+      dplyr::select( -metric) %>%
+      # mutate(
+      #   bsb  = paste0(sprintf("%.2f", bsb),"%"),
+      #   scup = paste0(sprintf("%.2f", scup),"%"),
+      #   sf   = paste0(sprintf("%.2f", sf),"%")
+      # ) %>% 
+      dplyr::rename( `Run Name` = model,
+                    `BSB Median harvest weight`= bsb, `Scup Median harvest weight`= scup, `SF Median harest weight` = sf)
+    
+DT::datatable(
+  tab,
+  options = list(
+    dom = "Bfrtip",
+    pageLength = 10,
+    autoWidth = TRUE
+  )
+)
+```
+
+## Regulations
+
+```{r, echo=FALSE, warning = FALSE}
+
+regfiles <- list.files(path = here::here("saved_regs/"), pattern = ".csv$", full.names = TRUE)
+
+regs <- regfiles %>%
+  set_names(regfiles) %>%  # Optional: keep file names for reference
+  purrr::map_dfr(readr::read_csv, .id = "filename") 
+
+
+ Regs_out <-regs %>%
+      tidyr::separate(input, into = c("species", "season", "measure"), sep = "_") %>%
+      dplyr::mutate(season = stringr::str_remove(season, "^seas")) %>%
+      tidyr::extract(species, into = c("species", "state2", "mode"), regex =  "([^a-z]+)([a-z]+)(.*)") %>%
+      dplyr::select(-state2) %>%
+      dplyr::group_by(run_name, state, species, mode, season) %>%
+      tidyr::pivot_wider(names_from = measure, values_from = value) %>%
+      dplyr::filter(!bag == 0) %>%
+      dplyr::mutate(season2 = paste0(op, " - ", cl)) %>%
+      dplyr::group_by(run_name, state, species, mode) %>%
+      dplyr::summarise(
+        bag = paste(bag, collapse = ","),
+        len = paste(len, collapse = ","),
+        season = paste(season2, collapse = ","),
+        .groups = "drop" ) %>%
+      dplyr::mutate(mode = if_else(mode == "", "All modes", mode)) %>% 
+      dplyr::mutate(season = gsub("2025-", "", season))
+ 
+ 
+DT::datatable(
+  Regs_out,
+  options = list(
+    dom = "Bfrtip",
+    pageLength = 30,
+    autoWidth = TRUE
+  )
+)
+
+
+```

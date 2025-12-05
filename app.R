@@ -4,6 +4,8 @@ library(shiny)
 library(shinyjs)
 library(dplyr)
 
+# Minor edit
+
 #### Start UI ####
 ui <- fluidPage(
   useShinyjs(),
@@ -17,67 +19,76 @@ ui <- fluidPage(
              ### Figure and table output by state
              tabsetPanel(
                tabPanel("MA", 
-                        shiny::h2("Massachusettes"),
+                        shiny::h2("Massachusetts"),
                         plotly::plotlyOutput(outputId = "ma_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "ma_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "ma_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "ma_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "ma_discards_fig"), # Disczrds)
+                        plotly::plotlyOutput(outputId = "ma_totmort_fig") # total mort
                ),
                tabPanel("RI", 
                         shiny::h2("Rhode Island"),
                         plotly::plotlyOutput(outputId = "ri_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "ri_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "ri_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "ri_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "ri_discards_fig"), # Disczrds)
+                        plotly::plotlyOutput(outputId = "ri_totmort_fig") # total mort
                ), 
                tabPanel("CT", 
                         shiny::h2("Connecticut"),
                         plotly::plotlyOutput(outputId = "ct_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "ct_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "ct_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "ct_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "ct_discards_fig"), # Disczrds)
+                        plotly::plotlyOutput(outputId = "ct_totmort_fig") # total mort
                ),
                tabPanel("NY", 
                         shiny::h2("New York"),
                         plotly::plotlyOutput(outputId = "ny_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "ny_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "ny_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "ny_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "ny_discards_fig"), # Disczrds)
+                        plotly::plotlyOutput(outputId = "ny_totmort_fig") # total mort
                ),
                tabPanel("NJ", 
                         shiny::h2("New Jersey"),
                         plotly::plotlyOutput(outputId = "nj_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "nj_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "nj_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "nj_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "nj_discards_fig"), # Disczrds)
+                        plotly::plotlyOutput(outputId = "nj_totmort_fig") # total mort
                ),
                tabPanel("DE", 
                         shiny::h2("Delaware"),
                         plotly::plotlyOutput(outputId = "de_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "de_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "de_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "de_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "de_discards_fig"), # Disczrds)
+                        plotly::plotlyOutput(outputId = "de_totmort_fig") # total mort
                ),
                tabPanel("MD", 
                         shiny::h2("Marlyand"),
                         plotly::plotlyOutput(outputId = "md_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "md_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "md_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "md_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "md_discards_fig"), # Disczrds)
+                        plotly::plotlyOutput(outputId = "md_totmort_fig") # total mort
                ),
                tabPanel("VA", 
                         shiny::h2("Virginia"),
                         plotly::plotlyOutput(outputId = "va_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "va_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "va_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "va_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "va_discards_fig"), # Disczrds)
+                        plotly::plotlyOutput(outputId = "va_totmort_fig") # total mort
                ),
                tabPanel("NC", 
                         shiny::h2("North Carolina"),
                         plotly::plotlyOutput(outputId = "nc_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "nc_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "nc_trips_fig"), # Ntrips
-                        plotly::plotlyOutput(outputId = "nc_discards_fig") # Disczrds)
+                        plotly::plotlyOutput(outputId = "nc_discards_fig"),  # Disczrds)
+                        plotly::plotlyOutput(outputId = "nc_totmort_fig") # total mort
                ), 
                tabPanel("Regulations", 
                         shiny::h2("Regulations"),
@@ -203,7 +214,7 @@ server <- function(input, output, session) {
   shinyjs::onclick("BSBNJaddSeason",
                    shinyjs::toggle(id = "BSBnjSeason5", anim = TRUE))
   shinyjs::onclick("SCUPNJaddSeason",
-                   shinyjs::toggle(id = "SCUPnjSeason2", anim = TRUE))
+                   shinyjs::toggle(id = "SCUPnjSeason3", anim = TRUE))
   
   shinyjs::onclick("SFDEaddSeason",
                    shinyjs::toggle(id = "SFdeSeason3", anim = TRUE))
@@ -1719,40 +1730,40 @@ server <- function(input, output, session) {
                uiOutput("SCUPnjMode"),
                
                actionButton("SCUPNJaddSeason", "Add Season"), 
-               shinyjs::hidden( div(ID = "SCUPnjSeason2",
-                                    rlang::exec(sliderInput, inputId= "SCUPnjFH_seas2", label ="For Hire  Season 2",
+               shinyjs::hidden( div(ID = "SCUPnjSeason3",
+                                    rlang::exec(sliderInput, inputId= "SCUPnjFH_seas3", label ="For Hire  Season 3",
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
                                                 !!!date_slider_defaults),
                                     fluidRow(
                                       column(4,
-                                             numericInput(inputId = "SCUPnjFH_2_bag", label ="Bag Limit",
+                                             numericInput(inputId = "SCUPnjFH_3_bag", label ="Bag Limit",
                                                           min = 0, max = 100, value = 0)),
                                       column(6,
-                                             rlang::exec(sliderInput, inputId= "SCUPnjFH_2_len", label ="Min Length",
+                                             rlang::exec(sliderInput, inputId= "SCUPnjFH_3_len", label ="Min Length",
                                                          min = 8, max = 12, value = 10, step = .5))), 
-                                    rlang::exec(sliderInput, inputId= "SCUPnjPR_seas2", label ="Private  Season 2",
+                                    rlang::exec(sliderInput, inputId= "SCUPnjPR_seas3", label ="Private  Season 3",
                                                 
                                                 
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
                                                 !!!date_slider_defaults),
                                     fluidRow(
                                       column(4,
-                                             numericInput(inputId = "SCUPnjPR_2_bag", label ="Bag Limit",
+                                             numericInput(inputId = "SCUPnjPR_3_bag", label ="Bag Limit",
                                                           min = 0, max = 100, value = 0)),
                                       column(6,
-                                             rlang::exec(sliderInput, inputId= "SCUPnjPR_2_len", label ="Min Length",
+                                             rlang::exec(sliderInput, inputId= "SCUPnjPR_3_len", label ="Min Length",
                                                          min = 8, max = 12, value = 10, step = .5))), 
-                                    rlang::exec(sliderInput, inputId= "SCUPnjSH_seas2", label ="Shore  Season 2",
+                                    rlang::exec(sliderInput, inputId= "SCUPnjSH_seas3", label ="Shore  Season 3",
                                                 
                                                 
                                                 value=c(as.Date("12-31","%m-%d"),as.Date("12-31","%m-%d")), 
                                                 !!!date_slider_defaults),
                                     fluidRow(
                                       column(4,
-                                             numericInput(inputId = "SCUPnjSH_2_bag", label ="Bag Limit",
+                                             numericInput(inputId = "SCUPnjSH_3_bag", label ="Bag Limit",
                                                           min = 0, max = 100, value = 0)),
                                       column(6,
-                                             rlang::exec(sliderInput, inputId= "SCUPnjSH_2_len", label ="Min Length",
+                                             rlang::exec(sliderInput, inputId= "SCUPnjSH_3_len", label ="Min Length",
                                                          min = 8, max = 12, value = 10, step = .5)))))))
     }
     
@@ -1992,7 +2003,7 @@ server <- function(input, output, session) {
     switch(input$SCUP_NJ_input_type,
            
            "All Modes Combined" = div( rlang::exec(sliderInput, inputId = "SCUPnj_seas1", label =" Season 1",
-                                                   value=c(as.Date("08-01","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                   value=c(as.Date("01-01","%m-%d"),as.Date("06-30","%m-%d")), 
                                                    !!!date_slider_defaults),
                                        fluidRow(
                                          column(4,
@@ -2000,9 +2011,19 @@ server <- function(input, output, session) {
                                                              min = 0, max = 100, value = 30)),
                                          column(6,
                                                 rlang::exec(sliderInput, inputId= "SCUPnj_1_len", label ="Min Length",
+                                                            min = 8, max = 12, value = 10, step = .5))), 
+                                       rlang::exec(sliderInput, inputId = "SCUPnj_seas2", label =" Season 2",
+                                                   value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                   !!!date_slider_defaults),
+                                       fluidRow(
+                                         column(4,
+                                                numericInput(inputId = "SCUPnj_2_bag", label ="Bag Limit",
+                                                             min = 0, max = 100, value = 30)),
+                                         column(6,
+                                                rlang::exec(sliderInput, inputId= "SCUPnj_2_len", label ="Min Length",
                                                             min = 8, max = 12, value = 10, step = .5)))),
            "Separated By Mode" = div(rlang::exec(sliderInput, inputId = "SCUPnjFH_seas1", label ="For Hire  Season 1",
-                                                 value=c(as.Date("08-01","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 value=c(as.Date("01-01","%m-%d"),as.Date("06-30","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
@@ -2012,7 +2033,7 @@ server <- function(input, output, session) {
                                               rlang::exec(sliderInput, inputId= "SCUPnjFH_1_len", label ="Min Length",
                                                           min = 8, max = 12, value = 10, step = .5))), 
                                      rlang::exec(sliderInput, inputId= "SCUPnjPR_seas1", label ="Private  Season 1",
-                                                 value=c(as.Date("08-01","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 value=c(as.Date("01-01","%m-%d"),as.Date("06-30","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
@@ -2022,7 +2043,7 @@ server <- function(input, output, session) {
                                               rlang::exec(sliderInput, inputId= "SCUPnjPR_1_len", label ="Min Length",
                                                           min = 8, max = 12, value = 10, step = .5))), 
                                      rlang::exec(sliderInput, inputId= "SCUPnjSH_seas1", label ="Shore  Season 1",
-                                                 value=c(as.Date("08-01","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 value=c(as.Date("01-01","%m-%d"),as.Date("06-30","%m-%d")), 
                                                  !!!date_slider_defaults),
                                      fluidRow(
                                        column(4,
@@ -2030,6 +2051,40 @@ server <- function(input, output, session) {
                                                            min = 0, max = 100, value = 30)),
                                        column(6,
                                               rlang::exec(sliderInput, inputId= "SCUPnjSH_1_len", label ="Min Length",
+                                                          min = 8, max = 12, value = 10, step = .5))), 
+                                     
+                                     
+                                     
+                                     
+                                     rlang::exec(sliderInput, inputId = "SCUPnjFH_seas2", label ="For Hire  Season 2",
+                                                 value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 !!!date_slider_defaults),
+                                     fluidRow(
+                                       column(4,
+                                              numericInput(inputId = "SCUPnjFH_2_bag", label ="Bag Limit",
+                                                           min = 0, max = 100, value = 30)),
+                                       column(6,
+                                              rlang::exec(sliderInput, inputId= "SCUPnjFH_2_len", label ="Min Length",
+                                                          min = 8, max = 12, value = 10, step = .5))), 
+                                     rlang::exec(sliderInput, inputId= "SCUPnjPR_seas2", label ="Private  Season 2",
+                                                 value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 !!!date_slider_defaults),
+                                     fluidRow(
+                                       column(4,
+                                              numericInput(inputId = "SCUPnjPR_2_bag", label ="Bag Limit",
+                                                           min = 0, max = 100, value = 30)),
+                                       column(6,
+                                              rlang::exec(sliderInput, inputId= "SCUPnjPR_2_len", label ="Min Length",
+                                                          min = 8, max = 12, value = 10, step = .5))), 
+                                     rlang::exec(sliderInput, inputId= "SCUPnjSH_seas2", label ="Shore  Season 2",
+                                                 value=c(as.Date("09-01","%m-%d"),as.Date("12-31","%m-%d")), 
+                                                 !!!date_slider_defaults),
+                                     fluidRow(
+                                       column(4,
+                                              numericInput(inputId = "SCUPnjSH_2_bag", label ="Bag Limit",
+                                                           min = 0, max = 100, value = 30)),
+                                       column(6,
+                                              rlang::exec(sliderInput, inputId= "SCUPnjSH_2_len", label ="Min Length",
                                                           min = 8, max = 12, value = 10, step = .5)))))
   })
   
@@ -3498,6 +3553,8 @@ server <- function(input, output, session) {
   # get all_data
   #all_data<-outputs()
   
+  # minor push
+  
   # Summary
   output$summary_rhl_fig<- plotly::renderPlotly({
     
@@ -3512,26 +3569,19 @@ server <- function(input, output, session) {
       dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1) * 100) %>%
       dplyr::group_by(state,filename.x, species, metric) %>%
       dplyr::summarise(median_pct_diff = round(median(pct_diff), 2)) %>%
-      tidyr::pivot_wider(names_from = species, values_from = median_pct_diff) %>% 
+      #tidyr::pivot_wider(names_from = species, values_from = median_pct_diff) %>% 
       dplyr::rename(Run_Name = filename.x)
     
     
     harv2 <- harv %>%
-      ggplot2::ggplot(ggplot2::aes(x = bsb, y = sf, label = Run_Name, color = scup)) +
-      ggplot2::geom_point( size = 3) +
-      ggplot2::geom_text(color = "black", vjust = -0.5, size = 3) +
-      #ggplot2::geom_hline(data = pca_sf, ggplot2::aes(yintercept = pca_reqs), color = "black")+
-      #ggplot2::geom_vline(data = pca_bsb, ggplot2::aes(xintercept = pca_reqs), color = "black", linetype = "dashed")+
+      ggplot2::ggplot(ggplot2::aes(x = species, y = median_pct_diff, label = Run_Name)) +
+      ggplot2::geom_point( size = 2) +
+      ggplot2::geom_text(color = "black", hjust = -0.25, size = 2) +
       ggplot2::facet_wrap(~ state) +
-      ggplot2::scale_x_continuous(labels = function(x) format(round(x, 2), nsmall = 0)) +
-      ggplot2::scale_y_continuous(labels = function(x) format(round(x, 2), nsmall = 0)) + 
-      ggplot2::labs(title = "Percentage change in SF (vertical) and BSB (horizontal) Recreational Harvest By State",
-                    x = "Change in BSB Harvest(%)",
-                    y = "Change in SF Harvest (%)",
-                    color="Change in Scup\nharvest (%)") +
-      #ggplot2::scale_color_gradient2( low = "blue", mid = "gray", high = "red",  midpoint = 0, limits = c(-10, 10)) + 
-      ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
-      ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
+      ggplot2::labs(title = "Percentage change in Recreational Harvest By State",
+                    x = "",
+                    y = "Median % Change in Harvest") +
+      ggplot2::geom_hline(yintercept = 0)+
       ggplot2::theme_bw()
     
     fig<- plotly::ggplotly(harv2) %>%
@@ -3555,20 +3605,16 @@ server <- function(input, output, session) {
       tidyr::pivot_wider(names_from = species, values_from = median_pct_diff)
     
     tab<- harv %>% 
-      dplyr::mutate(bsb_ok  = abs(bsb)  <= bsb_percent_change,
-                    scup_ok = abs(scup) <= scup_percent_change,
-                    sf_ok   = abs(sf)   <= sf_percent_change) %>%
       dplyr::rowwise() %>%
-      dplyr::mutate(ok_count = paste0(sum(c_across(c(bsb_ok, scup_ok, sf_ok))), "/3")) %>%
       dplyr::ungroup()%>%
-      dplyr::select( -metric,  -bsb_ok ,-scup_ok, -sf_ok) %>%
+      dplyr::select( -metric) %>%
       mutate(
         bsb  = paste0(sprintf("%.2f", bsb),"%"),
         scup = paste0(sprintf("%.2f", scup),"%"),
         sf   = paste0(sprintf("%.2f", sf),"%")
       ) %>% 
       dplyr::rename(State = state, `Run Name` = filename.x,
-                    `BSB Change`= bsb, `Scup Change`= scup, `SF Change` = sf, `Below RHL` = ok_count)
+                    `BSB Median % Change`= bsb, `Scup Median % Change`= scup, `SF Median %Change` = sf)
     
     tab
   })
@@ -3620,21 +3666,19 @@ server <- function(input, output, session) {
       dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1)  * 100) %>%
       dplyr::group_by(state, filename.x, species, metric) %>%
       dplyr::summarise(median_pct_diff = round(median(pct_diff),2), .groups = "drop") %>%
-      tidyr::pivot_wider(names_from = species, values_from = median_pct_diff) %>% 
+      #tidyr::pivot_wider(names_from = species, values_from = median_pct_diff) %>% 
       dplyr::rename(Run_Name = filename.x)
     
     # Static ggplot
     harv2 <- harv %>%
-      ggplot2::ggplot(ggplot2::aes(x = bsb, y = sf, label = Run_Name, color = scup)) +
-      ggplot2::geom_point(size = 3) +
-      ggplot2::geom_text(vjust = -0.5, size = 3) +
-      ggplot2::labs(
-        title = paste("Percentage change in SF (vertical) and BSB (horizontal) Recreational Harvest in", state_name),
-        x = "Change in BSB Harvest(%)",
-        y = "Change in SF Harvest (%)",
-        color="Change in Scup\nharvest (%)") +
-      ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
-      ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
+      ggplot2::ggplot(ggplot2::aes(x = species, y = median_pct_diff, label = Run_Name)) +
+      ggplot2::geom_point( size = 2) +
+      ggplot2::geom_text(color = "black", hjust = -0.25, size = 2) +
+      ggplot2::facet_wrap(~ state) +
+      ggplot2::labs(title = "Percentage change in Recreational Harvest By State",
+                    x = "",
+                    y = "Median % Change in Harvest") +
+      ggplot2::geom_hline(yintercept = 0)+
       ggplot2::theme_bw()
     
     # Convert to plotly
@@ -3718,7 +3762,7 @@ server <- function(input, output, session) {
     # Trips data
     trips <- data %>%
       dplyr::filter(
-        metric %in% c("predicted trips"),
+        metric %in% c("predicted_trips"),
         state == state_name,
         mode == "all modes"
       ) %>%
@@ -3799,7 +3843,69 @@ server <- function(input, output, session) {
       ggplot2::theme(legend.position = "none") +
       ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
-      ggplot2::facet_wrap(. ~ species) +
+      ggplot2::facet_wrap(. ~ species, scales = "free") +
+      ggplot2::theme_bw()
+    
+    # Convert to plotly
+    fig <- plotly::ggplotly(p1) %>%
+      plotly::style(textposition = "top center")
+    
+    return(fig)
+  }
+  
+  totmort_fig<- function(data, state_name) {
+    
+    # Reference values (SQ model only, keep only)
+    ref_pct <- data %>%
+      dplyr::filter(
+        metric == "keep_weight",
+        state == state_name,
+        mode == "all modes",
+        model == "SQ"
+      ) %>%
+      dplyr::mutate(ref_value = value) %>%
+      dplyr::select(filename, species, state, draw, ref_value)
+    
+    # Harvest percent difference
+    harv <- data %>%
+      dplyr::filter(
+        metric == "keep_weight",
+        state == state_name,
+        mode == "all modes"
+      ) %>%
+      dplyr::left_join(ref_pct, by = dplyr::join_by(species, state, draw)) %>%
+      dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1)  * 100) %>%
+      dplyr::group_by(state, filename.x, species, metric) %>%
+      dplyr::summarise(median_keep_pct_diff = round(median(pct_diff),2), .groups = "drop") %>%
+      dplyr::rename(Run_Name = filename.x)
+    
+    # Discards
+    mort <- data %>%
+      dplyr::filter(
+        metric %in% c("keep_weight", "release_weight"),
+        state == state_name,
+        mode == "all modes"
+      ) %>%
+      dplyr::group_by(state, filename, species, mode, draw, model) %>%
+      dplyr::summarise(mort = sum(value)) %>% 
+      dplyr::group_by(state, filename, species) %>% 
+      dplyr::summarise(median_rel_weight = median(mort), .groups = "drop") %>%
+      dplyr::rename(Run_Name = filename) %>% 
+      dplyr::left_join(harv, by = c("state", "Run_Name", "species")) %>% 
+      dplyr::mutate(median_rel_weight = round(median_rel_weight/1000000,2))
+    
+    # Static plot
+    p1 <- mort %>%
+      ggplot2::ggplot(ggplot2::aes(x = median_keep_pct_diff, y = median_rel_weight, label = Run_Name)) +
+      ggplot2::geom_point() +
+      ggplot2::geom_text(vjust = -0.5, size = 3) +
+      ggplot2::ggtitle(paste("Total mortality in", state_name)) +
+      ggplot2::ylab("Total Mortality (million lbs)") +
+      ggplot2::xlab("Change in Harvest from SQ (%)")+
+      ggplot2::theme(legend.position = "none") +
+      ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
+      ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
+      ggplot2::facet_wrap(. ~ species, scales = "free") +
       ggplot2::theme_bw()
     
     # Convert to plotly
@@ -3830,6 +3936,11 @@ server <- function(input, output, session) {
     discards_ma
   })
   
+  output$ma_totmort_fig <- plotly::renderPlotly({
+    mort_ma <- totmort_fig(outputs(), "MA")
+    mort_ma
+  })
+  
   ### RI
   output$ri_rhl_fig<- plotly::renderPlotly({
     rhl_ri <- rhl_fig(outputs(), "RI")
@@ -3849,6 +3960,11 @@ server <- function(input, output, session) {
   output$ri_discards_fig <- plotly::renderPlotly({
     discards_ri <- discards_fig(outputs(), "RI")
     discards_ri
+  })
+  
+  output$ri_totmort_fig <- plotly::renderPlotly({
+    mort_ri <- totmort_fig(outputs(), "RI")
+    mort_ri
   })
   
   ### CT
@@ -3872,6 +3988,11 @@ server <- function(input, output, session) {
     discards_ct
   })
   
+  output$ct_totmort_fig <- plotly::renderPlotly({
+    mort_ct <- totmort_fig(outputs(), "CT")
+    mort_ct
+  })
+  
   ### NY
   output$ny_rhl_fig<- plotly::renderPlotly({
     rhl_ny <- rhl_fig(outputs(), "NY")
@@ -3893,6 +4014,10 @@ server <- function(input, output, session) {
     discards_ny
   })
   
+  output$ny_totmort_fig <- plotly::renderPlotly({
+    mort_ny <- totmort_fig(outputs(), "NY")
+    mort_ny
+  })
   
   ### NJ
   output$nj_rhl_fig<- plotly::renderPlotly({
@@ -3913,6 +4038,11 @@ server <- function(input, output, session) {
   output$nj_discards_fig <- plotly::renderPlotly({
     discards_nj <- discards_fig(outputs(), "NJ")
     discards_nj
+  })
+  
+  output$nj_totmort_fig <- plotly::renderPlotly({
+    mort_nj <- totmort_fig(outputs(), "NJ")
+    mort_nj
   })
   
   ### DE
@@ -3936,6 +4066,11 @@ server <- function(input, output, session) {
     discards_de
   })
   
+  output$de_totmort_fig <- plotly::renderPlotly({
+    mort_de <- totmort_fig(outputs(), "DE")
+    mort_de
+  })
+  
   ### MD
   output$md_rhl_fig<- plotly::renderPlotly({
     rhl_md <- rhl_fig(outputs(), "MD")
@@ -3955,6 +4090,11 @@ server <- function(input, output, session) {
   output$md_discards_fig <- plotly::renderPlotly({
     discards_md <- discards_fig(outputs(), "MD")
     discards_md
+  })
+  
+  output$md_totmort_fig <- plotly::renderPlotly({
+    mort_md <- totmort_fig(outputs(), "MD")
+    mort_md
   })
   
   ### VA
@@ -3977,6 +4117,12 @@ server <- function(input, output, session) {
     discards_va <- discards_fig(outputs(), "VA")
     discards_va
   })
+  
+  output$va_totmort_fig <- plotly::renderPlotly({
+    mort_va <- totmort_fig(outputs(), "VA")
+    mort_va
+  })
+  
   ### NC
   output$nc_rhl_fig<- plotly::renderPlotly({
     rhl_nc <- rhl_fig(outputs(), "NC")
@@ -3996,6 +4142,11 @@ server <- function(input, output, session) {
   output$nc_discards_fig <- plotly::renderPlotly({
     discards_nc <- discards_fig(outputs(), "NC")
     discards_nc
+  })
+  
+  output$nc_totmort_fig <- plotly::renderPlotly({
+    mort_nc <- totmort_fig(outputs(), "NC")
+    mort_nc
   })
   
   ####  Storing Inputs for decoupled model ####
@@ -4445,7 +4596,7 @@ server <- function(input, output, session) {
                                             as.character(input$SCUPnjPR_seas3[1]), as.character(input$SCUPnjPR_seas3[2]), as.character(input$SCUPnjPR_3_bag), as.character(input$SCUPnjPR_3_len),
                                             as.character(input$SCUPnjSH_seas3[1]), as.character(input$SCUPnjSH_seas3[2]), as.character(input$SCUPnjSH_3_bag), as.character(input$SCUPnjSH_3_len)))
       }else{
-        scupbNJregs <-  data.frame(run_name = c(Run_Name()),
+        scupNJregs <-  data.frame(run_name = c(Run_Name()),
                                    state = c("NJ"),
                                    input =  c( "SCUPnjFH_seas1_op", "SCUPnjFH_seas1_cl", "SCUPnjFH_1_bag", "SCUPnjFH_1_len", 
                                                "SCUPnjPR_seas1_op", "SCUPnjPR_seas1_cl", "SCUPnjPR_1_bag", "SCUPnjPR_1_len",

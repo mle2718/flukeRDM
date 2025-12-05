@@ -12,7 +12,7 @@ files <- list.files(path = here::here("output/"), pattern = "\\.csv$", full.name
 
 all_data <- files %>%
   set_names(files) %>%  # Optional: keep file names for reference
-  purrr::map_dfr(readr::read_csv, .id = "filename", col_select=all_of(read_cols), col_types=read_cols_types) %>% 
+  purrr::map_dfr(readr::read_csv, .id = "filename") %>% 
   dplyr::mutate(filename = stringr::str_extract(filename, "(?<=output_).+?(?=_202)"))
 
 state_list <- unique(all_data$state)
@@ -65,20 +65,4 @@ for (i in unique(all_data$model)){
 
 
 
-
-
-## Read in coastwide folder 
-files <- list.files(path = here::here("output_coastwide/"), pattern = "\\.csv$", full.names = TRUE)
-
-coastwide <- files %>%
-  set_names(files) %>%  # Optional: keep file names for reference
-  purrr::map_dfr(readr::read_csv, .id = "filename", col_select=all_of(read_cols), col_types=read_cols_types) 
-
-
-## Sum all run 1,2,3...
-coastwide2<- coastwide %>% dplyr::group_by(metric, species, mode, draw, model) %>% 
-  dplyr::reframe(value = sum(value)) 
-
-
-## Take medians of sums
 
