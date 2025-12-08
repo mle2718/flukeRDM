@@ -3576,7 +3576,7 @@ server <- function(input, output, session) {
     harv2 <- harv %>%
       ggplot2::ggplot(ggplot2::aes(x = species, y = median_pct_diff, label = Run_Name)) +
       ggplot2::geom_point( size = 2) +
-      ggplot2::geom_text(color = "black", hjust = -0.25, size = 2) +
+      ggplot2::geom_text(color = "black", hjust = -0.25, size = 3) +
       ggplot2::facet_wrap(~ state) +
       ggplot2::labs(title = "Percentage change in Recreational Harvest By State",
                     x = "",
@@ -3673,7 +3673,7 @@ server <- function(input, output, session) {
     harv2 <- harv %>%
       ggplot2::ggplot(ggplot2::aes(x = species, y = median_pct_diff, label = Run_Name)) +
       ggplot2::geom_point( size = 2) +
-      ggplot2::geom_text(color = "black", hjust = -0.25, size = 2) +
+      ggplot2::geom_text(color = "black", hjust = -0.25, size = 3) +
       ggplot2::facet_wrap(~ state) +
       ggplot2::labs(title = "Percentage change in Recreational Harvest By State",
                     x = "",
