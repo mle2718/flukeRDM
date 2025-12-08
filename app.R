@@ -3844,7 +3844,8 @@ server <- function(input, output, session) {
       ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::facet_wrap(. ~ species, scales = "free") +
-      ggplot2::theme_bw()
+      ggplot2::theme_bw()+
+      ggplot2::theme(panel.spacing = ggplot2::unit(-0.5, "cm"))
     
     # Convert to plotly
     fig <- plotly::ggplotly(p1) %>%
@@ -3906,7 +3907,9 @@ server <- function(input, output, session) {
       ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::facet_wrap(. ~ species, scales = "free") +
-      ggplot2::theme_bw()
+      ggplot2::theme_bw()+
+      ggplot2::theme(panel.spacing = ggplot2::unit(-0.5, "cm"))
+      
     
     # Convert to plotly
     fig <- plotly::ggplotly(p1) %>%
