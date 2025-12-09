@@ -3576,7 +3576,7 @@ server <- function(input, output, session) {
     harv2 <- harv %>%
       ggplot2::ggplot(ggplot2::aes(x = species, y = median_pct_diff, label = Run_Name)) +
       ggplot2::geom_point( size = 2) +
-      ggplot2::geom_text(color = "black", hjust = -0.25, size = 2) +
+      ggplot2::geom_text(color = "black", hjust = -0.25, size = 3) +
       ggplot2::facet_wrap(~ state) +
       ggplot2::labs(title = "Percentage change in Recreational Harvest By State",
                     x = "",
@@ -3673,7 +3673,7 @@ server <- function(input, output, session) {
     harv2 <- harv %>%
       ggplot2::ggplot(ggplot2::aes(x = species, y = median_pct_diff, label = Run_Name)) +
       ggplot2::geom_point( size = 2) +
-      ggplot2::geom_text(color = "black", hjust = -0.25, size = 2) +
+      ggplot2::geom_text(color = "black", hjust = -0.25, size = 3) +
       ggplot2::facet_wrap(~ state) +
       ggplot2::labs(title = "Percentage change in Recreational Harvest By State",
                     x = "",
@@ -3844,7 +3844,8 @@ server <- function(input, output, session) {
       ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::facet_wrap(. ~ species, scales = "free") +
-      ggplot2::theme_bw()
+      ggplot2::theme_bw()+
+      ggplot2::theme(panel.spacing = ggplot2::unit(-0.5, "cm"))
     
     # Convert to plotly
     fig <- plotly::ggplotly(p1) %>%
@@ -3906,7 +3907,9 @@ server <- function(input, output, session) {
       ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.1)) +
       ggplot2::facet_wrap(. ~ species, scales = "free") +
-      ggplot2::theme_bw()
+      ggplot2::theme_bw()+
+      ggplot2::theme(panel.spacing = ggplot2::unit(-0.5, "cm"))
+      
     
     # Convert to plotly
     fig <- plotly::ggplotly(p1) %>%
