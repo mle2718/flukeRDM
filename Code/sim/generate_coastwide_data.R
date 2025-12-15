@@ -9,7 +9,7 @@ library(tidyr)
 ### Read in all of output folder
 
 files <- list.files(path = here::here("output/"), pattern = "\\.csv$", full.names = TRUE)
-
+files <- list.files(path = here::here("output/"), pattern = "SQ1", full.names = TRUE)
 all_data <- files %>%
   set_names(files) %>%  # Optional: keep file names for reference
   purrr::map_dfr(readr::read_csv, .id = "filename") %>% 
