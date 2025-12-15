@@ -39,7 +39,7 @@ coastwide2<- coastwide %>% dplyr::group_by(metric, species, mode, draw, model) %
 
 ```
 
-## Percent coastwide change
+## Coastwide change
 
 
 ```{r pressure, echo=FALSE, warning = FALSE}
