@@ -33,7 +33,7 @@ coastwide <- files %>%
   purrr::map_dfr(readr::read_csv, .id = "filename") %>% 
   dplyr::filter(stringr::str_detect(filename, "SQ")) %>% 
   dplyr::bind_rows(Lou_SQ2)
-  
+
 coastwide2<- coastwide %>% dplyr::group_by(metric, species, mode, draw, model) %>% 
   dplyr::reframe(value = sum(value)) 
 
@@ -42,7 +42,41 @@ coastwide2<- coastwide %>% dplyr::group_by(metric, species, mode, draw, model) %
 ## Coastwide change
 
 
-```{r pressure, echo=FALSE, warning = FALSE}
+```{r, echo=FALSE, warning = FALSE}
+ # ref_pct <- coastwide2 %>% #all_data %>%
+ #      dplyr::filter(metric == "keep_weight" & mode == "all modes" & model == "SQ") %>%
+ #      dplyr::mutate(ref_value = value) %>%
+ #      dplyr::select(model, species, draw, ref_value)
+    
+harv <- coastwide2 %>% #all_data %>%
+      dplyr::filter(metric == "keep_weight" & mode == "all modes") %>%
+      # dplyr::left_join(ref_pct, by = join_by(species,   draw)) %>%
+      # dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1) * 100) %>%
+      dplyr::mutate(value_mt = value/2205) %>% 
+       dplyr::group_by(model, species, metric) %>%
+      dplyr::summarise(value = round(median(value), 0), 
+                       value_mt = round(median(value_mt), 0)) %>%
+      tidyr::pivot_wider(names_from = species, values_from = c(value, value_mt))
+
+tab <- harv %>% 
+      dplyr::rowwise() %>%
+      dplyr::ungroup()%>%
+      dplyr::select( -metric) %>%
+  data.table::as.data.table()
+
+DT::datatable(
+  tab,
+  options = list(
+    dom = "Bfrtip",
+    pageLength = 10,
+    autoWidth = TRUE
+  )
+)
+```
+
+
+
+```{r, echo=FALSE, warning = FALSE}
  # ref_pct <- coastwide2 %>% #all_data %>%
  #      dplyr::filter(metric == "keep_weight" & mode == "all modes" & model == "SQ") %>%
  #      dplyr::mutate(ref_value = value) %>%
