@@ -76,7 +76,7 @@ DT::datatable(
 
 
 ### Comparing the first 10 runs of each
-```{r, echo=FALSE, warning = FALSE}
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
 p1<-coastwide2 %>% dplyr::filter(draw %in% c(1:3)) %>% 
   dplyr::filter(metric == "keep_weight" & mode == "all modes") %>% 
   ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
