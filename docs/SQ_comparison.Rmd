@@ -87,3 +87,113 @@ plotly::ggplotly(p1)
 
 
 ```
+
+
+
+### MA
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "MA") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
+
+### RI
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "RI") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
+
+### CT
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "CT") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
+
+### NY
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "NY") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
+
+### NJ
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "NJ") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
+
+### DE
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "DE") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
+
+### MD
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "MD") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
+
+### VA
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "VA") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
+
+### NC
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "NC") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
