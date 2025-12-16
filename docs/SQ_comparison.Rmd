@@ -1,0 +1,233 @@
+---
+title: "Status quo comparison"
+output: html_document
+date: ""
+---
+
+```{r setup, include=FALSE, warning = FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+
+library(dplyr)
+library(stringr)
+library(readr)
+library(purrr)
+library(tidyr)
+library(DT)
+
+files <- list.files(path = here::here("output_coastwide/"), pattern = ".csv$", full.names = TRUE)
+Lou_SQ <- readxl::read_xlsx(here::here("output/RDM_SQ_data_for_kim.xlsx")) 
+
+Lou_SQ2<- Lou_SQ %>% 
+  dplyr::mutate(model = "Lou_SQ",
+                "...1" = "NA", 
+                filename = "NA") %>% 
+  dplyr::select(!source)
+
+
+coastwide <- files %>%
+  set_names(files) %>%  # Optional: keep file names for ref
+  purrr::map_dfr(readr::read_csv, .id = "filename") %>% 
+  dplyr::filter(stringr::str_detect(filename, "SQ")) %>% 
+  dplyr::bind_rows(Lou_SQ2)
+
+coastwide2<- coastwide %>% dplyr::group_by(metric, species, mode, draw, model) %>% 
+  dplyr::reframe(value = sum(value)) 
+
+```
+
+## Coastwide change
+
+
+```{r, echo=FALSE, warning = FALSE}
+ # ref_pct <- coastwide2 %>% #all_data %>%
+ #      dplyr::filter(metric == "keep_weight" & mode == "all modes" & model == "SQ") %>%
+ #      dplyr::mutate(ref_value = value) %>%
+ #      dplyr::select(model, species, draw, ref_value)
+    
+harv <- coastwide2 %>% #all_data %>%
+      dplyr::filter(metric == "keep_weight" & mode == "all modes") %>%
+      # dplyr::left_join(ref_pct, by = join_by(species,   draw)) %>%
+      # dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1) * 100) %>%
+      dplyr::mutate(value_mt = value/2205) %>% 
+       dplyr::group_by(model, species, metric) %>%
+      dplyr::summarise(value = round(median(value), 0), 
+                       value_mt = round(median(value_mt), 0)) %>%
+      tidyr::pivot_wider(names_from = species, values_from = c(value, value_mt))
+
+tab <- harv %>% 
+      dplyr::rowwise() %>%
+      dplyr::ungroup()%>%
+      dplyr::select( -metric) %>%
+  data.table::as.data.table()
+
+DT::datatable(
+  tab,
+  options = list(
+    dom = "Bfrtip",
+    pageLength = 10,
+    autoWidth = TRUE
+  )
+)
+```
+
+
+
+```{r, echo=FALSE, warning = FALSE}
+ # ref_pct <- coastwide2 %>% #all_data %>%
+ #      dplyr::filter(metric == "keep_weight" & mode == "all modes" & model == "SQ") %>%
+ #      dplyr::mutate(ref_value = value) %>%
+ #      dplyr::select(model, species, draw, ref_value)
+    
+harv <- coastwide2 %>% #all_data %>%
+      dplyr::filter(metric == "keep_weight" & mode == "all modes") %>%
+      # dplyr::left_join(ref_pct, by = join_by(species,   draw)) %>%
+      # dplyr::mutate(pct_diff = (value - ref_value) / (ref_value+1) * 100) %>%
+      dplyr::mutate(value_mt = value/2205) %>% 
+       dplyr::group_by(model, species, metric) %>%
+      dplyr::summarise(value = round(median(value), 0), 
+                       value_mt = round(median(value_mt), 0)) %>%
+      tidyr::pivot_wider(names_from = species, values_from = c(value, value_mt))
+
+tab <- harv %>% 
+      dplyr::rowwise() %>%
+      dplyr::ungroup()%>%
+      dplyr::select( -metric) %>%
+  data.table::as.data.table()
+
+DT::datatable(
+  tab,
+  options = list(
+    dom = "Bfrtip",
+    pageLength = 10,
+    autoWidth = TRUE
+  )
+)
+```
+
+
+### Comparing the first 10 runs of each
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide2 %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+
+
+```
+
+
+
+### MA
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "MA") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
+
+### RI
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "RI") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
+
+### CT
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "CT") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
+
+### NY
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "NY") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
+
+### NJ
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "NJ") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
+
+### DE
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "DE") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
+
+### MD
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "MD") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
+
+### VA
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "VA") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
+
+### NC
+
+```{r, echo=FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+p1<-coastwide %>% dplyr::filter(draw %in% c(1:3)) %>% 
+  dplyr::filter(metric == "keep_weight" & mode == "all modes" & state == "NC") %>% 
+  ggplot2::ggplot(ggplot2::aes(x = metric, y = (value/2205), color = model))+
+  ggplot2::geom_point(size = 2)+
+  ggplot2::facet_wrap(species~draw, scales = "free")
+
+plotly::ggplotly(p1)
+```
