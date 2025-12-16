@@ -28,6 +28,8 @@ Lou_SQ2<- Lou_SQ %>%
   dplyr::select(!source)
 
 
+
+
 coastwide <- files %>%
   set_names(files) %>%  # Optional: keep file names for ref
   purrr::map_dfr(readr::read_csv, .id = "filename") %>% 
