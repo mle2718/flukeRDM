@@ -3528,7 +3528,8 @@ server <- function(input, output, session) {
     all_data <- flist %>%
       set_names(flist) %>%  # Optional: keep file names for reference
       purrr::map_dfr(readr::read_csv, .id = "filename", col_select=all_of(read_cols), col_types=read_cols_types) %>% 
-      dplyr::mutate(filename = stringr::str_extract(filename, "(?<=output_).+?(?=_202)"))
+      dplyr::mutate(filename = stringr::str_extract(filename, "(?<=output_).+?(?=_202)")) %>% 
+      dplyr::mutate(model = dplyr::case_when(model == "Lou_SQ"  ~ "SQ", TRUE ~ model))
     return(all_data)
   }
   
