@@ -122,8 +122,8 @@ if (exists("SCUPnj_seas1_op")) {
       #SCUP
       scup_bag_y2=dplyr::case_when(date_adj >= lubridate::yday(SCUPnj_seas1_op) & date_adj <= lubridate::yday(SCUPnj_seas1_cl) ~ as.numeric(SCUPnj_1_bag), TRUE ~ 0), 
       scup_min_y2=dplyr::case_when(date_adj >= lubridate::yday(SCUPnj_seas1_op) & date_adj <= lubridate::yday(SCUPnj_seas1_cl) ~ as.numeric(SCUPnj_1_len) * 2.54, TRUE ~ 254),
-      scup_bag_y2=dplyr::case_when(date_adj >= lubridate::yday(SCUPnj_seas2_op) & date_adj <= lubridate::yday(SCUPnj_seas2_cl) ~ as.numeric(SCUPnj_2_bag), TRUE ~ 0), 
-      scup_min_y2=dplyr::case_when(date_adj >= lubridate::yday(SCUPnj_seas2_op) & date_adj <= lubridate::yday(SCUPnj_seas2_cl) ~ as.numeric(SCUPnj_2_len) * 2.54, TRUE ~ 254))
+      scup_bag_y2=dplyr::case_when(date_adj >= lubridate::yday(SCUPnj_seas2_op) & date_adj <= lubridate::yday(SCUPnj_seas2_cl) ~ as.numeric(SCUPnj_2_bag), TRUE ~ scup_bag_y2), 
+      scup_min_y2=dplyr::case_when(date_adj >= lubridate::yday(SCUPnj_seas2_op) & date_adj <= lubridate::yday(SCUPnj_seas2_cl) ~ as.numeric(SCUPnj_2_len) * 2.54, TRUE ~ scup_min_y2))
 } else {
   directed_trips<- directed_trips %>%  
     dplyr::mutate(
