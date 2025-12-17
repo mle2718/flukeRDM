@@ -9,7 +9,7 @@ library(dplyr)
 #### Start UI ####
 ui <- fluidPage(
   useShinyjs(),
-  titlePanel("Recreational Fisheries Decision Support Tool"),
+  titlePanel("Recreational Fisheries Decision Support Tool for Summer Flounder, Scup, and Black Sea Bass"),
   tabsetPanel(
     tabPanel("Summary Page",
              plotly::plotlyOutput(outputId = "summary_rhl_fig"),
