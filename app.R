@@ -12,6 +12,7 @@ ui <- fluidPage(
   titlePanel("Recreational Fisheries Decision Support Tool for Summer Flounder, Scup, and Black Sea Bass"),
   tabsetPanel(
     tabPanel("Summary Page",
+            "This page summarizes results of previous model runs. It takes about 60 seconds to initialize the first time that you use the app.",
              plotly::plotlyOutput(outputId = "summary_rhl_fig"),
              shiny::h2("Summary Table"), 
              DT::DTOutput(outputId = "summary_percdiff_table"),
