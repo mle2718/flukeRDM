@@ -135,6 +135,7 @@ directed_trips<- directed_trips %>%
 
 predictions_out10 <- data.frame()
 #future::plan(future::multisession, workers = 36)
+set.seed(915)
 future::plan(future::multisession, workers = 34)
 get_predictions_out<- function(x){
 #for(x in 1:25){
@@ -280,6 +281,7 @@ print("out of loop")
 
 start_time <- Sys.time()
 
+
 # use furrr package to parallelize the get_predictions_out function 100 times
 # This will spit out a dataframe with 100 predictions 
 predictions_out10<- furrr::future_map_dfr(
@@ -288,7 +290,8 @@ predictions_out10<- furrr::future_map_dfr(
     data.table::setDTthreads(1)
     get_predictions_out(.x)
   },
-  .id = "draw"
+  .id = "draw", 
+  .options = furrr::furrr_options(seed = TRUE)
 )
 #predictions_out10<- furrr::future_map_dfr(1:25, ~get_predictions_out(.), .id = "draw")
 

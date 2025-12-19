@@ -9,9 +9,10 @@ library(dplyr)
 #### Start UI ####
 ui <- fluidPage(
   useShinyjs(),
-  titlePanel("Recreational Fisheries Decision Support Tool"),
+  titlePanel("Recreational Fisheries Decision Support Tool for Summer Flounder, Scup, and Black Sea Bass"),
   tabsetPanel(
     tabPanel("Summary Page",
+            "This page summarizes results of previous model runs. It takes about 60 seconds to initialize the first time that you use the app.",
              plotly::plotlyOutput(outputId = "summary_rhl_fig"),
              shiny::h2("Summary Table"), 
              DT::DTOutput(outputId = "summary_percdiff_table"),
@@ -3528,7 +3529,8 @@ server <- function(input, output, session) {
     all_data <- flist %>%
       set_names(flist) %>%  # Optional: keep file names for reference
       purrr::map_dfr(readr::read_csv, .id = "filename", col_select=all_of(read_cols), col_types=read_cols_types) %>% 
-      dplyr::mutate(filename = stringr::str_extract(filename, "(?<=output_).+?(?=_202)"))
+      dplyr::mutate(filename = stringr::str_extract(filename, "(?<=output_).+?(?=_202)")) %>% 
+      dplyr::mutate(model = dplyr::case_when(model == "Lou_SQ"  ~ "SQ", TRUE ~ model))
     return(all_data)
   }
   
