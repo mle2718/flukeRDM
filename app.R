@@ -21,6 +21,7 @@ ui <- fluidPage(
              tabsetPanel(
                tabPanel("MA", 
                         shiny::h2("Massachusetts"),
+                        p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "ma_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "ma_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "ma_trips_fig"), # Ntrips
@@ -29,6 +30,7 @@ ui <- fluidPage(
                ),
                tabPanel("RI", 
                         shiny::h2("Rhode Island"),
+                        p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "ri_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "ri_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "ri_trips_fig"), # Ntrips
@@ -37,6 +39,7 @@ ui <- fluidPage(
                ), 
                tabPanel("CT", 
                         shiny::h2("Connecticut"),
+                        p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "ct_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "ct_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "ct_trips_fig"), # Ntrips
@@ -45,6 +48,7 @@ ui <- fluidPage(
                ),
                tabPanel("NY", 
                         shiny::h2("New York"),
+                        p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "ny_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "ny_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "ny_trips_fig"), # Ntrips
@@ -53,6 +57,7 @@ ui <- fluidPage(
                ),
                tabPanel("NJ", 
                         shiny::h2("New Jersey"),
+                        p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "nj_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "nj_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "nj_trips_fig"), # Ntrips
@@ -61,6 +66,7 @@ ui <- fluidPage(
                ),
                tabPanel("DE", 
                         shiny::h2("Delaware"),
+                        p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "de_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "de_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "de_trips_fig"), # Ntrips
@@ -69,6 +75,7 @@ ui <- fluidPage(
                ),
                tabPanel("MD", 
                         shiny::h2("Marlyand"),
+                        p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "md_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "md_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "md_trips_fig"), # Ntrips
@@ -77,6 +84,7 @@ ui <- fluidPage(
                ),
                tabPanel("VA", 
                         shiny::h2("Virginia"),
+                        p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "va_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "va_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "va_trips_fig"), # Ntrips
@@ -85,6 +93,7 @@ ui <- fluidPage(
                ),
                tabPanel("NC", 
                         shiny::h2("North Carolina"),
+                        p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "nc_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "nc_CV_fig"),# Angler Satis
                         plotly::plotlyOutput(outputId = "nc_trips_fig"), # Ntrips
