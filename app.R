@@ -115,7 +115,7 @@ ui <- fluidPage(
     
     
     tabPanel( "Regulation Selection",
-              strong(div("INSTRUCTIONS: (1) Give your policy a name, (2) Select one or more states,  (3) Select regulations, (4) Click run me and wait for the model to run, (5) Use the `Results` tab to examine the results.", style = "color:blue")), # Warning for users
+              strong(div("INSTRUCTIONS: (1) Give your policy a name, (2) Select one or more states,  (3) Select regulations, (4) Click Run Me", style = "color:blue")), # Warning for users
               # Collect the Run Name
               textInput("Run_Name", "Please give your policy a unique name using your initials and a number (ex. AB1)."),
               
