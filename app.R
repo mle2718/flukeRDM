@@ -3539,7 +3539,9 @@ server <- function(input, output, session) {
       set_names(flist) %>%  # Optional: keep file names for reference
       purrr::map_dfr(readr::read_csv, .id = "filename", col_select=all_of(read_cols), col_types=read_cols_types) %>% 
       dplyr::mutate(filename = stringr::str_extract(filename, "(?<=output_).+?(?=_202)")) %>% 
-      dplyr::mutate(model = dplyr::case_when(model == "Lou_SQ"  ~ "SQ", TRUE ~ model))
+      dplyr::mutate(model = dplyr::case_when(model == "Lou_SQ"  ~ "SQ", TRUE ~ model)) %>% 
+      dplyr::mutate(metric = dplyr::case_when(model == "SQ" & metric == "change_CS" ~ "CV", TRUE ~ metric), 
+                    metric = dplyr::case_when(model == "SQ" & metric == "n_trips_alt" ~ "predicted_trips", TRUE ~ metric))
     return(all_data)
   }
   
