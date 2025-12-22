@@ -24,81 +24,81 @@ ui <- fluidPage(
                         p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "ma_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "ma_CV_fig"),# Angler Satis
-                        plotly::plotlyOutput(outputId = "ma_trips_fig"), # Ntrips
                         plotly::plotlyOutput(outputId = "ma_discards_fig"), # Disczrds)
-                        plotly::plotlyOutput(outputId = "ma_totmort_fig") # total mort
+                        plotly::plotlyOutput(outputId = "ma_totmort_fig"), # total mort
+                        plotly::plotlyOutput(outputId = "ma_trips_fig") # Ntrips
                ),
                tabPanel("RI", 
                         shiny::h2("Rhode Island"),
                         p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "ri_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "ri_CV_fig"),# Angler Satis
-                        plotly::plotlyOutput(outputId = "ri_trips_fig"), # Ntrips
                         plotly::plotlyOutput(outputId = "ri_discards_fig"), # Disczrds)
-                        plotly::plotlyOutput(outputId = "ri_totmort_fig") # total mort
+                        plotly::plotlyOutput(outputId = "ri_totmort_fig"), # total mort
+                        plotly::plotlyOutput(outputId = "ri_trips_fig") # Ntrips
                ), 
                tabPanel("CT", 
                         shiny::h2("Connecticut"),
                         p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "ct_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "ct_CV_fig"),# Angler Satis
-                        plotly::plotlyOutput(outputId = "ct_trips_fig"), # Ntrips
                         plotly::plotlyOutput(outputId = "ct_discards_fig"), # Disczrds)
-                        plotly::plotlyOutput(outputId = "ct_totmort_fig") # total mort
+                        plotly::plotlyOutput(outputId = "ct_totmort_fig"), # total mort
+                        plotly::plotlyOutput(outputId = "ct_trips_fig") # Ntrips
                ),
                tabPanel("NY", 
                         shiny::h2("New York"),
                         p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "ny_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "ny_CV_fig"),# Angler Satis
-                        plotly::plotlyOutput(outputId = "ny_trips_fig"), # Ntrips
                         plotly::plotlyOutput(outputId = "ny_discards_fig"), # Disczrds)
-                        plotly::plotlyOutput(outputId = "ny_totmort_fig") # total mort
+                        plotly::plotlyOutput(outputId = "ny_totmort_fig"), # total mort
+                        plotly::plotlyOutput(outputId = "ny_trips_fig") # Ntrips
                ),
                tabPanel("NJ", 
                         shiny::h2("New Jersey"),
                         p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "nj_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "nj_CV_fig"),# Angler Satis
-                        plotly::plotlyOutput(outputId = "nj_trips_fig"), # Ntrips
                         plotly::plotlyOutput(outputId = "nj_discards_fig"), # Disczrds)
-                        plotly::plotlyOutput(outputId = "nj_totmort_fig") # total mort
+                        plotly::plotlyOutput(outputId = "nj_totmort_fig"), # total mort
+                        plotly::plotlyOutput(outputId = "nj_trips_fig") # Ntrips
                ),
                tabPanel("DE", 
                         shiny::h2("Delaware"),
                         p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "de_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "de_CV_fig"),# Angler Satis
-                        plotly::plotlyOutput(outputId = "de_trips_fig"), # Ntrips
                         plotly::plotlyOutput(outputId = "de_discards_fig"), # Disczrds)
-                        plotly::plotlyOutput(outputId = "de_totmort_fig") # total mort
+                        plotly::plotlyOutput(outputId = "de_totmort_fig"), # total mort
+                        plotly::plotlyOutput(outputId = "de_trips_fig") # Ntrips
                ),
                tabPanel("MD", 
                         shiny::h2("Marlyand"),
                         p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "md_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "md_CV_fig"),# Angler Satis
-                        plotly::plotlyOutput(outputId = "md_trips_fig"), # Ntrips
                         plotly::plotlyOutput(outputId = "md_discards_fig"), # Disczrds)
-                        plotly::plotlyOutput(outputId = "md_totmort_fig") # total mort
+                        plotly::plotlyOutput(outputId = "md_totmort_fig"), # total mort
+                        plotly::plotlyOutput(outputId = "md_trips_fig") # Ntrips
                ),
                tabPanel("VA", 
                         shiny::h2("Virginia"),
                         p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "va_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "va_CV_fig"),# Angler Satis
-                        plotly::plotlyOutput(outputId = "va_trips_fig"), # Ntrips
                         plotly::plotlyOutput(outputId = "va_discards_fig"), # Disczrds)
-                        plotly::plotlyOutput(outputId = "va_totmort_fig") # total mort
+                        plotly::plotlyOutput(outputId = "va_totmort_fig"), # total mort
+                        plotly::plotlyOutput(outputId = "va_trips_fig") # Ntrips
                ),
                tabPanel("NC", 
                         shiny::h2("North Carolina"),
                         p("This may take a moment to load. Thank you for your patience"),
                         plotly::plotlyOutput(outputId = "nc_rhl_fig"),# Harvest
                         plotly::plotlyOutput(outputId = "nc_CV_fig"),# Angler Satis
-                        plotly::plotlyOutput(outputId = "nc_trips_fig"), # Ntrips
                         plotly::plotlyOutput(outputId = "nc_discards_fig"),  # Disczrds)
-                        plotly::plotlyOutput(outputId = "nc_totmort_fig") # total mort
+                        plotly::plotlyOutput(outputId = "nc_totmort_fig"), # total mort
+                        plotly::plotlyOutput(outputId = "nc_trips_fig") # Ntrips
                ), 
                tabPanel("Regulations", 
                         shiny::h2("Regulations"),
