@@ -1,0 +1,55 @@
+
+*Adjust project paths based on user
+global project_path "C:\Users\andrew.carr-harris\Desktop\Git\flukeRDM" /* Lou's project path */
+*global iterative_data_path "C:\Users\andrew.carr-harris\Desktop\flukeRDM_iterative_data" 
+*global project_path "C:\Users\min-yang.lee\Documents\rdmtool\lou_files\cod_haddock"  /* Min-Yang's project path */
+global iterative_data_path "E:\Lou_projects\flukeRDM\flukeRDM_iterative_data"/* Lou's path for iterative catch data that is too large to upload to GitHub*/  /* Everything Kim needs to run the model on the app */
+
+global input_data_cd "C:\Users\andrew.carr-harris\Desktop\MRIP_data_2025" /* Lou's local data path */
+global input_code_cd "${project_path}\Code\pre_sim"
+global iterative_input_data_cd "${iterative_data_path}"
+global figure_cd  "${input_data_cd}\figures"
+
+u "$input_data_cd\simulated_projected_means_copula.dta", clear 
+
+split my, parse(_)
+drop my_dom_id_string4
+rename my_dom_id_string1 state
+rename my_dom_id_string2 wave
+rename my_dom_id_string3 mode
+
+encode wave, gen(wave2)
+keep sf_cat_sim bsb_cat_sim scup_cat_sim draw state wave mode wave2
+order state wave mode
+collapse (mean) sf bsb scup, by(state wave mode)
+keep if sf==0 | bsb==0 | scup==0
+
+replace mode="_"+mode
+reshape wide sf bsb scup, i(draw state wave wave2) j(mode) string
+
+
+
+
+ds draw state wave wave2, not
+local vars "`r(varlist)'"
+foreach v of local vars{
+	replace `v'=. if `v'==0
+}
+
+levelsof state, local(sts)
+foreach s of local sts{
+graph box sf_cat_sim_pr sf_cat_sim_fh sf_cat_sim_sh if state=="`s'" , ///
+    over(wave, label(labsize(small))) ///
+    box(1, fcolor(navy)   lcolor(navy)) ///
+    box(2, fcolor(maroon) lcolor(maroon)) ///
+	box(3, fcolor(gray) lcolor(gray)) ///
+    marker(1, msymbol(O) msize(tiny) mcolor(navy)) ///
+    marker(2, msymbol(O) msize(tiny) mcolor(maroon)) ///
+	marker(3, msymbol(O) msize(tiny) mcolor(gray)) ///
+    legend(order(1 "Private" 2 "For-hire" 3 "Shore") position(6) cols(3)) /// 
+	ylab(, labsize(small)) name(`s', replace) title(`s')
+}
+
+grc1leg MA RI CT  bsb_keep_numbers scup_keep_numbers, rows(1) title("Coastwide harvest ('000s fish')",size(medium))  ///
+	note("MRIP 2024: survey-weighted estimate and SE-based CIs" "RDM 2026: median and percentile-based CIs" , size(small) yoffset(-2)) 
+

@@ -55,6 +55,7 @@ global calibration_year_num 2024
 global projection_year_old0 "(year==2025 & inlist(wave, 1, 2, 3)) | (year==2024) | (year==2023 & inlist(wave, 4, 5, 6))" //ADJUST THIS AFTER MRIP DATA RELEASE
 global projection_year_old "(year==2025 & inlist(wave, 1, 2, 3)) | (year==2024) | (year==2022 & inlist(wave, 4, 5, 6))" //ADJUST THIS AFTER MRIP DATA RELEASE
 global projection_year_new "(year==2025 & inlist(wave, 1, 2, 3, 4)) | (year==2024) | (year==2023 & inlist(wave, 5, 6))" //ADJUST THIS AFTER MRIP DATA RELEASE
+global projection_year_three_year "(year==2025 & inlist(wave, 1, 2, 3, 4)) | (year==2024) | (year==2023) | (year==2022 & inlist(wave, 5, 6))" //ADJUST THIS AFTER MRIP DATA RELEASE
 
 global calibration_catch_per_trip_years "(year==2024 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2023 & inlist(wave, 6)) | (year==2023 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2022 & inlist(wave, 6))"
 
@@ -124,7 +125,7 @@ global project_path "C:\Users\andrew.carr-harris\Desktop\Git\flukeRDM" /* Lou's 
 *global project_path "C:\Users\min-yang.lee\Documents\rdmtool\lou_files\cod_haddock"  /* Min-Yang's project path */
 global iterative_data_path "E:\Lou_projects\flukeRDM\flukeRDM_iterative_data"/* Lou's path for iterative catch data that is too large to upload to GitHub*/  /* Everything Kim needs to run the model on the app */
 
-global input_data_cd "C:\Users\andrew.carr-harris\Desktop\MRIP_data_2025" /* Lou's local data path */
+global input_data_cd "C:\Users\andrew.carr-harris\Desktop\MRIP_data_2025\updated_2025_data" /* Lou's local data path */
 global input_code_cd "${project_path}\Code\pre_sim"
 global iterative_input_data_cd "${iterative_data_path}"
 global figure_cd  "${input_data_cd}\figures"
@@ -170,7 +171,7 @@ replace var_id=strat_id if strmatch(var_id,"")
 * Ensure only relevant states 
 keep if inlist(st, 25, 44, 9,  36 , 34, 10, 24, 51, 37)
 
-keep if $projection_year_new
+keep if $projection_year_three_year
 
 gen st2 = string(st,"%02.0f")
 
