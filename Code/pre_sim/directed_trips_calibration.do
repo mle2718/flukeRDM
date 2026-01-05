@@ -1,11 +1,11 @@
 
 
 /*This code uses the MRIP data to 
-	1) estimate dircetd trips and their standard error at the year, month, kind-of-day (weekend including fed holidays/weekday), mode (pr/fh) level during the calibraiton period, 
-	2) use those paramters to create 150 random draws of directed trips for each stratum,
-	3) divide each random draw by the number of days in that stratum to obtain an estimate of trips-per-day calibration period, 
-	4) compute for each stratum an calender year adjustment = (# of calender days in that stratum for the projection period)/(# of calender days in that stratum for the calibration period), 
-		that we will use to correct for differences in the number of calinder days in each stratum between the calibration and projection period, 
+	1) estimate dirrected trips and their standard error during the calibration period, 
+	2) use those paramters to create random draws of directed trips for each stratum,
+	3) divide each random draw by the number of days in that stratum to obtain an estimate of trips-per-day, 
+	4) compute for each stratum a calendar year adjustment = (# of calendar days in that stratum for the projection period)/(# of calendar days in that stratum for the calibration period). 
+		We will multiply projection results by this scalar to account for differences in the number of calibration- versus projection-year calendar days in each stratum
 	5) set the baseline year and projection year regulations ("$input_code_cd/set regulations.do")
 */
 		
