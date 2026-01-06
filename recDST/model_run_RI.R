@@ -56,18 +56,18 @@ directed_trips<-feather::read_feather(file.path(data_path, paste0("directed_trip
 if (exists("SFri_seas1_op")) {
   directed_trips<- directed_trips %>%
     dplyr::mutate(#Summer Flounder
-      fluke_bag_y2=dplyr::case_when(date_adj >= lubridate::yday(SFri_seas1_op) & date_adj <= lubridate::yday(SFri_seas1_cl) ~ as.numeric(SFri_1_bag), TRUE ~ 0), 
-      fluke_min_y2=dplyr::case_when(date_adj >= lubridate::yday(SFri_seas1_op) & date_adj <= lubridate::yday(SFri_seas1_cl) ~ as.numeric(SFri_1_len) * 2.54, TRUE ~ 254))
+      fluke_bag_y2=dplyr::case_when(date_adj >= yday(mdy(SFri_seas1_op)) & date_adj <= yday(mdy(SFri_seas1_cl)) ~ as.numeric(SFri_1_bag), TRUE ~ 0), 
+      fluke_min_y2=dplyr::case_when(date_adj >= yday(mdy(SFri_seas1_op)) & date_adj <= yday(mdy(SFri_seas1_cl)) ~ as.numeric(SFri_1_len) * 2.54, TRUE ~ 254))
 } else {
   directed_trips<- directed_trips %>%
     dplyr::mutate(
-      fluke_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SFriFH_seas1_op) & date_adj <= lubridate::yday(SFriFH_seas1_cl) ~ as.numeric(SFriFH_1_bag), TRUE ~ 0), 
-      fluke_bag_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(SFriPR_seas1_op) & date_adj <= lubridate::yday(SFriPR_seas1_cl) ~ as.numeric(SFriPR_1_bag), TRUE ~ fluke_bag_y2), 
-      fluke_bag_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SFriSH_seas1_op) & date_adj <= lubridate::yday(SFriSH_seas1_cl) ~ as.numeric(SFriSH_1_bag), TRUE ~ fluke_bag_y2),
+      fluke_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(SFriFH_seas1_op)) & date_adj <= yday(mdy(SFriFH_seas1_cl)) ~ as.numeric(SFriFH_1_bag), TRUE ~ 0), 
+      fluke_bag_y2=dplyr::case_when(mode == "pr" & date_adj >= yday(mdy(SFriPR_seas1_op)) & date_adj <= yday(mdy(SFriPR_seas1_cl)) ~ as.numeric(SFriPR_1_bag), TRUE ~ fluke_bag_y2), 
+      fluke_bag_y2=dplyr::case_when(mode == "sh" & date_adj >= yday(mdy(SFriSH_seas1_op)) & date_adj <= yday(mdy(SFriSH_seas1_cl)) ~ as.numeric(SFriSH_1_bag), TRUE ~ fluke_bag_y2),
       
-      fluke_min_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SFriFH_seas1_op) & date_adj <= lubridate::yday(SFriFH_seas1_cl) ~ as.numeric(SFriFH_1_len) * 2.54, TRUE ~ 254), 
-      fluke_min_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(SFriPR_seas1_op) & date_adj <= lubridate::yday(SFriPR_seas1_cl) ~ as.numeric(SFriPR_1_len) * 2.54, TRUE ~ fluke_min_y2), 
-      fluke_min_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SFriSH_seas1_op) & date_adj <= lubridate::yday(SFriSH_seas1_cl) ~ as.numeric(SFriSH_1_len) * 2.54, TRUE ~ fluke_min_y2))
+      fluke_min_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(SFriFH_seas1_op)) & date_adj <= yday(mdy(SFriFH_seas1_cl)) ~ as.numeric(SFriFH_1_len) * 2.54, TRUE ~ 254), 
+      fluke_min_y2=dplyr::case_when(mode == "pr" & date_adj >= yday(mdy(SFriPR_seas1_op)) & date_adj <= yday(mdy(SFriPR_seas1_cl)) ~ as.numeric(SFriPR_1_len) * 2.54, TRUE ~ fluke_min_y2), 
+      fluke_min_y2=dplyr::case_when(mode == "sh" & date_adj >= yday(mdy(SFriSH_seas1_op)) & date_adj <= yday(mdy(SFriSH_seas1_cl)) ~ as.numeric(SFriSH_1_len) * 2.54, TRUE ~ fluke_min_y2))
   
 }
 
@@ -75,58 +75,58 @@ if (exists("SFri_seas1_op")) {
 
 directed_trips<- directed_trips %>%
   dplyr::mutate(
-    fluke_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SFriFH_seas2_op) & date_adj <= lubridate::yday(SFriFH_seas2_cl) ~ as.numeric(SFriFH_2_bag), TRUE ~ fluke_bag_y2),
-    fluke_bag_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(SFriPR_seas2_op) & date_adj <= lubridate::yday(SFriPR_seas2_cl) ~ as.numeric(SFriPR_2_bag), TRUE ~ fluke_bag_y2),
-    fluke_bag_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SFriSH_seas2_op) & date_adj <= lubridate::yday(SFriSH_seas2_cl) ~ as.numeric(SFriSH_2_bag), TRUE ~ fluke_bag_y2), 
+    fluke_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(SFriFH_seas2_op)) & date_adj <= yday(mdy(SFriFH_seas2_cl)) ~ as.numeric(SFriFH_2_bag), TRUE ~ fluke_bag_y2),
+    fluke_bag_y2=dplyr::case_when(mode == "pr" & date_adj >= yday(mdy(SFriPR_seas2_op)) & date_adj <= yday(mdy(SFriPR_seas2_cl)) ~ as.numeric(SFriPR_2_bag), TRUE ~ fluke_bag_y2),
+    fluke_bag_y2=dplyr::case_when(mode == "sh" & date_adj >= yday(mdy(SFriSH_seas2_op)) & date_adj <= yday(mdy(SFriSH_seas2_cl)) ~ as.numeric(SFriSH_2_bag), TRUE ~ fluke_bag_y2), 
     
-    fluke_min_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SFriFH_seas2_op) & date_adj <= lubridate::yday(SFriFH_seas2_cl) ~ as.numeric(SFriFH_2_len) * 2.54, TRUE ~ fluke_min_y2),
-    fluke_min_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(SFriPR_seas2_op) & date_adj <= lubridate::yday(SFriPR_seas2_cl) ~ as.numeric(SFriPR_2_len) * 2.54, TRUE ~ fluke_min_y2),
-    fluke_min_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SFriSH_seas2_op) & date_adj <= lubridate::yday(SFriSH_seas2_cl) ~ as.numeric(SFriSH_2_len) * 2.54, TRUE ~ fluke_min_y2),
+    fluke_min_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(SFriFH_seas2_op)) & date_adj <= yday(mdy(SFriFH_seas2_cl)) ~ as.numeric(SFriFH_2_len) * 2.54, TRUE ~ fluke_min_y2),
+    fluke_min_y2=dplyr::case_when(mode == "pr" & date_adj >= yday(mdy(SFriPR_seas2_op)) & date_adj <= yday(mdy(SFriPR_seas2_cl)) ~ as.numeric(SFriPR_2_len) * 2.54, TRUE ~ fluke_min_y2),
+    fluke_min_y2=dplyr::case_when(mode == "sh" & date_adj >= yday(mdy(SFriSH_seas2_op)) & date_adj <= yday(mdy(SFriSH_seas2_cl)) ~ as.numeric(SFriSH_2_len) * 2.54, TRUE ~ fluke_min_y2),
     
     # Black Sea Bass Bag Limit by Mode
-    bsb_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(BSBriFH_seas1_op) & date_adj <= lubridate::yday(BSBriFH_seas1_cl) ~ as.numeric(BSBriFH_1_bag), TRUE ~ 0), 
-    bsb_bag_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(BSBriPR_seas1_op) & date_adj <= lubridate::yday(BSBriPR_seas1_cl) ~ as.numeric(BSBriPR_1_bag), TRUE ~ bsb_bag_y2), 
-    bsb_bag_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(BSBriSH_seas1_op) & date_adj <= lubridate::yday(BSBriSH_seas1_cl) ~ as.numeric(BSBriSH_1_bag), TRUE ~ bsb_bag_y2),
-    bsb_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(BSBriFH_seas2_op) & date_adj <= lubridate::yday(BSBriFH_seas2_cl) ~ as.numeric(BSBriFH_2_bag), TRUE ~ bsb_bag_y2), 
-    bsb_bag_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(BSBriPR_seas2_op) & date_adj <= lubridate::yday(BSBriPR_seas2_cl) ~ as.numeric(BSBriPR_2_bag), TRUE ~ bsb_bag_y2), 
-    bsb_bag_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(BSBriSH_seas2_op) & date_adj <= lubridate::yday(BSBriSH_seas2_cl) ~ as.numeric(BSBriSH_2_bag), TRUE ~ bsb_bag_y2),
-    bsb_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(BSBriFH_seas3_op) & date_adj <= lubridate::yday(BSBriFH_seas3_cl) ~ as.numeric(BSBriFH_3_bag), TRUE ~ bsb_bag_y2), 
-    bsb_bag_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(BSBriPR_seas3_op) & date_adj <= lubridate::yday(BSBriPR_seas3_cl) ~ as.numeric(BSBriPR_3_bag), TRUE ~ bsb_bag_y2), 
-    bsb_bag_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(BSBriSH_seas3_op) & date_adj <= lubridate::yday(BSBriSH_seas3_cl) ~ as.numeric(BSBriSH_3_bag), TRUE ~ bsb_bag_y2),
+    bsb_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(BSBriFH_seas1_op)) & date_adj <= yday(mdy(BSBriFH_seas1_cl)) ~ as.numeric(BSBriFH_1_bag), TRUE ~ 0), 
+    bsb_bag_y2=dplyr::case_when(mode == "pr" & date_adj >= yday(mdy(BSBriPR_seas1_op)) & date_adj <= yday(mdy(BSBriPR_seas1_cl)) ~ as.numeric(BSBriPR_1_bag), TRUE ~ bsb_bag_y2), 
+    bsb_bag_y2=dplyr::case_when(mode == "sh" & date_adj >= yday(mdy(BSBriSH_seas1_op)) & date_adj <= yday(mdy(BSBriSH_seas1_cl)) ~ as.numeric(BSBriSH_1_bag), TRUE ~ bsb_bag_y2),
+    bsb_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(BSBriFH_seas2_op)) & date_adj <= yday(mdy(BSBriFH_seas2_cl)) ~ as.numeric(BSBriFH_2_bag), TRUE ~ bsb_bag_y2), 
+    bsb_bag_y2=dplyr::case_when(mode == "pr" & date_adj >= yday(mdy(BSBriPR_seas2_op)) & date_adj <= yday(mdy(BSBriPR_seas2_cl)) ~ as.numeric(BSBriPR_2_bag), TRUE ~ bsb_bag_y2), 
+    bsb_bag_y2=dplyr::case_when(mode == "sh" & date_adj >= yday(mdy(BSBriSH_seas2_op)) & date_adj <= yday(mdy(BSBriSH_seas2_cl)) ~ as.numeric(BSBriSH_2_bag), TRUE ~ bsb_bag_y2),
+    bsb_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(BSBriFH_seas3_op)) & date_adj <= yday(mdy(BSBriFH_seas3_cl)) ~ as.numeric(BSBriFH_3_bag), TRUE ~ bsb_bag_y2), 
+    bsb_bag_y2=dplyr::case_when(mode == "pr" & date_adj >= yday(mdy(BSBriPR_seas3_op)) & date_adj <= yday(mdy(BSBriPR_seas3_cl)) ~ as.numeric(BSBriPR_3_bag), TRUE ~ bsb_bag_y2), 
+    bsb_bag_y2=dplyr::case_when(mode == "sh" & date_adj >= yday(mdy(BSBriSH_seas3_op)) & date_adj <= yday(mdy(BSBriSH_seas3_cl)) ~ as.numeric(BSBriSH_3_bag), TRUE ~ bsb_bag_y2),
     # Black Sea Bass Minimum Length by Mode
-    bsb_min_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(BSBriFH_seas1_op) & date_adj <= lubridate::yday(BSBriFH_seas1_cl) ~ as.numeric(BSBriFH_1_len) * 2.54, TRUE ~ 254), 
-    bsb_min_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(BSBriPR_seas1_op) & date_adj <= lubridate::yday(BSBriPR_seas1_cl) ~ as.numeric(BSBriPR_1_len) * 2.54, TRUE ~ bsb_min_y2), 
-    bsb_min_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(BSBriSH_seas1_op) & date_adj <= lubridate::yday(BSBriSH_seas1_cl) ~ as.numeric(BSBriSH_1_len) * 2.54, TRUE ~ bsb_min_y2),
-    bsb_min_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(BSBriFH_seas2_op) & date_adj <= lubridate::yday(BSBriFH_seas2_cl) ~ as.numeric(BSBriFH_2_len) * 2.54, TRUE ~ bsb_min_y2), 
-    bsb_min_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(BSBriPR_seas2_op) & date_adj <= lubridate::yday(BSBriPR_seas2_cl) ~ as.numeric(BSBriPR_2_len) * 2.54, TRUE ~ bsb_min_y2), 
-    bsb_min_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(BSBriSH_seas2_op) & date_adj <= lubridate::yday(BSBriSH_seas2_cl) ~ as.numeric(BSBriSH_2_len) * 2.54, TRUE ~ bsb_min_y2), 
-    bsb_min_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(BSBriFH_seas3_op) & date_adj <= lubridate::yday(BSBriFH_seas3_cl) ~ as.numeric(BSBriFH_3_len) * 2.54, TRUE ~ bsb_min_y2), 
-    bsb_min_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(BSBriPR_seas3_op) & date_adj <= lubridate::yday(BSBriPR_seas3_cl) ~ as.numeric(BSBriPR_3_len) * 2.54, TRUE ~ bsb_min_y2), 
-    bsb_min_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(BSBriSH_seas3_op) & date_adj <= lubridate::yday(BSBriSH_seas3_cl) ~ as.numeric(BSBriSH_3_len) * 2.54, TRUE ~ bsb_min_y2))
+    bsb_min_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(BSBriFH_seas1_op)) & date_adj <= yday(mdy(BSBriFH_seas1_cl)) ~ as.numeric(BSBriFH_1_len) * 2.54, TRUE ~ 254), 
+    bsb_min_y2=dplyr::case_when(mode == "pr" & date_adj >= yday(mdy(BSBriPR_seas1_op)) & date_adj <= yday(mdy(BSBriPR_seas1_cl)) ~ as.numeric(BSBriPR_1_len) * 2.54, TRUE ~ bsb_min_y2), 
+    bsb_min_y2=dplyr::case_when(mode == "sh" & date_adj >= yday(mdy(BSBriSH_seas1_op)) & date_adj <= yday(mdy(BSBriSH_seas1_cl)) ~ as.numeric(BSBriSH_1_len) * 2.54, TRUE ~ bsb_min_y2),
+    bsb_min_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(BSBriFH_seas2_op)) & date_adj <= yday(mdy(BSBriFH_seas2_cl)) ~ as.numeric(BSBriFH_2_len) * 2.54, TRUE ~ bsb_min_y2), 
+    bsb_min_y2=dplyr::case_when(mode == "pr" & date_adj >= yday(mdy(BSBriPR_seas2_op)) & date_adj <= yday(mdy(BSBriPR_seas2_cl)) ~ as.numeric(BSBriPR_2_len) * 2.54, TRUE ~ bsb_min_y2), 
+    bsb_min_y2=dplyr::case_when(mode == "sh" & date_adj >= yday(mdy(BSBriSH_seas2_op)) & date_adj <= yday(mdy(BSBriSH_seas2_cl)) ~ as.numeric(BSBriSH_2_len) * 2.54, TRUE ~ bsb_min_y2), 
+    bsb_min_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(BSBriFH_seas3_op)) & date_adj <= yday(mdy(BSBriFH_seas3_cl)) ~ as.numeric(BSBriFH_3_len) * 2.54, TRUE ~ bsb_min_y2), 
+    bsb_min_y2=dplyr::case_when(mode == "pr" & date_adj >= yday(mdy(BSBriPR_seas3_op)) & date_adj <= yday(mdy(BSBriPR_seas3_cl)) ~ as.numeric(BSBriPR_3_len) * 2.54, TRUE ~ bsb_min_y2), 
+    bsb_min_y2=dplyr::case_when(mode == "sh" & date_adj >= yday(mdy(BSBriSH_seas3_op)) & date_adj <= yday(mdy(BSBriSH_seas3_cl)) ~ as.numeric(BSBriSH_3_len) * 2.54, TRUE ~ bsb_min_y2))
 
 
 
 
 directed_trips<- directed_trips %>%  
   dplyr::mutate(
-    scup_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SCUPriFH_seas1_op) & date_adj <= lubridate::yday(SCUPriFH_seas1_cl) ~ as.numeric(SCUPriFH_1_bag), TRUE ~ 0), 
-    scup_min_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SCUPriFH_seas1_op) & date_adj <= lubridate::yday(SCUPriFH_seas1_cl) ~ as.numeric(SCUPriFH_1_len) * 2.54, TRUE ~ 254),
-    scup_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SCUPriFH_seas2_op) & date_adj <= lubridate::yday(SCUPriFH_seas2_cl) ~ as.numeric(SCUPriFH_2_bag), TRUE ~ scup_bag_y2),
-    scup_min_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SCUPriFH_seas2_op) & date_adj <= lubridate::yday(SCUPriFH_seas2_cl) ~ as.numeric(SCUPriFH_2_len) * 2.54, TRUE ~ scup_min_y2),
-    scup_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SCUPriFH_seas3_op) & date_adj <= lubridate::yday(SCUPriFH_seas3_cl) ~ as.numeric(SCUPriFH_3_bag), TRUE ~ scup_bag_y2),
-    scup_min_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SCUPriFH_seas3_op) & date_adj <= lubridate::yday(SCUPriFH_seas3_cl) ~ as.numeric(SCUPriFH_3_len) * 2.54, TRUE ~ scup_min_y2),
-    scup_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SCUPriFH_seas4_op) & date_adj <= lubridate::yday(SCUPriFH_seas4_cl) ~ as.numeric(SCUPriFH_4_bag), TRUE ~ scup_bag_y2),
-    scup_min_y2=dplyr::case_when(mode == "fh" & date_adj >= lubridate::yday(SCUPriFH_seas4_op) & date_adj <= lubridate::yday(SCUPriFH_seas4_cl) ~ as.numeric(SCUPriFH_4_len) * 2.54, TRUE ~ scup_min_y2),
+    scup_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(SCUPriFH_seas1_op)) & date_adj <= yday(mdy(SCUPriFH_seas1_cl)) ~ as.numeric(SCUPriFH_1_bag), TRUE ~ 0), 
+    scup_min_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(SCUPriFH_seas1_op)) & date_adj <= yday(mdy(SCUPriFH_seas1_cl)) ~ as.numeric(SCUPriFH_1_len) * 2.54, TRUE ~ 254),
+    scup_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(SCUPriFH_seas2_op)) & date_adj <= yday(mdy(SCUPriFH_seas2_cl)) ~ as.numeric(SCUPriFH_2_bag), TRUE ~ scup_bag_y2),
+    scup_min_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(SCUPriFH_seas2_op)) & date_adj <= yday(mdy(SCUPriFH_seas2_cl)) ~ as.numeric(SCUPriFH_2_len) * 2.54, TRUE ~ scup_min_y2),
+    scup_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(SCUPriFH_seas3_op)) & date_adj <= yday(mdy(SCUPriFH_seas3_cl)) ~ as.numeric(SCUPriFH_3_bag), TRUE ~ scup_bag_y2),
+    scup_min_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(SCUPriFH_seas3_op)) & date_adj <= yday(mdy(SCUPriFH_seas3_cl)) ~ as.numeric(SCUPriFH_3_len) * 2.54, TRUE ~ scup_min_y2),
+    scup_bag_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(SCUPriFH_seas4_op)) & date_adj <= yday(mdy(SCUPriFH_seas4_cl)) ~ as.numeric(SCUPriFH_4_bag), TRUE ~ scup_bag_y2),
+    scup_min_y2=dplyr::case_when(mode == "fh" & date_adj >= yday(mdy(SCUPriFH_seas4_op)) & date_adj <= yday(mdy(SCUPriFH_seas4_cl)) ~ as.numeric(SCUPriFH_4_len) * 2.54, TRUE ~ scup_min_y2),
     
-    scup_bag_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(SCUPriPR_seas1_op) & date_adj <= lubridate::yday(SCUPriPR_seas1_cl) ~ as.numeric(SCUPriPR_1_bag), TRUE ~ scup_bag_y2),
-    scup_min_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(SCUPriPR_seas1_op) & date_adj <= lubridate::yday(SCUPriPR_seas1_cl) ~ as.numeric(SCUPriPR_1_len) * 2.54, TRUE ~ scup_min_y2),
-    scup_bag_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(SCUPriPR_seas2_op) & date_adj <= lubridate::yday(SCUPriPR_seas2_cl) ~ as.numeric(SCUPriPR_2_bag), TRUE ~ scup_bag_y2),
-    scup_min_y2=dplyr::case_when(mode == "pr" & date_adj >= lubridate::yday(SCUPriPR_seas2_op) & date_adj <= lubridate::yday(SCUPriPR_seas2_cl) ~ as.numeric(SCUPriPR_2_len) * 2.54, TRUE ~ scup_min_y2),
+    scup_bag_y2=dplyr::case_when(mode == "pr" & date_adj >= yday(mdy(SCUPriPR_seas1_op)) & date_adj <= yday(mdy(SCUPriPR_seas1_cl)) ~ as.numeric(SCUPriPR_1_bag), TRUE ~ scup_bag_y2),
+    scup_min_y2=dplyr::case_when(mode == "pr" & date_adj >= yday(mdy(SCUPriPR_seas1_op)) & date_adj <= yday(mdy(SCUPriPR_seas1_cl)) ~ as.numeric(SCUPriPR_1_len) * 2.54, TRUE ~ scup_min_y2),
+    scup_bag_y2=dplyr::case_when(mode == "pr" & date_adj >= yday(mdy(SCUPriPR_seas2_op)) & date_adj <= yday(mdy(SCUPriPR_seas2_cl)) ~ as.numeric(SCUPriPR_2_bag), TRUE ~ scup_bag_y2),
+    scup_min_y2=dplyr::case_when(mode == "pr" & date_adj >= yday(mdy(SCUPriPR_seas2_op)) & date_adj <= yday(mdy(SCUPriPR_seas2_cl)) ~ as.numeric(SCUPriPR_2_len) * 2.54, TRUE ~ scup_min_y2),
     
-    scup_bag_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SCUPriSH_seas1_op) & date_adj <= lubridate::yday(SCUPriSH_seas1_cl) ~ as.numeric(SCUPriSH_1_bag), TRUE ~ scup_bag_y2),
-    scup_min_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SCUPriSH_seas1_op) & date_adj <= lubridate::yday(SCUPriSH_seas1_cl) ~ as.numeric(SCUPriSH_1_len) * 2.54, TRUE ~ scup_min_y2),
-    scup_bag_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SCUPriSH_seas2_op) & date_adj <= lubridate::yday(SCUPriSH_seas2_cl) ~ as.numeric(SCUPriSH_2_bag), TRUE ~ scup_bag_y2),
-    scup_min_y2=dplyr::case_when(mode == "sh" & date_adj >= lubridate::yday(SCUPriSH_seas2_op) & date_adj <= lubridate::yday(SCUPriSH_seas2_cl) ~ as.numeric(SCUPriSH_2_len) * 2.54, TRUE ~ scup_min_y2))
+    scup_bag_y2=dplyr::case_when(mode == "sh" & date_adj >= yday(mdy(SCUPriSH_seas1_op)) & date_adj <= yday(mdy(SCUPriSH_seas1_cl)) ~ as.numeric(SCUPriSH_1_bag), TRUE ~ scup_bag_y2),
+    scup_min_y2=dplyr::case_when(mode == "sh" & date_adj >= yday(mdy(SCUPriSH_seas1_op)) & date_adj <= yday(mdy(SCUPriSH_seas1_cl)) ~ as.numeric(SCUPriSH_1_len) * 2.54, TRUE ~ scup_min_y2),
+    scup_bag_y2=dplyr::case_when(mode == "sh" & date_adj >= yday(mdy(SCUPriSH_seas2_op)) & date_adj <= yday(mdy(SCUPriSH_seas2_cl)) ~ as.numeric(SCUPriSH_2_bag), TRUE ~ scup_bag_y2),
+    scup_min_y2=dplyr::case_when(mode == "sh" & date_adj >= yday(mdy(SCUPriSH_seas2_op)) & date_adj <= yday(mdy(SCUPriSH_seas2_cl)) ~ as.numeric(SCUPriSH_2_len) * 2.54, TRUE ~ scup_min_y2))
 
 #print(directed_trips)
 

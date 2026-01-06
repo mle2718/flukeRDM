@@ -5,6 +5,8 @@
 start_time <- Sys.time()
 library(magrittr)
 library(data.table)
+library(lubridate)
+
 #args = "SQ"
 
 args <- commandArgs(trailingOnly = TRUE)
