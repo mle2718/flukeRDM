@@ -6,9 +6,9 @@ start_time <- Sys.time()
 library(magrittr)
 library(data.table)
 library(lubridate)
-library(conflicted)
-conflicts_prefer(lubridate::yday)
-conflicts_prefer(lubridate::ymd)
+
+conflicted::conflicts_prefer(lubridate::yday)
+conflicted::conflicts_prefer(lubridate::ymd)
 
 
 #args = "SQ"
