@@ -29,4 +29,5 @@ RUN install2.r -e -s \
     plotly \
     DT \
     uuid \
+    conflicted \
     && chown -R shiny:shiny /srv/rdmtool
