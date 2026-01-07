@@ -221,6 +221,12 @@ get_predictions_out<- function(x){
   base_outcomes<-base_outcomes %>% 
     dplyr::arrange(date_parsed, mode, tripid, catch_draw)
   
+  check_n_choice_occasions <- n_choice_occasions %>% 
+    dplyr::select(date_parsed, mode) %>%
+    dplyr::distinct() 
+  
+  base_outcomes<-base_outcomes %>% 
+    dplyr::right_join(check_n_choice_occasions, by=c("date_parsed", "mode"))
   
   # Pull in calibration comparison information about trip-level harvest/discard re-allocations 
   calib_comparison<-readRDS(file.path(data_path,"calibrated_model_stats_new.rds")) %>%
