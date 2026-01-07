@@ -199,6 +199,7 @@ get_predictions_out<- function(x){
   base_outcomes<-base_outcomes %>% 
     dplyr::arrange(date_parsed, mode, tripid, catch_draw)
   
+  #kim look here
   check_n_choice_occasions <- n_choice_occasions %>% 
     dplyr::select(date_parsed, mode) %>%
     dplyr::distinct() 

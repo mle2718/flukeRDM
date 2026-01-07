@@ -203,6 +203,7 @@ get_predictions_out<- function(x){
     dplyr::arrange(date_parsed, mode)
   rm(base_outcomes0, n_choice_occasions0)
   
+  ## Kim look hear
   base_outcomes<-base_outcomes %>% 
     dplyr::arrange(date_parsed, mode, tripid, catch_draw)
   
