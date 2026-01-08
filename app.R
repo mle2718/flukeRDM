@@ -3896,21 +3896,21 @@ server <- function(input, output, session) {
     # Discards
     mort <- data %>%
       dplyr::filter(
-        metric %in% c("keep_weight", "release_weight"),
+        metric %in% c("keep_weight", "discmort_weight"),
         state == state_name,
         mode == "all modes"
       ) %>%
       dplyr::group_by(state, filename, species, mode, draw, model) %>%
       dplyr::summarise(mort = sum(value)) %>% 
       dplyr::group_by(state, filename, species) %>% 
-      dplyr::summarise(median_rel_weight = median(mort), .groups = "drop") %>%
+      dplyr::summarise(median_totmort_weight = median(mort), .groups = "drop") %>%
       dplyr::rename(Run_Name = filename) %>% 
       dplyr::left_join(harv, by = c("state", "Run_Name", "species")) %>% 
-      dplyr::mutate(median_rel_weight = round(median_rel_weight/1000000,2))
+      dplyr::mutate(median_rel_weight = round(median_totmort_weight/1000000,2))
     
     # Static plot
     p1 <- mort %>%
-      ggplot2::ggplot(ggplot2::aes(x = median_keep_pct_diff, y = median_rel_weight, label = Run_Name)) +
+      ggplot2::ggplot(ggplot2::aes(x = median_keep_pct_diff, y = median_totmort_weight, label = Run_Name)) +
       ggplot2::geom_point() +
       ggplot2::geom_text(vjust = -0.5, size = 3) +
       ggplot2::ggtitle(paste("Total mortality in", state_name)) +
