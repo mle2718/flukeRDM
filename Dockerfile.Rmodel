@@ -34,7 +34,8 @@ RUN install2.r -e -s \
     uuid \
     plotly \
     feather \
-    DT
+    DT \
+    conflicted 
 
 WORKDIR /srv/rdmtool
 
