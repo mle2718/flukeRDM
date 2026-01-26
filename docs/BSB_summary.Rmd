@@ -45,7 +45,7 @@ harv <- dat %>%
       dplyr::ungroup()%>%
       dplyr::select( -metric) %>%
       dplyr::rename( `Policy Name` = model,
-                    `BSB median harvest weight`= bsb, `Scup median harvest weight`= scup, `SF median harvest weight` = sf)
+                    `BSB median harvest pounds`= bsb, `Scup median harvest pounds`= scup, `SF median harvest pounds` = sf)
     
 DT::datatable(
   tab,
@@ -54,9 +54,9 @@ DT::datatable(
     pageLength = 10,
     autoWidth = TRUE)) %>% 
   DT::formatRound(
-    columns = c("BSB median harvest weight",
-                "Scup median harvest weight",
-                "SF median harvest weight"),
+    columns = c("BSB median harvest pounds",
+                "Scup median harvest pounds",
+                "SF median harvest pounds"),
     digits = 0,mark = ",")
 ```
 
@@ -75,7 +75,7 @@ discs <- dat %>%
       dplyr::ungroup()%>%
       dplyr::select( -metric) %>%
       dplyr::rename( `Policy Name` = model,
-                    `BSB median discard weight`= bsb, `Scup median discard weight`= scup, `SF median discard weight` = sf)
+                    `BSB median discard pounds`= bsb, `Scup median discard pounds`= scup, `SF median discard pounds` = sf)
     
 DT::datatable(
   tab,
@@ -86,9 +86,9 @@ DT::datatable(
   )
 )%>% 
   DT::formatRound(
-    columns = c("BSB median discard weight",
-                "Scup median discard weight",
-                "SF median discard weight"),
+    columns = c("BSB median discard pounds",
+                "Scup median discard pounds",
+                "SF median discard pounds"),
     digits = 0,mark = ",")
 ```
 
