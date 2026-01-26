@@ -1,0 +1,199 @@
+---
+title: "2026 policy options summary"
+output: html_document
+date: ""
+---
+
+```{r setup, include=FALSE, warning = FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+
+options(scipen=999, 
+        digits = 2) 
+
+library(dplyr)
+library(stringr)
+library(readr)
+library(purrr)
+library(tidyr)
+library(DT)
+## Read in coastwide folder 
+files <- list.files(path = here::here("output/"), pattern = ".csv$", full.names = TRUE)
+
+dat <- files %>%
+  set_names(files) %>%  # Optional: keep file names for ref
+  purrr::map_dfr(readr::read_csv, .id = "filename") %>%
+  dplyr::select(-c("...8", "filename"))
+
+```
+
+## Median harvest weight
+
+```{r , echo=FALSE, warning = FALSE}
+    
+harv <- dat %>% 
+      dplyr::filter(metric == "keep_weight" & mode == "all modes") %>%
+       dplyr::group_by(state, model, species, metric) %>%
+      dplyr::summarise(value = round(median(value), 0)) %>%
+      tidyr::pivot_wider(names_from = species, values_from = value)    
+
+ tab<- harv %>% 
+      dplyr::rowwise() %>%
+      dplyr::ungroup()%>%
+      dplyr::select( -metric) %>%
+      dplyr::rename( `Policy Name` = model,
+                    `BSB median harvest weight`= bsb, `Scup median harvest weight`= scup, `SF median harvest weight` = sf)
+    
+DT::datatable(
+  tab,
+  options = list(
+    dom = "Bfrtip",
+    pageLength = 10,
+    autoWidth = TRUE)) %>% 
+  DT::formatRound(
+    columns = c("BSB median harvest weight",
+                "Scup median harvest weight",
+                "SF median harvest weight"),
+    digits = 0,mark = ",")
+```
+
+
+## Median discard weight
+
+```{r , echo=FALSE, warning = FALSE}
+discs <- dat %>% 
+      dplyr::filter(metric == "release_weight" & mode == "all modes") %>%
+       dplyr::group_by(state, model, species, metric) %>%
+      dplyr::summarise(value = round(median(value), 0)) %>%
+      tidyr::pivot_wider(names_from = species, values_from = value)    
+
+ tab<- discs %>% 
+      dplyr::rowwise() %>%
+      dplyr::ungroup()%>%
+      dplyr::select( -metric) %>%
+      dplyr::rename( `Policy Name` = model,
+                    `BSB median discard weight`= bsb, `Scup median discard weight`= scup, `SF median discard weight` = sf)
+    
+DT::datatable(
+  tab,
+  options = list(
+    dom = "Bfrtip",
+    pageLength = 10,
+    autoWidth = TRUE
+  )
+)%>% 
+  DT::formatRound(
+    columns = c("BSB median discard weight",
+                "Scup median discard weight",
+                "SF median discard weight"),
+    digits = 0,mark = ",")
+```
+
+
+## Median angler satisfaction - How much better off will anglers be next year compared to last year, in dollars?
+
+```{r , echo=FALSE, warning = FALSE}
+    
+cv <- dat %>% 
+      dplyr::filter(metric == "CV" & mode == "all modes") %>%
+       dplyr::group_by(state, model, species, metric) %>%
+      dplyr::summarise(value = round(median(value), 0)) %>%
+      tidyr::pivot_wider(names_from = species, values_from = value)    
+
+ tab<- cv %>% 
+      dplyr::rowwise() %>%
+      dplyr::ungroup()%>%
+      dplyr::select( -metric) %>%
+      dplyr::rename( `Policy Name` = model,
+                    `Angler Satisfaction ($)`= "NA")
+    
+DT::datatable(
+  tab,
+  options = list(
+    dom = "Bfrtip",
+    pageLength = 10,
+    autoWidth = TRUE
+  )
+) %>% 
+  DT::formatRound(
+    columns = c("Angler Satisfaction ($)"),
+    digits = 0,mark = ",")
+```
+
+## Median estimated number of angler trips
+
+```{r , echo=FALSE, warning = FALSE}
+
+trips <- dat %>% 
+      dplyr::filter(metric == "predicted_trips" & mode == "all modes") %>%
+       dplyr::group_by(state, model, species, metric) %>%
+      dplyr::summarise(value = round(median(value), 0)) %>%
+      tidyr::pivot_wider(names_from = species, values_from = value)    
+
+ tab<- trips %>% 
+      dplyr::rowwise() %>%
+      dplyr::ungroup()%>%
+      dplyr::select( -metric) %>%
+      dplyr::rename( `Policy Name` = model,
+                    `Estimated number of trips`= "NA")
+    
+DT::datatable(
+  tab,
+  options = list(
+    dom = "Bfrtip",
+    pageLength = 10,
+    autoWidth = TRUE
+  )
+) %>% 
+  DT::formatRound(
+    columns = c("Estimated number of trips"),
+    digits = 0,mark = ",")
+```
+
+
+
+## Regulations
+
+```{r, echo=FALSE, warning = FALSE}
+
+regfiles <- list.files(path = here::here("saved_regs/"), pattern = ".csv$", full.names = TRUE)
+
+regs <- regfiles %>%
+  set_names(regfiles) %>%  # Optional: keep file names for reference
+  purrr::map_dfr(readr::read_csv, .id = "filename") 
+
+
+ Regs_out <-regs %>%
+      tidyr::separate(input, into = c("species", "season", "measure"), sep = "_") %>%
+      dplyr::mutate(season = stringr::str_remove(season, "^seas")) %>%
+      tidyr::extract(species, into = c("species", "state2", "mode"), regex =  "([^a-z]+)([a-z]+)(.*)") %>%
+      dplyr::select(-state2) %>%
+      dplyr::group_by(run_name, state, species, mode, season) %>%
+      tidyr::pivot_wider(names_from = measure, values_from = value) %>%
+      dplyr::filter(!bag == 0) %>%
+      dplyr::mutate(season2 = paste0(op, " - ", cl)) %>%
+      dplyr::group_by(run_name, state, species, mode) %>%
+      dplyr::summarise(
+        bag = paste(bag, collapse = ","),
+        len = paste(len, collapse = ","),
+        season = paste(season2, collapse = ","),
+        .groups = "drop" ) %>%
+      dplyr::mutate(mode = if_else(mode == "", "All modes", mode)) %>% 
+      dplyr::mutate(season = gsub("2025-", "", season), 
+                    season = gsub("2026-", "", season))
+ 
+ 
+DT::datatable(
+  Regs_out,
+  options = list(
+    dom = "Bfrtip",
+    pageLength = 10,
+    autoWidth = TRUE
+  )
+)
+
+
+```
