@@ -50,6 +50,9 @@ rename my_dom_id_string2 wave
 rename my_dom_id_string3 mode
 drop my_dom_id_string4
 
+order state wave mode 
+drop my
+
 reshape long tot_ sd_, i(state wave mode) j(new) string
 rename tot_ sim_total 
 rename sd_ sim_sd

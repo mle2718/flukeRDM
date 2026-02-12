@@ -33,7 +33,7 @@
   setkey(calib_lookup, mode)
   
   ## Run for all modes + aggregate  - summer flounder 
-  results_list <- lapply(mode_draw, simulate_mode_sf, calib_lookup = calib_lookup,
+  results_list <- lapply(mode_draw, simulate_mode_sf, catch_data=catch_data, calib_lookup = calib_lookup,
                          sf_size_data = sf_size_data)
   
   sf_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data"))
@@ -48,7 +48,7 @@
     dplyr::mutate(dplyr::across(everything(), ~tidyr::replace_na(., 0)))
   
   ## Run for all modes + aggregate  - black sea bass 
-  results_list <- lapply(mode_draw, simulate_mode_bsb, calib_lookup = calib_lookup, 
+  results_list <- lapply(mode_draw, simulate_mode_bsb, catch_data=catch_data, calib_lookup = calib_lookup, 
                          bsb_size_data = bsb_size_data)
   
   bsb_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
@@ -65,7 +65,7 @@
     dplyr::mutate(dplyr::across(everything(), ~tidyr::replace_na(., 0)))
   
   ## Run for all modes + aggregate  - scup 
-  results_list <- lapply(mode_draw, simulate_mode_scup, calib_lookup = calib_lookup, 
+  results_list <- lapply(mode_draw, simulate_mode_scup, catch_data=catch_data, calib_lookup = calib_lookup, 
                          scup_size_data = scup_size_data)
   
   scup_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
@@ -470,11 +470,12 @@
   model_output1_long <- melt(
     model_output1,
     id.vars = c("mode"),   # keep these as identifiers
-    measure.vars = c("change_CS", "n_trips_alt",  "ntrips_base", "tot_cat_bsb_base" ,  
-                     "tot_cat_bsb_new",     "tot_cat_scup_base" ,  "tot_cat_scup_new" ,   "tot_cat_sf_base" ,   "tot_cat_sf_new"  ,   
-                     "tot_keep_bsb_base",   "tot_keep_bsb_new" ,  "tot_keep_scup_base" , "tot_keep_scup_new" ,  "tot_keep_sf_base"  , 
-                     "tot_keep_sf_new"  ,   "tot_rel_bsb_base" ,   "tot_rel_bsb_new"  ,  "tot_rel_scup_base" ,  "tot_rel_scup_new" ,  
-                     "tot_rel_sf_base" ,    "tot_rel_sf_new"),
+    measure.vars = c("change_CS","n_trips_alt","n_trips_base",      
+                      "tot_cat_bsb_base",   "tot_cat_bsb_new",    "tot_cat_scup_base" , "tot_cat_scup_new"  ,
+                      "tot_cat_sf_base" ,   "tot_cat_sf_new"   ,  "tot_keep_bsb_base",  "tot_keep_bsb_new" , 
+                    "tot_keep_scup_base", "tot_keep_scup_new" , "tot_keep_sf_base" ,  "tot_keep_sf_new"   ,
+                     "tot_rel_bsb_base" ,  "tot_rel_bsb_new"  ,  "tot_rel_scup_base" , "tot_rel_scup_new"  ,
+                      "tot_rel_sf_base" ,   "tot_rel_sf_new"   ),
     variable.name = "metric",
     value.name = "value"
   )

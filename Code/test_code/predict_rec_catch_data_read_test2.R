@@ -95,11 +95,11 @@ n_choice_occasions <- bind_rows(n_choice_occasions0) %>%
 rm(base_outcomes0, n_choice_occasions0)
 
 ##code correction 10/24
-check_n_choice_occasions <- n_choice_occasions %>% 
+check_n_choice_occasions <- n_choice_occasions %>%
   dplyr::select(date_parsed, mode) %>%
-  dplyr::distinct() 
+  dplyr::distinct()
 
-base_outcomes<-base_outcomes %>% 
+base_outcomes<-base_outcomes %>%
    dplyr::right_join(check_n_choice_occasions, by=c("date_parsed", "mode"))
 ###end code correction 10/24
 
