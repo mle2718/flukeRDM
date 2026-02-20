@@ -301,6 +301,136 @@
       beta_opt_out_avidity * (total_trips_12 * opt_out) 
   )]
   
+  
+  ############
+  # Assess response surface of computing probs and CV per catch draw, versus averaging over catch draws
+  # check1<-mean_trip_data %>% 
+  #   as.data.table()
+  # 
+  #  # Pre-compute exponential terms
+  # check1[, `:=`(exp_vA = exp(vA), exp_v0 = exp(v0))]
+  # 
+  # check1[, `:=`(
+  #   probA = exp_vA / sum(exp_vA),
+  #   prob0 = exp_v0 / sum(exp_v0), 
+  #   log_sum_alt = log(sum(exp_vA)),
+  #   log_sum_base = log(sum(exp_v0)) 
+  # ), by = group_index]
+  # 
+  # # Calculate consumer surplus 
+  # check1[, `:=`(
+  #   CS_base = log_sum_base / -beta_cost,
+  #   CS_alt = log_sum_alt / -beta_cost
+  # )]
+  # 
+  # # Calculate change consumer surplus 
+  # check1[, `:=`(
+  #   change_CS = CS_alt - CS_base, 
+  #   change_prob = probA-prob0
+  # )]
+  # 
+  # # Get rid of things we don't need.
+  # check1 <- check1 %>% 
+  #   dplyr::filter(alt==1) %>% 
+  #   dplyr::select(-matches("beta")) %>% 
+  #   dplyr::select(-"alt", -"opt_out", -"exp_v0", -"exp_vA", 
+  #                 -"cost", -"age", -"total_trips_12", -"catch_draw", -"group_index", 
+  #                 -"log_sum_alt", -"log_sum_base")
+  # 
+  # all_vars<-c()
+  # all_vars <- names(check1)[!names(check1) %in% c("date_parsed","mode", "tripid")]
+  # 
+  # #all_vars
+  # # average outcomes across draws
+  # check1<-check1  %>% data.table::as.data.table() %>%
+  #   .[,lapply(.SD, mean), by = c("date_parsed","mode", "tripid"), .SDcols = all_vars]
+  # 
+  # check1a<-check1   %>% 
+  #   dplyr::filter(vA>-20)
+  # 
+  # plot(check1a$vA, check1a$probA,
+  #      xlab = "vA",
+  #      ylab = "probA",
+  #      pch = 16)
+  # 
+  # plot(check1a$change_CS, check1a$probA,
+  #      xlab = "change_CS",
+  #      ylab = "probA",
+  #      pch = 16)
+  # 
+  # plot(check1a$change_CS, check1a$change_prob,
+  #      xlab = "change_CS",
+  #      ylab = "change_prob",
+  #      pch = 16)
+  # 
+  # 
+  # ### take the average vA then compute probs and CS
+  # check2<-mean_trip_data %>% 
+  #   as.data.table()
+  # 
+  # check2 <- check2 %>% 
+  #   dplyr::select(matches("tot_"), "alt","beta_cost","date_parsed","mode","tripid","v0" ,"vA" )
+  #  
+  # all_vars<-c()
+  # all_vars <- names(check2)[!names(check2) %in% c("date_parsed","mode", "tripid", "alt")]
+  # all_vars
+  # 
+  # # average outcomes across draws
+  # check2<-check2  %>% data.table::as.data.table() %>%
+  #   .[,lapply(.SD, mean), by = c("date_parsed","mode", "tripid", "alt"), .SDcols = all_vars]
+  # 
+  # check2[, `:=`(exp_vA = exp(vA), exp_v0 = exp(v0))]
+  # 
+  # check2[, `:=`(
+  #   probA = exp_vA / sum(exp_vA),
+  #   prob0 = exp_v0 / sum(exp_v0), 
+  #   log_sum_alt = log(sum(exp_vA)),
+  #   log_sum_base = log(sum(exp_v0)) 
+  # ), by = c("date_parsed","mode", "tripid")]
+  # 
+  # # Calculate consumer surplus 
+  # check2[, `:=`(
+  #   CS_base = log_sum_base / -beta_cost,
+  #   CS_alt = log_sum_alt / -beta_cost
+  # )]
+  # 
+  # # Calculate change consumer surplus 
+  # check2[, `:=`(
+  #   change_CS = CS_alt - CS_base, 
+  #   change_prob = probA-prob0
+  # )]
+  # 
+  # # Get rid of things we don't need.
+  # check2 <- check2 %>% 
+  #   dplyr::filter(alt==1) 
+  # 
+  # check2a<-check2  %>% 
+  #   dplyr::filter(vA>-20)
+  # 
+  # plot(check2a$vA, check2a$probA,
+  #      xlab = "vA",
+  #      ylab = "probA",
+  #      pch = 16)
+  # 
+  # plot(check2a$change_CS, check2a$probA,
+  #      xlab = "change_CS",
+  #      ylab = "probA",
+  #      pch = 16)
+  # 
+  # plot(check2a$change_CS, check2a$change_prob,
+  #      xlab = "change_CS",
+  #      ylab = "change_prob",
+  #      pch = 16)
+  # 
+  # #all_vars
+  # 
+  # plot(check1$vA, check1$probA,
+  #      xlab = "vA",
+  #      ylab = "probA",
+  #      pch = 16)
+  
+  
+  #######
   # Pre-compute exponential terms
   mean_trip_data[, `:=`(exp_vA = exp(vA), exp_v0 = exp(v0))]
   
