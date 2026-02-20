@@ -136,10 +136,16 @@ for(i in seq_len(nrow(run_grid))) {
     dplyr::summarise(median_pct_diff = round(median(pct_diff),2)) %>%
     tidyr::pivot_wider(names_from = species, values_from = median_pct_diff)
   
+  north_df <- as_tibble_row(north_map)
+  south_df <- as_tibble_row(south_map)
+  nj_df <- as_tibble_row(nj_map)
   results <- cbind(
     North_ID = north_id,
     South_ID = south_id,
     NJ_ID = nj_id,
+    north_df, 
+    south_df, 
+    nj_df,
     harv
   )
   all_results <- dplyr::bind_rows(all_results, results)
