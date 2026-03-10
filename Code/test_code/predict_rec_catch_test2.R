@@ -33,7 +33,7 @@
   setkey(calib_lookup, mode)
   
   ## Run for all modes + aggregate  - summer flounder 
-  results_list <- lapply(mode_draw, simulate_mode_sf, calib_lookup = calib_lookup,
+  results_list <- lapply(mode_draw, simulate_mode_sf, catch_data=catch_data, calib_lookup = calib_lookup,
                          sf_size_data = sf_size_data)
   
   sf_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data"))
@@ -48,7 +48,7 @@
     dplyr::mutate(dplyr::across(everything(), ~tidyr::replace_na(., 0)))
   
   ## Run for all modes + aggregate  - black sea bass 
-  results_list <- lapply(mode_draw, simulate_mode_bsb, calib_lookup = calib_lookup, 
+  results_list <- lapply(mode_draw, simulate_mode_bsb, catch_data=catch_data, calib_lookup = calib_lookup, 
                          bsb_size_data = bsb_size_data)
   
   bsb_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
@@ -65,7 +65,7 @@
     dplyr::mutate(dplyr::across(everything(), ~tidyr::replace_na(., 0)))
   
   ## Run for all modes + aggregate  - scup 
-  results_list <- lapply(mode_draw, simulate_mode_scup, calib_lookup = calib_lookup, 
+  results_list <- lapply(mode_draw, simulate_mode_scup, catch_data=catch_data, calib_lookup = calib_lookup, 
                          scup_size_data = scup_size_data)
   
   scup_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
@@ -95,7 +95,7 @@
   # scup_catch_check<-sum(scup_trip_data$tot_keep_scup_new+scup_trip_data$tot_rel_scup_new)
   
   rm(trip_data_a)
-  
+  rm(sf_trip_data, scup_trip_data, bsb_trip_data, catch_data)
   
   # Convert to data.table
   data.table::setDT(size_data_sf)
@@ -109,39 +109,45 @@
   length_temp <- merge(size_data_sf, size_data_bsb,
                        by = c("date", "mode", "tripid", "catch_draw"),
                        all = TRUE)
-  
+
   # Then merge the result with scup
   length_data <- merge(length_temp, size_data_scup,
                        by = c("date", "mode", "tripid", "catch_draw"),
                        all = TRUE)
-  
+
   #First merge sf and bsb zero catches
   zero_catch_temp<- merge(zero_catch_sf, zero_catch_bsb,
                           by = c("date", "mode", "tripid", "catch_draw"),
                           all = TRUE)
-  
+
   # Then merge the zero catches result with scup
   zero_catch_check <- merge(zero_catch_temp, zero_catch_scup,
                             by = c("date", "mode", "tripid", "catch_draw"),
                             all = TRUE)[
-                              tot_keep_sf_new == 0 & tot_rel_sf_new == 0 & 
-                                tot_keep_bsb_new == 0 & tot_rel_bsb_new == 0 & 
-                                tot_keep_scup_new == 0 & tot_rel_scup_new == 0, 
+                              tot_keep_sf_new == 0 & tot_rel_sf_new == 0 &
+                                tot_keep_bsb_new == 0 & tot_rel_bsb_new == 0 &
+                                tot_keep_scup_new == 0 & tot_rel_scup_new == 0,
                               .(date, mode, tripid, catch_draw)
                             ]
-  
-  
+
+
   # Bind rows (rbindlist is faster and more memory-efficient)
-  length_data <- data.table::rbindlist(list(length_data, zero_catch_check), fill = TRUE) 
-  
+  length_data <- data.table::rbindlist(list(length_data, zero_catch_check), fill = TRUE)
+
+  rm(zero_catch_sf,zero_catch_bsb,zero_catch_scup,zero_catch_check, length_temp, zero_catch_temp)
+  rm(results_list, size_data_sf, size_data_bsb,size_data_scup)  
+
   
   # Replace NA values with 0 again (if necessary)
-  length_data[is.na(length_data)] <- 0
+  num_cols <- names(length_data)[sapply(length_data, is.numeric)]
   
-  rm(zero_catch_sf,zero_catch_bsb,zero_catch_scup,zero_catch_check, length_temp, zero_catch_temp)
+  for (j in num_cols) {
+    data.table::set(length_data, which(is.na(length_data[[j]])), j, 0)
+  }
   
-  length_data<-data.table::as.data.table(length_data) 
-  
+
+  length_data<-data.table::as.data.table(length_data)
+
   
   # If there is catch of only sf 
   # if(sf_catch_check !=0 & bsb_catch_check==0 & scup_catch_check==0){
@@ -187,16 +193,50 @@
     
   )]
   
+
+  
   length_data[, date_parsed := lubridate::dmy(date)][, date := NULL]
+  trip_data <- trip_data[base_outcomes, on = .(date_parsed, mode, tripid, catch_draw), nomatch = 0L]
   
-  # Merge
-  trip_data <- trip_data[base_outcomes, on = .(date_parsed, mode, tripid, catch_draw), nomatch = 0]
   
+
+  
+  # 
+  # ##########
+  # # Rebuild contributions for alt=1 only from the original trip_data
+  # tripDT <- as.data.table(trip_data)
+  # tripDT[, group_index := .GRP, by=.(date_parsed, mode, catch_draw, tripid)]
+  # 
+  # # Component differences (new - base) for alt=1
+  # tripDT[, `:=`(
+  #   d_sf_keep  = beta_sqrt_sf_keep     * (sqrt(tot_keep_sf_new)  - sqrt(tot_keep_sf_base)),
+  #   d_sf_rel   = beta_sqrt_sf_release  * (sqrt(tot_rel_sf_new)   - sqrt(tot_rel_sf_base)),
+  #   d_bsb_keep = beta_sqrt_bsb_keep    * (sqrt(tot_keep_bsb_new) - sqrt(tot_keep_bsb_base)),
+  #   d_bsb_rel  = beta_sqrt_bsb_release * (sqrt(tot_rel_bsb_new)  - sqrt(tot_rel_bsb_base)),
+  #   d_cross    = beta_sqrt_sf_bsb_keep * (sqrt(tot_keep_sf_new)*sqrt(tot_keep_bsb_new)
+  #                                         - sqrt(tot_keep_sf_base)*sqrt(tot_keep_bsb_base)),
+  #   d_scup     = beta_sqrt_scup_catch  * (sqrt(tot_cat_scup_new) - sqrt(tot_cat_scup_base))
+  # )]
+  # tripDT[, d_total := d_sf_keep + d_sf_rel + d_bsb_keep + d_bsb_rel + d_cross + d_scup]
+  # summary(tripDT$d_total)    # This parallels delta_v for alt=1
+  # colMeans(tripDT[, .(d_sf_keep,d_sf_rel,d_bsb_keep,d_bsb_rel,d_cross,d_scup)], na.rm=TRUE)
+  # 
+  # 
+  # #C. Check whether “new” is more variable (Jensen) even if means are similar:
+  # cols <- c("tot_keep_sf","tot_rel_sf","tot_keep_bsb","tot_rel_bsb","tot_cat_scup")
+  # for (nm in cols) {
+  #   newv  <- tripDT[[paste0(nm,"_new")]]
+  #   basev <- tripDT[[paste0(nm,"_base")]]
+  #   cat(nm, "\n")
+  #   cat("means  new/base:", mean(newv), mean(basev), "\n")
+  #   cat("sd     new/base:",  sd(newv),  sd(basev),  "\n")
+  #   cat("E[sqrt] new/base:", mean(sqrt(newv)), mean(sqrt(basev)), "\n\n")
+  # }
+  # 
+  # #######
   trip_data[, domain2 := NULL]
   
-  rm(sf_trip_data, scup_trip_data, bsb_trip_data, 
-     size_data_sf, size_data_bsb,size_data_scup, 
-     base_outcomes, catch_data)
+  rm(base_outcomes)
   
   #trip_data$NJ_dummy<-case_when(s=="NJ"~1, TRUE~0)
   
@@ -220,23 +260,28 @@
   
   # Compute vA and v0
   trip_data[, `:=`(
-    vA = beta_sqrt_sf_keep * sqrt_keep_sf_new +
+     v0_trip = beta_sqrt_sf_keep*sqrt_keep_sf_base +
       #beta_NJ_sf_keep*NJ_dummy +
-      beta_sqrt_sf_release * sqrt_rel_sf_new +
-      beta_sqrt_bsb_keep * sqrt_keep_bsb_new +
-      beta_sqrt_bsb_release * sqrt_rel_bsb_new +
-      beta_sqrt_sf_bsb_keep * (sqrt_keep_sf_new * sqrt_keep_bsb_new) +
-      beta_sqrt_scup_catch * sqrt_cat_scup_new +
-      beta_cost * cost,
+      beta_sqrt_sf_release*sqrt_keep_sf_base +
+      beta_sqrt_bsb_keep*sqrt_keep_bsb_base +
+      beta_sqrt_bsb_release*sqrt_rel_bsb_base +
+      beta_sqrt_sf_bsb_keep*(sqrt_keep_sf_base * sqrt_keep_bsb_base) +
+      beta_sqrt_scup_catch*sqrt_cat_scup_base +
+      beta_cost*cost,
     
-    v0 = beta_sqrt_sf_keep * sqrt_keep_sf_base +
+    vA_trip = beta_sqrt_sf_keep*sqrt_keep_sf_new +
       #beta_NJ_sf_keep*NJ_dummy +
-      beta_sqrt_sf_release * sqrt_rel_sf_base +
-      beta_sqrt_bsb_keep * sqrt_keep_bsb_base +
-      beta_sqrt_bsb_release * sqrt_rel_bsb_base +
-      beta_sqrt_sf_bsb_keep * (sqrt_keep_sf_base * sqrt_keep_bsb_base) +
-      beta_sqrt_scup_catch * sqrt_cat_scup_base +
-      beta_cost * cost
+      beta_sqrt_sf_release*sqrt_rel_sf_new +
+      beta_sqrt_bsb_keep*sqrt_keep_bsb_new +
+      beta_sqrt_bsb_release*sqrt_rel_bsb_new +
+      beta_sqrt_sf_bsb_keep*(sqrt_keep_sf_new * sqrt_keep_bsb_new) +
+      beta_sqrt_scup_catch*sqrt_cat_scup_new +
+      beta_cost*cost,
+    
+    v_optout = beta_opt_out +
+      beta_opt_out_age * (age) +
+      beta_opt_out_avidity * (total_trips_12) 
+    
   )]
   
   # remove the temp sqrt columns to save memory
@@ -244,69 +289,41 @@
                 "sqrt_keep_sf_base", "sqrt_rel_sf_base", "sqrt_keep_bsb_base", "sqrt_rel_bsb_base",
                 "sqrt_cat_scup_new", "sqrt_cat_scup_base") := NULL]
   
+  mean_trip_data <- data.table::as.data.table(trip_data)
+
+  # remove big cols
+  drop_cols <- c("beta_opt_out","beta_opt_out_age",     
+                 "beta_opt_out_avidity","beta_sqrt_bsb_keep","beta_sqrt_bsb_release", "beta_sqrt_scup_catch", 
+                 "beta_sqrt_sf_bsb_keep", "beta_sqrt_sf_keep","beta_sqrt_sf_release", 
+                 "age", "cost", "domain2", "total_trips_12", "NJ_dummy")
   
-  mean_trip_data <- trip_data %>% data.table::data.table() %>% 
-    .[, group_index := .GRP, by = .(date_parsed, mode, catch_draw, tripid)]
+  drop_cols <- intersect(drop_cols, names(mean_trip_data))
+  if (length(drop_cols)) mean_trip_data[, (drop_cols) := NULL]
   
-  # expand the data to create two alternatives, representing the alternatives available in choice survey
-  mean_trip_data <- mean_trip_data %>%
-    dplyr::mutate(n_alt = rep(2,nrow(.))) %>%
-    tidyr::uncount(n_alt) %>%
-    dplyr::mutate(alt = rep(1:2,nrow(.)/2),
-                  opt_out = ifelse(alt == 2, 1, 0))
+  keep_vars <- setdiff(names(mean_trip_data), c("date_parsed","mode","tripid"))
+  mean_trip_data <- mean_trip_data[, lapply(.SD, mean),
+                                   by = .(date_parsed, mode,tripid),
+                                   .SDcols = keep_vars]
   
-  #Calculate the expected utility of alts 2 parameters of the utility function,
-  #put the two values in the same column, exponentiate, and calculate their sum (vA_col_sum)
-  
-  data.table::setDT(mean_trip_data)
-  
-  # Filter only alt == 2 once, and calculate vA and v0
-  mean_trip_data[alt == 2, c("vA", "v0") := .(
-    beta_opt_out * opt_out +
-      beta_opt_out_age * (age * opt_out) +
-      beta_opt_out_avidity * (total_trips_12 * opt_out) 
+  mean_trip_data[, `:=`(
+    prob0 = exp(v0_trip) / (exp(v0_trip) + exp(v_optout)),
+    probA = exp(vA_trip) / (exp(vA_trip) + exp(v_optout)),
+    log_sum_alt = log((exp(vA_trip) + exp(v_optout))),
+    log_sum_base = log((exp(v0_trip) + exp(v_optout)))
   )]
   
-  # Pre-compute exponential terms
-  mean_trip_data[, `:=`(exp_vA = exp(vA), exp_v0 = exp(v0))]
-  
-  # Group by group_index and calculate probabilities and log-sums
-  
+  #CS
+  # Here I take the negative of the CS formula for easier interpretability of model output
   mean_trip_data[, `:=`(
-    probA = exp_vA / sum(exp_vA),
-    prob0 = exp_v0 / sum(exp_v0), 
-    log_sum_alt = log(sum(exp_vA)),
-    log_sum_base = log(sum(exp_v0)) 
-  ), by = group_index]
-  
-  # Calculate consumer surplus 
-  mean_trip_data[, `:=`(
-    CS_base = log_sum_base / -beta_cost,
-    CS_alt = log_sum_alt / -beta_cost
-  )]
-  
-  # Calculate change consumer surplus 
-  mean_trip_data[, `:=`(
-    change_CS = CS_alt - CS_base
+    change_CS = -(1/beta_cost)*(log_sum_alt - log_sum_base)
   )]
   
   # Get rid of things we don't need.
-  mean_trip_data <- mean_trip_data %>% 
-    dplyr::filter(alt==1) %>% 
-    dplyr::select(-matches("beta")) %>% 
-    dplyr::select(-"alt", -"opt_out", -"vA" , -"v0",-"exp_v0", -"exp_vA", 
-                  -"cost", -"age", -"total_trips_12", -"catch_draw", -"group_index", 
-                  -"log_sum_alt", -"log_sum_base", -"tot_keep_sf_base",  -"tot_rel_sf_base",  -"tot_cat_sf_base", 
-                  -"tot_keep_bsb_base",  -"tot_rel_bsb_base", -"tot_cat_bsb_base",  
-                  -"tot_keep_scup_base",-"tot_rel_scup_base",  -"tot_cat_scup_base", -"prob0") 
+  mean_trip_data <- mean_trip_data %>%
+    dplyr::select(-"vA_trip" ,-"v_optout", -"v0_trip" , -"catch_draw",
+                  -"log_sum_base",-"log_sum_alt", -"beta_cost") %>%
+    dplyr::arrange(date_parsed, mode, tripid)
   
-  all_vars<-c()
-  all_vars <- names(mean_trip_data)[!names(mean_trip_data) %in% c("date_parsed","mode", "tripid")]
-  
-  #all_vars
-  # average outcomes across draws
-  mean_trip_data<-mean_trip_data  %>% data.table::as.data.table() %>%
-    .[,lapply(.SD, mean), by = c("date_parsed","mode", "tripid"), .SDcols = all_vars]
   
   # multiply the average trip probability in the new scenario (probA) by each catch variable to get probability-weighted catch
   list_names <- c("tot_keep_sf_new",   "tot_rel_sf_new",  "tot_cat_sf_new", 
@@ -320,11 +337,25 @@
     .[,as.vector(all_vars) := lapply(.SD, function(x) x * probA), .SDcols = all_vars] %>%
     .[]
   
+  # multiply the average trip probability in the new scenario (prob0) by each catch variable to get probability-weighted catch
+  list_names <- c("tot_keep_sf_base",   "tot_rel_sf_base",  "tot_cat_sf_base", 
+                  "tot_keep_bsb_base",  "tot_rel_bsb_base", "tot_cat_bsb_base",  
+                  "tot_keep_scup_base","tot_rel_scup_base",  "tot_cat_scup_base")
+
+  
+  all_vars <- c(list_names)
+  
+  mean_trip_data <- mean_trip_data %>%
+    data.table::as.data.table() %>%
+    .[,as.vector(all_vars) := lapply(.SD, function(x) x * prob0), .SDcols = all_vars] %>%
+    .[]
+  
   
   ## select the same number of choice occasions in the prediction year as in the calibration year
   # We will multiply each simulated choice equation by an appropriate expansion factor, 
   # then multiply this expansion factor by the projection-year calendar adjustment to account for
   # different numbers of weekend vs. weekday in the projection year versus the calibration
+  
   ndraws = 50
   mean_trip_data<-mean_trip_data %>% 
     dplyr::left_join(n_choice_occasions, by = c("mode", "date_parsed")) %>% 
@@ -336,11 +367,20 @@
     dplyr::mutate(n_choice_occasions=n_choice_occasions0*expansion_factor,
                   expand=n_choice_occasions/ndraws) 
   
+  
+  #retain expansion factors by strata to multiply with length data 
+  expansion_factors<-mean_trip_data %>% 
+    dplyr::select("date_parsed","mode", "tripid", "expand", "probA")
+  
+  
   # Expand outcomes for projection year
   list_names <- c("tot_keep_sf_new",   "tot_rel_sf_new",  "tot_cat_sf_new", 
                   "tot_keep_bsb_new",  "tot_rel_bsb_new", "tot_cat_bsb_new",  
                   "tot_keep_scup_new","tot_rel_scup_new",  "tot_cat_scup_new", 
-                  "probA", "change_CS")
+                  "tot_keep_sf_base",   "tot_rel_sf_base",  "tot_cat_sf_base", 
+                  "tot_keep_bsb_base",  "tot_rel_bsb_base", "tot_cat_bsb_base",  
+                  "tot_keep_scup_base","tot_rel_scup_base",  "tot_cat_scup_base",
+                  "probA", "change_CS", "prob0")
   
   all_vars <- c(list_names)
   
@@ -349,33 +389,35 @@
     .[,as.vector(all_vars) := lapply(.SD, function(x) x * expand), .SDcols = all_vars] %>%
     .[]
   
-  #retain expansion factors by strata to multiply with length data 
-  expansion_factors<-mean_trip_data %>% 
-    dplyr::select("date_parsed","mode", "tripid", "expand")
   
   #process length data 
   pattern_vars <- grep("^keep_(sf_|bsb_|scup_)[0-9.]*$|^release_(sf_|bsb_|scup_)[0-9.]*$", 
                        names(length_data), value = TRUE)
   
-  length_data<-length_data  %>% data.table::as.data.table() %>%
-    .[,lapply(.SD, mean), by = c("date_parsed","mode", "tripid"), .SDcols = pattern_vars]  
+   length_data<-length_data  %>% data.table::as.data.table() %>%
+     .[,lapply(.SD, mean), by = c("date_parsed","mode", "tripid"), .SDcols = pattern_vars]
   
-  length_data<-length_data %>% 
-    dplyr::right_join(expansion_factors, b=c("date_parsed","mode", "tripid"))
+   length_data<-length_data %>%
+     dplyr::right_join(expansion_factors, b=c("date_parsed","mode", "tripid"))
+
+  # mulitply length data first by the average probability, then by the expansion factor
+   length_data <- length_data %>%
+     data.table::as.data.table() %>%
+     .[,as.vector(pattern_vars) := lapply(.SD, function(x) x * probA * expand), .SDcols = pattern_vars] %>%
+     .[]
   
-  length_data <- length_data %>%
-    data.table::as.data.table() %>%
-    .[,as.vector(pattern_vars) := lapply(.SD, function(x) x * expand), .SDcols = pattern_vars] %>%
-    .[]  
-  
-  ## Compute welfare and predicted trips
+  # Compute welfare and predicted trips
   # Aggregate by mode
   mean_trip_data <- mean_trip_data %>%
-    dplyr::rename(n_trips_alt = probA)
+    dplyr::rename(n_trips_alt = probA, n_trips_base = prob0)
   
   # Ensure mean_trip_data is a data.table
   data.table::setDT(mean_trip_data)
-  list_names <- c("change_CS","n_trips_alt")
+  list_names <- c("change_CS","n_trips_alt", "n_trips_base", "tot_cat_bsb_base" ,  
+                 "tot_cat_bsb_new",     "tot_cat_scup_base" ,  "tot_cat_scup_new" ,   "tot_cat_sf_base" ,   "tot_cat_sf_new"  ,   
+                 "tot_keep_bsb_base",   "tot_keep_bsb_new" ,  "tot_keep_scup_base" , "tot_keep_scup_new" ,  "tot_keep_sf_base"  , 
+                  "tot_keep_sf_new"  ,   "tot_rel_bsb_base" ,   "tot_rel_bsb_new"  ,  "tot_rel_scup_base" ,  "tot_rel_scup_new" ,  
+                  "tot_rel_sf_base" ,    "tot_rel_sf_new")
   
   aggregate_trip_data_mode <- mean_trip_data[, lapply(.SD, sum), by = .(mode), .SDcols = list_names]
   
@@ -389,13 +431,18 @@
   model_output1_long <- melt(
     model_output1,
     id.vars = c("mode"),   # keep these as identifiers
-    measure.vars = c("change_CS", "n_trips_alt"),
+    measure.vars = c("change_CS","n_trips_alt","n_trips_base",      
+                      "tot_cat_bsb_base",   "tot_cat_bsb_new",    "tot_cat_scup_base" , "tot_cat_scup_new"  ,
+                      "tot_cat_sf_base" ,   "tot_cat_sf_new"   ,  "tot_keep_bsb_base",  "tot_keep_bsb_new" , 
+                    "tot_keep_scup_base", "tot_keep_scup_new" , "tot_keep_sf_base" ,  "tot_keep_sf_new"   ,
+                     "tot_rel_bsb_base" ,  "tot_rel_bsb_new"  ,  "tot_rel_scup_base" , "tot_rel_scup_new"  ,
+                      "tot_rel_sf_base" ,   "tot_rel_sf_new"   ),
     variable.name = "metric",
     value.name = "value"
   )
   
-  model_output1_long[, metric := fifelse(metric == "change_CS", "CV",
-                                         fifelse(metric == "n_trips_alt", "predicted trips", "metric"))]
+  # model_output1_long[, metric := fifelse(metric == "change_CS", "CV",
+  #                                        fifelse(metric == "n_trips_alt", "predicted trips", "metric"))]
   model_output1_long$species<-"NA"
   
   

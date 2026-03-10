@@ -677,7 +677,91 @@ graph export "$figure_cd/catch_at_length_calib.png", as(png) replace
 
 save "$input_data_cd/baseline_catch_at_length.dta", replace 
 
+
 u "$input_data_cd/baseline_catch_at_length.dta", clear 
+
+
+* figures for Rachel 2/10/26
+/*
+preserve
+
+keep if species=="bsb"
+tempfile base
+save `base', replace 
+
+clear
+tempfile master
+save `master', emptyok
+
+local regions "NO NJ SO"
+foreach r of local regions{
+	u `base', clear
+	keep if region=="`r'"
+	
+gen domain3=region+"_"+draw
+encode domain3, gen(domain4)
+xtset domain4 length
+tsfill, full
+mvencode fitted observed, mv(0) override
+decode domain4, gen(domain5)
+split domain5, parse(_)
+replace region=domain51
+replace draw=domain52
+replace species="bsb"
+drop domain3 domain4 domain5 domain51 domain52 domain2
+sort species region draw length 
+collapse (median) fitted observed, by(region length)
+append using `master'
+
+save `master', replace
+clear                            
+}
+
+use `master', clear
+
+twoway ///
+    line fitted_prob length if region=="NO", sort lcolor(navy) lpattern(solid) || ///
+	line observed length if region=="NO", sort lcolor(navy) lpattern(dash)   ///
+    xtitle("Length (cm)") ///
+    ytitle("Probability-at-length") ///
+	ylabel(#10, labsize(small)) xlabel(#15, labsize(small)) ///
+    legend(order(1 "Fitted (gamma)" 2 "Observed" ) ring(0) bplacement(neast) cols(1) ) ///
+    title("North (MA-NY) 2024 recreational black sea bass catch-at-length", size(medium) yoffset(2)) ///
+    xline(39.37 40.64 41.91, lcolor(gs10) lpattern(solid)) ///
+    note("Vertical lines: 15.5 inch (39.37 cm), 16 inch (40.64 cm), and 16.5 inch (41.91 cm)" "Values reflect median across 125 draws of total catch", yoffset(-2))
+	
+	graph export "$figure_cd/catch_at_length_2024_NO.png", as(png) replace
+
+twoway ///
+    line fitted_prob length if region=="NJ", sort lcolor(navy) lpattern(solid) || ///
+	line observed length if region=="NJ", sort lcolor(navy) lpattern(dash) ///
+    xtitle("Length (cm)") ///
+    ytitle("Probability-at-length") ///
+	ylabel(#10, labsize(small)) xlabel(#15, labsize(small)) ///
+    legend(order(1 "Fitted (gamma)" 2 "Observed" ) ring(0) bplacement(neast) cols(1) ) ///
+    title("NJ 2024 recreational black sea bass catch-at-length", size(medium)) ///
+    xline(39.37 40.64 41.91, lcolor(gs10) lpattern(solid)) ///
+    note("Vertical lines: 15.5 inch (39.37 cm), 16 inch (40.64 cm), and 16.5 inch (41.91 cm)" "Values reflect median across 125 draws of total catch", yoffset(-2))
+	
+	graph export "$figure_cd/catch_at_length_2024_NJ.png", as(png) replace
+
+twoway ///
+    line fitted_prob length if region=="SO", sort lcolor(navy) lpattern(solid) || ///
+	line observed length if region=="SO", sort lcolor(navy) lpattern(dash) ///
+    xtitle("Length (cm)") ///
+    ytitle("Probability-at-length") ///
+	ylabel(#10, labsize(small)) xlabel(#15, labsize(small)) ///
+    legend(order(1 "Fitted (gamma)" 2 "Observed" ) ring(0) bplacement(neast) cols(1) ) ///
+    title("South (DE-NC) 2024 recreational black sea bass catch-at-length", size(medium)) ///
+    xline(39.37 40.64 41.91, lcolor(gs10) lpattern(solid)) ///
+    note("Vertical lines: 15.5 inch (39.37 cm), 16 inch (40.64 cm), and 16.5 inch (41.91 cm)" "Values reflect median across 125 draws of total catch", yoffset(-2))
+	graph export "$figure_cd/catch_at_length_2024_SO.png", as(png) replace
+restore 
+*/
+
+
+
+
 
 * Prepare the data for export to simulation
 keep length fitted species region draw
