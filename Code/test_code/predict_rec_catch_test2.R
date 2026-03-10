@@ -95,7 +95,7 @@
   # scup_catch_check<-sum(scup_trip_data$tot_keep_scup_new+scup_trip_data$tot_rel_scup_new)
   
   rm(trip_data_a)
-  
+  rm(sf_trip_data, scup_trip_data, bsb_trip_data, catch_data)
   
   # Convert to data.table
   data.table::setDT(size_data_sf)
@@ -134,11 +134,17 @@
   # Bind rows (rbindlist is faster and more memory-efficient)
   length_data <- data.table::rbindlist(list(length_data, zero_catch_check), fill = TRUE)
 
-
-  # Replace NA values with 0 again (if necessary)
-  length_data[is.na(length_data)] <- 0
-
   rm(zero_catch_sf,zero_catch_bsb,zero_catch_scup,zero_catch_check, length_temp, zero_catch_temp)
+  rm(results_list, size_data_sf, size_data_bsb,size_data_scup)  
+
+  
+  # Replace NA values with 0 again (if necessary)
+  num_cols <- names(length_data)[sapply(length_data, is.numeric)]
+  
+  for (j in num_cols) {
+    data.table::set(length_data, which(is.na(length_data[[j]])), j, 0)
+  }
+  
 
   length_data<-data.table::as.data.table(length_data)
 
@@ -230,9 +236,7 @@
   # #######
   trip_data[, domain2 := NULL]
   
-  rm(sf_trip_data, scup_trip_data, bsb_trip_data, 
-     size_data_sf, size_data_bsb,size_data_scup, 
-     base_outcomes, catch_data)
+  rm(base_outcomes)
   
   #trip_data$NJ_dummy<-case_when(s=="NJ"~1, TRUE~0)
   
@@ -256,21 +260,28 @@
   
   # Compute vA and v0
   trip_data[, `:=`(
-    vA = beta_sqrt_sf_keep * sqrt_keep_sf_new +
-      beta_sqrt_sf_release * sqrt_rel_sf_new +
-      beta_sqrt_bsb_keep * sqrt_keep_bsb_new +
-      beta_sqrt_bsb_release * sqrt_rel_bsb_new +
-      beta_sqrt_sf_bsb_keep * (sqrt_keep_sf_new * sqrt_keep_bsb_new) +
-      beta_sqrt_scup_catch * sqrt_cat_scup_new +
-      beta_cost * cost,
+     v0_trip = beta_sqrt_sf_keep*sqrt_keep_sf_base +
+      #beta_NJ_sf_keep*NJ_dummy +
+      beta_sqrt_sf_release*sqrt_keep_sf_base +
+      beta_sqrt_bsb_keep*sqrt_keep_bsb_base +
+      beta_sqrt_bsb_release*sqrt_rel_bsb_base +
+      beta_sqrt_sf_bsb_keep*(sqrt_keep_sf_base * sqrt_keep_bsb_base) +
+      beta_sqrt_scup_catch*sqrt_cat_scup_base +
+      beta_cost*cost,
     
-    v0 = beta_sqrt_sf_keep * sqrt_keep_sf_base +
-      beta_sqrt_sf_release * sqrt_rel_sf_base +
-      beta_sqrt_bsb_keep * sqrt_keep_bsb_base +
-      beta_sqrt_bsb_release * sqrt_rel_bsb_base +
-      beta_sqrt_sf_bsb_keep * (sqrt_keep_sf_base * sqrt_keep_bsb_base) +
-      beta_sqrt_scup_catch * sqrt_cat_scup_base +
-      beta_cost * cost
+    vA_trip = beta_sqrt_sf_keep*sqrt_keep_sf_new +
+      #beta_NJ_sf_keep*NJ_dummy +
+      beta_sqrt_sf_release*sqrt_rel_sf_new +
+      beta_sqrt_bsb_keep*sqrt_keep_bsb_new +
+      beta_sqrt_bsb_release*sqrt_rel_bsb_new +
+      beta_sqrt_sf_bsb_keep*(sqrt_keep_sf_new * sqrt_keep_bsb_new) +
+      beta_sqrt_scup_catch*sqrt_cat_scup_new +
+      beta_cost*cost,
+    
+    v_optout = beta_opt_out +
+      beta_opt_out_age * (age) +
+      beta_opt_out_avidity * (total_trips_12) 
+    
   )]
   
   # remove the temp sqrt columns to save memory
@@ -278,222 +289,42 @@
                 "sqrt_keep_sf_base", "sqrt_rel_sf_base", "sqrt_keep_bsb_base", "sqrt_rel_bsb_base",
                 "sqrt_cat_scup_new", "sqrt_cat_scup_base") := NULL]
   
+  mean_trip_data <- data.table::as.data.table(trip_data)
+
+  # remove big cols
+  drop_cols <- c("beta_opt_out","beta_opt_out_age",     
+                 "beta_opt_out_avidity","beta_sqrt_bsb_keep","beta_sqrt_bsb_release", "beta_sqrt_scup_catch", 
+                 "beta_sqrt_sf_bsb_keep", "beta_sqrt_sf_keep","beta_sqrt_sf_release", 
+                 "age", "cost", "domain2", "total_trips_12", "NJ_dummy")
   
-  mean_trip_data <- trip_data %>% data.table::data.table() %>% 
-    .[, group_index := .GRP, by = .(date_parsed, mode, catch_draw, tripid)]
+  drop_cols <- intersect(drop_cols, names(mean_trip_data))
+  if (length(drop_cols)) mean_trip_data[, (drop_cols) := NULL]
   
-  # expand the data to create two alternatives, representing the alternatives available in choice survey
-  mean_trip_data <- mean_trip_data %>%
-    dplyr::mutate(n_alt = rep(2,nrow(.))) %>%
-    tidyr::uncount(n_alt) %>%
-    dplyr::mutate(alt = rep(1:2,nrow(.)/2),
-                  opt_out = ifelse(alt == 2, 1, 0))
-  
-  #Calculate the expected utility of alts 2 parameters of the utility function,
-  #put the two values in the same column, exponentiate, and calculate their sum (vA_col_sum)
-  
-  data.table::setDT(mean_trip_data)
-  
-  # Filter only alt == 2 once, and calculate vA and v0
-  mean_trip_data[alt == 2, c("vA", "v0") := .(
-    beta_opt_out * opt_out +
-      beta_opt_out_age * (age * opt_out) +
-      beta_opt_out_avidity * (total_trips_12 * opt_out) 
-  )]
-  
-  
-  ############
-  # Assess response surface of computing probs and CV per catch draw, versus averaging over catch draws
-  # check1<-mean_trip_data %>% 
-  #   as.data.table()
-  # 
-  #  # Pre-compute exponential terms
-  # check1[, `:=`(exp_vA = exp(vA), exp_v0 = exp(v0))]
-  # 
-  # check1[, `:=`(
-  #   probA = exp_vA / sum(exp_vA),
-  #   prob0 = exp_v0 / sum(exp_v0), 
-  #   log_sum_alt = log(sum(exp_vA)),
-  #   log_sum_base = log(sum(exp_v0)) 
-  # ), by = group_index]
-  # 
-  # # Calculate consumer surplus 
-  # check1[, `:=`(
-  #   CS_base = log_sum_base / -beta_cost,
-  #   CS_alt = log_sum_alt / -beta_cost
-  # )]
-  # 
-  # # Calculate change consumer surplus 
-  # check1[, `:=`(
-  #   change_CS = CS_alt - CS_base, 
-  #   change_prob = probA-prob0
-  # )]
-  # 
-  # # Get rid of things we don't need.
-  # check1 <- check1 %>% 
-  #   dplyr::filter(alt==1) %>% 
-  #   dplyr::select(-matches("beta")) %>% 
-  #   dplyr::select(-"alt", -"opt_out", -"exp_v0", -"exp_vA", 
-  #                 -"cost", -"age", -"total_trips_12", -"catch_draw", -"group_index", 
-  #                 -"log_sum_alt", -"log_sum_base")
-  # 
-  # all_vars<-c()
-  # all_vars <- names(check1)[!names(check1) %in% c("date_parsed","mode", "tripid")]
-  # 
-  # #all_vars
-  # # average outcomes across draws
-  # check1<-check1  %>% data.table::as.data.table() %>%
-  #   .[,lapply(.SD, mean), by = c("date_parsed","mode", "tripid"), .SDcols = all_vars]
-  # 
-  # check1a<-check1   %>% 
-  #   dplyr::filter(vA>-20)
-  # 
-  # plot(check1a$vA, check1a$probA,
-  #      xlab = "vA",
-  #      ylab = "probA",
-  #      pch = 16)
-  # 
-  # plot(check1a$change_CS, check1a$probA,
-  #      xlab = "change_CS",
-  #      ylab = "probA",
-  #      pch = 16)
-  # 
-  # plot(check1a$change_CS, check1a$change_prob,
-  #      xlab = "change_CS",
-  #      ylab = "change_prob",
-  #      pch = 16)
-  # 
-  # 
-  # ### take the average vA then compute probs and CS
-  # check2<-mean_trip_data %>% 
-  #   as.data.table()
-  # 
-  # check2 <- check2 %>% 
-  #   dplyr::select(matches("tot_"), "alt","beta_cost","date_parsed","mode","tripid","v0" ,"vA" )
-  #  
-  # all_vars<-c()
-  # all_vars <- names(check2)[!names(check2) %in% c("date_parsed","mode", "tripid", "alt")]
-  # all_vars
-  # 
-  # # average outcomes across draws
-  # check2<-check2  %>% data.table::as.data.table() %>%
-  #   .[,lapply(.SD, mean), by = c("date_parsed","mode", "tripid", "alt"), .SDcols = all_vars]
-  # 
-  # check2[, `:=`(exp_vA = exp(vA), exp_v0 = exp(v0))]
-  # 
-  # check2[, `:=`(
-  #   probA = exp_vA / sum(exp_vA),
-  #   prob0 = exp_v0 / sum(exp_v0), 
-  #   log_sum_alt = log(sum(exp_vA)),
-  #   log_sum_base = log(sum(exp_v0)) 
-  # ), by = c("date_parsed","mode", "tripid")]
-  # 
-  # # Calculate consumer surplus 
-  # check2[, `:=`(
-  #   CS_base = log_sum_base / -beta_cost,
-  #   CS_alt = log_sum_alt / -beta_cost
-  # )]
-  # 
-  # # Calculate change consumer surplus 
-  # check2[, `:=`(
-  #   change_CS = CS_alt - CS_base, 
-  #   change_prob = probA-prob0
-  # )]
-  # 
-  # # Get rid of things we don't need.
-  # check2 <- check2 %>% 
-  #   dplyr::filter(alt==1) 
-  # 
-  # check2a<-check2  %>% 
-  #   dplyr::filter(vA>-20)
-  # 
-  # plot(check2a$vA, check2a$probA,
-  #      xlab = "vA",
-  #      ylab = "probA",
-  #      pch = 16)
-  # 
-  # plot(check2a$change_CS, check2a$probA,
-  #      xlab = "change_CS",
-  #      ylab = "probA",
-  #      pch = 16)
-  # 
-  # plot(check2a$change_CS, check2a$change_prob,
-  #      xlab = "change_CS",
-  #      ylab = "change_prob",
-  #      pch = 16)
-  # 
-  # #all_vars
-  # 
-  # plot(check1$vA, check1$probA,
-  #      xlab = "vA",
-  #      ylab = "probA",
-  #      pch = 16)
-  
-  
-  #######
-  # Pre-compute exponential terms
-  mean_trip_data[, `:=`(exp_vA = exp(vA), exp_v0 = exp(v0))]
-  
-  # Group by group_index and calculate probabilities and log-sums
+  keep_vars <- setdiff(names(mean_trip_data), c("date_parsed","mode","tripid"))
+  mean_trip_data <- mean_trip_data[, lapply(.SD, mean),
+                                   by = .(date_parsed, mode,tripid),
+                                   .SDcols = keep_vars]
   
   mean_trip_data[, `:=`(
-    probA = exp_vA / sum(exp_vA),
-    prob0 = exp_v0 / sum(exp_v0), 
-    log_sum_alt = log(sum(exp_vA)),
-    log_sum_base = log(sum(exp_v0)) 
-  ), by = group_index]
-  
-  # Calculate consumer surplus 
-  mean_trip_data[, `:=`(
-    CS_base = log_sum_base / -beta_cost,
-    CS_alt = log_sum_alt / -beta_cost
+    prob0 = exp(v0_trip) / (exp(v0_trip) + exp(v_optout)),
+    probA = exp(vA_trip) / (exp(vA_trip) + exp(v_optout)),
+    log_sum_alt = log((exp(vA_trip) + exp(v_optout))),
+    log_sum_base = log((exp(v0_trip) + exp(v_optout)))
   )]
   
-  # Calculate change consumer surplus 
+  #CS
+  # Here I take the negative of the CS formula for easier interpretability of model output
   mean_trip_data[, `:=`(
-    change_CS = CS_alt - CS_base
+    change_CS = -(1/beta_cost)*(log_sum_alt - log_sum_base)
   )]
-  
-  
-  
-  # DT <- copy(mean_trip_data)
-  # 
-  # # Keep only the two rows per group before you filtered
-  # # (Run this before your dplyr::filter(alt==1) step.)
-  # DT[, is_alt1 := (alt==1)]
-  # DT[, is_optout := (alt==2)]
-  # 
-  # # Extract alt1 utilities under A vs 0 and the opt-out utility (same in A/0)
-  # alt1 <- DT[alt==1, .(group_index, vA_alt1=vA, v0_alt1=v0)]
-  # oo   <- DT[alt==2, .(group_index, v_optout=vA)]  # vA==v0 here by construction
-  # 
-  # check <- alt1[oo, on="group_index"]
-  # check[, delta_v := vA_alt1 - v0_alt1]
-  # 
-  # summary(check$delta_v)   # If mostly negative, that explains mean(probA) < mean(prob0)
-  # mean(check$vA_alt1); mean(check$v0_alt1)
-  
   
   # Get rid of things we don't need.
-  mean_trip_data <- mean_trip_data %>% 
-    dplyr::filter(alt==1) %>% 
-    dplyr::select(-matches("beta")) %>% 
-    dplyr::select(-"alt", -"opt_out", -"vA" , -"v0",-"exp_v0", -"exp_vA", 
-                  -"cost", -"age", -"total_trips_12", -"catch_draw", -"group_index", 
-                  -"log_sum_alt", -"log_sum_base")
-  # , -"tot_keep_sf_base",  -"tot_rel_sf_base",  -"tot_cat_sf_base", 
-  #                 -"tot_keep_bsb_base",  -"tot_rel_bsb_base", -"tot_cat_bsb_base",  
-  #                 -"tot_keep_scup_base",-"tot_rel_scup_base",  -"tot_cat_scup_base") 
+  mean_trip_data <- mean_trip_data %>%
+    dplyr::select(-"vA_trip" ,-"v_optout", -"v0_trip" , -"catch_draw",
+                  -"log_sum_base",-"log_sum_alt", -"beta_cost") %>%
+    dplyr::arrange(date_parsed, mode, tripid)
   
-  all_vars<-c()
-  all_vars <- names(mean_trip_data)[!names(mean_trip_data) %in% c("date_parsed","mode", "tripid")]
   
-  #all_vars
-  # average outcomes across draws
-  mean_trip_data<-mean_trip_data  %>% data.table::as.data.table() %>%
-    .[,lapply(.SD, mean), by = c("date_parsed","mode", "tripid"), .SDcols = all_vars]
-  
-
   # multiply the average trip probability in the new scenario (probA) by each catch variable to get probability-weighted catch
   list_names <- c("tot_keep_sf_new",   "tot_rel_sf_new",  "tot_cat_sf_new", 
                   "tot_keep_bsb_new",  "tot_rel_bsb_new", "tot_cat_bsb_new",  
