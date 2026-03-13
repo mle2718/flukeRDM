@@ -11,35 +11,45 @@
 * Simulated total catch by state and species 	
 use "$iterative_input_data_cd\simulated_catch_totals.dta", clear 
 
-collapse (sum)  tot_sf_cat_sim tot_bsb_cat_sim tot_scup_cat_sim, by(state draw)
+gen region="NO" if inlist(state, "MA", "RI", "CT", "NY") 
+replace region="NJ" if inlist(state, "NJ") 
+replace region="SO" if inlist(state, "DE", "MD", "VA", "NC")
 
-reshape long tot_, i(draw state) j(species) string
+collapse (sum)  tot_sf_cat_sim tot_bsb_cat_sim tot_scup_cat_sim, by(region draw)
+
+reshape long tot_, i(draw region) j(species) string
 
 split species, parse(_)
 drop species species2 species3
 rename species1 species
 renam tot tot_catch 
 
-order species state draw
+order species region draw
 format tot %12.0gc
-sort draw species state
+sort draw species region
 
 tempfile catch2024
 save `catch2024', replace 
 
 *A2) 
 import delimited using "$iterative_input_data_cd/baseline_catch_at_length.csv", clear  
-sort draw state species length
+keep if inlist(state, "NY", "NJ", "MD")
+rename state region
+replace region="NO" if region=="NY"
+replace region="NJ" if region=="NJ"
+replace region="SO" if region=="MD"
 
-merge m:1 species state draw using `catch2024'
+sort draw region species length
+
+merge m:1 species region draw using `catch2024'
 drop _merge
 
 *A3) 
 gen cal=tot*fitted
-sort draw state species length
+sort draw region species length
 
-gen domain=state+"_"+species
-
+gen domain=region+"_"+species
+keep if species=="bsb"
 tempfile cal
 save `cal', replace 
 
@@ -152,49 +162,12 @@ tempfile pop2024
 save `pop2024', replace
 restore
 
-
-*B3) 
-expand 4 if species=="bsb" & region=="north"
-bysort draw species region age: gen n=_n 
-gen  state="MA" if species=="bsb" & region=="north" & n==1
-replace state="RI" if species=="bsb" & region=="north" & n==2
-replace state="CT" if species=="bsb" & region=="north" & n==3
-replace state="NY" if species=="bsb" & region=="north" & n==4
-drop n
-
-expand 5 if species=="bsb" & region=="south"
-bysort draw species region age: gen n=_n 
-replace  state="NJ" if species=="bsb" & region=="south" & n==1
-replace state="DE" if species=="bsb" & region=="south" & n==2
-replace state="VA" if species=="bsb" & region=="south" & n==3
-replace state="MD" if species=="bsb" & region=="south" & n==4
-replace state="NC" if species=="bsb" & region=="south" & n==5
-drop n
-
-expand 9 if species=="sf"
-bysort draw species region age: gen n=_n 
-replace  state="MA" if species=="sf" & n==1
-replace state="RI" if species=="sf" & n==2
-replace state="CT" if species=="sf" & n==3
-replace state="NY" if species=="sf" & n==4
-replace state="NC" if species=="sf" & n==5
-replace  state="NJ" if species=="sf"& n==6
-replace state="DE" if species=="sf" & n==7
-replace state="VA" if species=="sf" & n==8
-replace state="MD" if species=="sf" & n==9
-drop n
-
-expand 9 if species=="scup"
-bysort draw species region age: gen n=_n 
-replace  state="MA" if species=="scup" & n==1
-replace state="RI" if species=="scup" & n==2
-replace state="CT" if species=="scup" & n==3
-replace state="NY" if species=="scup" & n==4
-replace state="NC" if species=="scup" & n==5
-replace  state="NJ" if species=="scup"& n==6
-replace state="DE" if species=="scup" & n==7
-replace state="VA" if species=="scup" & n==8
-replace state="MD" if species=="scup" & n==9
+expand 2 if species=="bsb" & region=="south"
+bysort species region draw age: gen n=_n
+replace region="NJ" if species=="bsb" & region=="south" & n==1
+replace region="SO" if species=="bsb" & region=="south" & n==2
+replace region="NO" if species=="bsb" & region=="north" 
+keep if species=="bsb"
 
 tempfile pop_naa_calibration
 save `pop_naa_calibration', replace 
@@ -252,25 +225,20 @@ replace age=7 if age>=7
 collapse (sum) countage, by(species age length)
 rename count naa
 
-expand 9 
+expand 3
 bysort species length age: gen n=_n 
-gen state="MA" if n==1
-replace state="MD" if n==2
-replace state="RI" if n==3
-replace state="CT" if n==4
-replace state="NY" if n==5
-replace state="NJ" if n==6
-replace state="DE" if n==7
-replace state="VA" if n==8
-replace state="NC" if n==9
+gen region="NO" if n==1
+replace region="NJ" if n==2
+replace region="SO" if n==3
 drop n
 
-sort state species age length 
-order state species age length 
+sort region species age length 
+order region species age length 
+keep if species=="bsb"
 
 
 *C2)  
-gen domain=state+"_"+species
+gen domain=region+"_"+species
 levelsof domain, local(domz)
 
 tempfile base
@@ -333,9 +301,9 @@ clear
 use `master', clear
 
 drop s0-s7
-drop species state
+drop species region
 split domain, parse(_)
-rename domain1 state
+rename domain1 region
 rename domain2 species
 
 /*
@@ -354,29 +322,31 @@ grc1leg `graphnames'
 
 
 *C3)  
-egen sum_smooth=sum(smoothed_naa), by(age species state)	
+egen sum_smooth=sum(smoothed_naa), by(age species region)	
 gen prop_smoothed=smoothed/sum	
 
-egen sum_raw=sum(naa), by(age species state)	
+egen sum_raw=sum(naa), by(age species region)	
 gen prop_raw=naa/sum_raw	
 drop sum*		
 
 *C4) 
 expand $ndraws
-bysort length age species state: gen draw=_n
+bysort length age species region: gen draw=_n
+
+keep if species=="bsb"
 
 tempfile age_length
 save `age_length', replace
 
 *C5)  
-merge m:1 species state age draw using `pop_naa_calibration'
+merge m:1 species region age draw using `pop_naa_calibration'
 replace pop_naa=pop_naa*1000
 
-sort draw species state age length   
+sort draw species region age length   
 
 gen nal=pop_naa*prop_smoothed
 
-collapse (sum) nal, by(draw species state length)
+collapse (sum) nal, by(draw species region length)
 
 preserve
 *collapse (mean) nal, by(state species length)
@@ -401,8 +371,8 @@ graph export "$figure_cd/sf_nal_2024.png", as(png) replace
 drop nal_1000
 */
 
-order draw state species length nal
-sort draw state species length nal
+order draw region species length nal
+sort draw region species length nal
 
 tempfile nal
 save `nal', replace 
@@ -415,10 +385,10 @@ save `nal', replace
 
 
 *Merge back to catch-at-lengths
-merge 1:1 species state draw length using `cal'
+merge 1:1 species region draw length using `cal'
 
 tostring draw, gen(draw2)
-gen domain2=state+"_"+species+"_"+draw2
+gen domain2=region+"_"+species+"_"+draw2
 drop if length==.
 
 mvencode nal cal, mv(0) override
@@ -439,12 +409,13 @@ clear
 tempfile master
 save `master', emptyok
 
-local regions "MA RI CT NY NJ DE MD VA NC"
-foreach r of local regions{
-	u `base', clear
-	keep if state=="`r'"
+local states "NO NJ SO"
 
-collapse (median) cal nal, by(state length)
+foreach r of local states {
+	u `base', clear
+	keep if reg=="`r'"
+
+collapse (median) cal nal, by(reg length)
 append using `master'
 
 save `master', replace
@@ -458,13 +429,14 @@ replace nal=nal/1000
 
 local glist
 gr drop _all
-local states "MA RI CT NY NJ DE MD VA NC"
+
+local states "NO NJ SO"
 
 foreach s of local states {
 	
 twoway ///
-    scatter cal length if state=="`s'" & length>46, sort lcol(red) lpat(solid) connect(direct) msize(vsmall) mcolor(red) || ///
-	scatter nal length if state=="`s'" & length>46, sort lcol(blue) lpat(solid)  connect(direct) msize(vsmall) mcolor(blue) ///
+    scatter cal length if reg=="`s'" , sort lcol(red) lpat(solid) connect(direct) msize(vsmall) mcolor(red) || ///
+	scatter nal length if reg=="`s'", sort lcol(blue) lpat(solid)  connect(direct) msize(vsmall) mcolor(blue) ///
     xtitle("Length (cm)", size(small)) ///
     ytitle("") ///
 	ylabel(#5, labsize(small)) xlabel(#10, labsize(small)) ///
@@ -473,15 +445,13 @@ twoway ///
 	
 	local glist `glist' gr_`s'
 }
-	grc1leg `glist', cols(3) title("2024 catch-at-length and numbers-at-length ('000s of fish) by state" "(only length>46cm displayed)", size(medium)) ycommon xcommon ///
+	grc1leg `glist', cols(3) title("2024 BSB catch-at-length and numbers-at-length ('000s of fish) by region", size(medium)) ycommon xcommon ///
 	 note("Values reflect median across 125 draws of total catch", yoffset(-2))
-
-graph export "$figure_cd/catch_and_numbers_at_length_2024_by_state.png", as(png) replace
+graph export "$figure_cd/catch_and_numbers_at_length_2024_by_region.png", as(png) replace
 restore 
 */
 
 egen sumtab=sum(tab), by(domain2)
-
 
 gen length2=length 
 levelsof domain2 if sumtab>0, local(domz)
@@ -495,7 +465,7 @@ foreach d of local domz{
 	replace length2=`min' if length<`min' & domain2=="`d'" 
 	
 }
-sort draw state species length 
+sort draw region species length 
 egen cal2=sum(cal), by(domain2 length2)
 egen nal2=sum(nal), by(domain2 length2)
 *drop tab sumtab
@@ -549,9 +519,9 @@ bysort domain2: egen plus_start = min(cond(is_plus==1, length2, .))
 bysort domain2: egen plus_end   = max(cond(is_plus==1, length2, .))
 
 * Parse domain2 back into state/species/draw if needed (you already have state/species/draw columns)
-keep state species draw plus_start plus_end
+keep region species draw plus_start plus_end
 duplicates drop
-sort species state draw
+sort species region draw
 keep if species=="bsb"
 restore 
 
@@ -569,7 +539,7 @@ tempfile cal_proportion
 save `cal_proportion', replace
 restore
 
-collapse (sum) cal nal, by(draw draw2 state species length3 domain2)
+collapse (sum) cal nal, by(draw draw2 region species length3 domain2)
 gen ql=cal/nal
 
 
@@ -690,6 +660,12 @@ reshape long a, i(species region draw) j(age) string
 destring age, replace
 rename a pop_naa
 
+expand 2 if species=="bsb" & region=="south"
+bysort species region draw age: gen n=_n
+replace region="NJ" if species=="bsb" & region=="south" & n==1
+replace region="SO" if species=="bsb" & region=="south" & n==2
+replace region="NO" if species=="bsb" & region=="north" 
+keep if species=="bsb"
 
 *To compare population NAA 2024/2026
 /*
@@ -744,58 +720,17 @@ if `r(levels)'=="all"{
  }
 restore
 */
-expand 4 if species=="bsb" & region=="north"
-bysort draw species region age: gen n=_n 
-gen  state="MA" if species=="bsb" & region=="north" & n==1
-replace state="RI" if species=="bsb" & region=="north" & n==2
-replace state="CT" if species=="bsb" & region=="north" & n==3
-replace state="NY" if species=="bsb" & region=="north" & n==4
-drop n
-
-expand 5 if species=="bsb" & region=="south"
-bysort draw species region age: gen n=_n 
-replace  state="NJ" if species=="bsb" & region=="south" & n==1
-replace state="DE" if species=="bsb" & region=="south" & n==2
-replace state="VA" if species=="bsb" & region=="south" & n==3
-replace state="MD" if species=="bsb" & region=="south" & n==4
-replace state="NC" if species=="bsb" & region=="south" & n==5
-drop n
-
-expand 9 if species=="sf"
-bysort draw species region age: gen n=_n 
-replace  state="MA" if species=="sf" & n==1
-replace state="RI" if species=="sf" & n==2
-replace state="CT" if species=="sf" & n==3
-replace state="NY" if species=="sf" & n==4
-replace state="NC" if species=="sf" & n==5
-replace  state="NJ" if species=="sf"& n==6
-replace state="DE" if species=="sf" & n==7
-replace state="VA" if species=="sf" & n==8
-replace state="MD" if species=="sf" & n==9
-drop n
-
-expand 9 if species=="scup"
-bysort draw species region age: gen n=_n 
-replace  state="MA" if species=="scup" & n==1
-replace state="RI" if species=="scup" & n==2
-replace state="CT" if species=="scup" & n==3
-replace state="NY" if species=="scup" & n==4
-replace state="NC" if species=="scup" & n==5
-replace  state="NJ" if species=="scup"& n==6
-replace state="DE" if species=="scup" & n==7
-replace state="VA" if species=="scup" & n==8
-replace state="MD" if species=="scup" & n==9
 
 *2) 
-merge 1:m age state draw species using `age_length'
-sort draw state species age length 
+merge 1:m age region draw species using `age_length'
+sort draw region species age length 
 
 gen nal=pop_naa*prop_smoothed
 
-collapse (sum) nal, by(draw species state length)
+collapse (sum) nal, by(draw species region length)
 
-order draw state species length nal
-sort draw state species length nal
+order draw region species length nal
+sort draw region species length nal
 rename nal nal_2026
 rename length length3 
 
@@ -849,29 +784,29 @@ graph export "$figure_cd/sf_nal_2024_2026.png", as(png) replace
 
 
 *3) 
-merge 1:1 draw state species length3 using `ql', keep(3) nogen
+merge 1:1 draw region species length3 using `ql', keep(3) nogen
 gen cal_2026=ql*nal_2026
 
 *4) 
 merge 1:m domain2 length3 using `cal_proportion'
-sort draw state species length
+sort draw region species length
 replace cal_2026=cal_2026*cal_proportion
 drop if cal_2026==. | cal_2026==0
 
 *5) 
-keep draw state species length cal_2026
-egen sum_cal=sum(cal_2026), by(draw state species)
+keep draw region species length cal_2026
+egen sum_cal=sum(cal_2026), by(draw region species)
 gen fitted_prob=cal_2026/sum_cal
 drop sum
 
-export delimited using "$iterative_input_data_cd/projected_catch_at_length.csv", replace 
 
 
 
 
-* graphs
-/*
-import delimited using "$iterative_input_data_cd/projected_catch_at_length.csv", clear 
+* figures for Rachel 2/10/26
+
+*preserve
+
 keep if species=="bsb"
 tempfile base
 save `base', replace 
@@ -880,25 +815,25 @@ clear
 tempfile master
 save `master', emptyok
 
-local regions "MA RI CT NY NJ DE MD VA NC"
+local regions "NO NJ SO"
 foreach r of local regions{
 	u `base', clear
-	keep if state=="`r'"
+	keep if region=="`r'"
 
 tostring draw, replace
-gen domain3=state+"_"+draw
+gen domain3=region+"_"+draw
 encode domain3, gen(domain4)
 xtset domain4 length
 tsfill, full
 mvencode fitted , mv(0) override
 decode domain4, gen(domain5)
 split domain5, parse(_)
-replace state=domain51
+replace region=domain51
 replace draw=domain52
 replace species="bsb"
 drop domain3 domain4 domain5 domain51 domain52 
-sort species state draw length 
-collapse (median) fitted , by(state length)
+sort species region draw length 
+collapse (median) fitted , by(region length)
 append using `master'
 
 save `master', replace
@@ -908,24 +843,36 @@ clear
 use `master', clear
 
 
-
-local glist
-gr drop _all
-local states "MA RI CT NY NJ DE MD VA NC"
-
-foreach s of local states {
-	
 twoway ///
-    line fitted_prob length if state=="`s'", sort lcolor(navy) lpattern(solid)  ///
-    xtitle("Length (cm)", size(small)) ///
-    ytitle("") ///
-	ylabel(#5, labsize(small)) xlabel(#10, labsize(small)) ///
-	title("`s'", size(small))    name(gr_`s', replace)   
-	
-	local glist `glist' gr_`s'
-}
-	gr combine `glist'	,  title("2026 projected BSB fitted catch probability-at-length by state", size(medium)) ycommon xcommon ///
-	 note("Values reflect median across 125 draws of total catch", yoffset(-2)) 
-	 graph export "$figure_cd/catch_at_length_2026_all.png", as(png) replace
+    line fitted_prob length if region=="NO", sort lcolor(navy) lpattern(solid)  ///
+    xtitle("Length (cm)") ///
+    ytitle("Probability-at-length") ///
+	ylabel(#10, labsize(small)) xlabel(#15, labsize(small)) ///
+    title("North (MA-NY) 2026 projected BSB fitted catch probability-at-length ", size(medium) yoffset(2)) ///
+    note("Values reflect median across 125 draws of total catch", yoffset(-2))
+	graph export "$figure_cd/catch_at_length_2026_NO_example.png", as(png) replace
 
+twoway ///
+    line fitted_prob length if region=="NJ", sort lcolor(navy) lpattern(solid)  ///
+    xtitle("Length (cm)") ///
+    ytitle("Probability-at-length") ///
+	ylabel(#10, labsize(small)) xlabel(#15, labsize(small)) ///
+    title("NJ 2026 projected BSB fitted catch probability-at-length ", size(medium) yoffset(2)) ///
+    note("Values reflect median across 125 draws of total catch", yoffset(-2))
+	graph export "$figure_cd/catch_at_length_2026_NJ_example.png", as(png) replace
+
+twoway ///
+    line fitted_prob length if region=="SO", sort lcolor(navy) lpattern(solid)  ///
+    xtitle("Length (cm)") ///
+    ytitle("Probability-at-length") ///
+	ylabel(#10, labsize(small)) xlabel(#15, labsize(small)) ///
+    title("South (DE-NC) 2026 projected BSB fitted catch probability-at-length ", size(medium) yoffset(2)) ///
+    note("Values reflect median across 125 draws of total catch", yoffset(-2))
+	graph export "$figure_cd/catch_at_length_2026_SO_example.png", as(png) replace
+restore 
 */
+
+
+
+*export delimited using "$iterative_input_data_cd/projected_catch_at_length.csv", replace 
+

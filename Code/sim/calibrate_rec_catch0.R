@@ -22,15 +22,17 @@ for (s in states) {
     for (i in draws) {
       
       # import necessary data
-      dtripz<-feather::read_feather(file.path(iterative_input_data_cd, paste0("directed_trips_calibration_", s, ".feather"))) %>% 
+      dtripz<-feather::read_feather(file.path(iterative_input_data_cd, paste0("archive/directed_trips_calibration/directed_trips_calibration_", s, ".feather"))) %>% 
         tibble::tibble() %>%
         dplyr::filter(draw == i) %>%
-        dplyr::select(mode, date, bsb_bag, bsb_min, fluke_bag,fluke_min, scup_bag, scup_min) %>% 
+        dplyr::select(mode, date, dtrip, bsb_bag, bsb_min, fluke_bag,fluke_min, scup_bag, scup_min) %>% 
         dplyr::filter(mode==md)
       
-      catch_data <- feather::read_feather(file.path(iterative_input_data_cd, paste0("calib_catch_draws_",s, "_", i,".feather"))) %>% 
+      catch_data <- feather::read_feather(file.path(iterative_input_data_cd, paste0("archive/calib_catch_draws/calib_catch_draws_",s, "_", i,".feather"))) %>% 
         dplyr::left_join(dtripz, by=c("mode", "date"))%>% 
-        dplyr::filter(mode==md) 
+        dplyr::filter(mode==md) %>% 
+        dplyr::select(-dtrip)
+      
       
       angler_dems<-catch_data %>% 
         dplyr::select(date, mode, tripid, total_trips_12, age, cost)%>% 
@@ -341,7 +343,7 @@ for (s in states) {
         dplyr::arrange(date, mode, tripid, tripid, catch_draw) %>% 
         dplyr::left_join(angler_dems, by = c("date", "mode", "tripid")) 
       
-      trip_data$NJ_dummy<-case_when(s=="NJ"~1, TRUE~0)
+      #trip_data$NJ_dummy<-case_when(s=="NJ"~1, TRUE~0)
       
       # base_outcomes_s_i data sets will retain trip outcomes from the baseline scenario.
       # We will merge these data to the prediction year outcomes to calculate changes in effort and CS.
@@ -353,66 +355,60 @@ for (s in states) {
                       tot_rel_scup_base = tot_rel_scup_new,
                       tot_rel_sf_base = tot_rel_sf_new)
       
-      #  compute utility
-      trip_data <-trip_data %>%
-        dplyr::mutate(
-          vA = beta_sqrt_sf_keep*sqrt(tot_keep_sf_new) +
-            #beta_NJ_sf_keep*NJ_dummy +
-            beta_sqrt_sf_release*sqrt(tot_rel_sf_new) +
-            beta_sqrt_bsb_keep*sqrt(tot_keep_bsb_new) +
-            beta_sqrt_bsb_release*sqrt(tot_rel_bsb_new) +
-            beta_sqrt_sf_bsb_keep*(sqrt(tot_keep_sf_new)*sqrt(tot_keep_bsb_new)) +
-            beta_sqrt_scup_catch*sqrt(tot_scup_catch) +
-            beta_cost*cost)
-      
-      
-      mean_trip_data <- trip_data %>% data.table::data.table() %>% 
-        .[, group_index := .GRP, by = .(date, mode, catch_draw, tripid)]
-      
-      # Now expand the data to create two alternatives, representing the alternatives available in choice survey
-      mean_trip_data <- mean_trip_data %>%
-        dplyr::mutate(n_alt = rep(2,nrow(.))) %>%
-        tidyr::uncount(n_alt) %>%
-        dplyr::mutate(alt = rep(1:2,nrow(.)/2),
-                      opt_out = ifelse(alt == 2, 1, 0))
-      
-      #Calculate the expected utility of alts 2 parameters of the utility function,
-      #put the two values in the same column, exponentiate, and calculate their sum (vA_col_sum)
-      
-      setDT(mean_trip_data)
-      
-      # Filter only alt == 2 once, and calculate vA 
-      mean_trip_data[alt == 2, "vA" := .(
-        beta_opt_out * opt_out +
-          beta_opt_out_age * (age * opt_out) +
-          beta_opt_out_avidity * (total_trips_12 * opt_out) 
+#  compute utility
+      trip_data[, `:=`(
+        vA_trip = beta_sqrt_sf_keep*sqrt(tot_keep_sf_new) +
+          #beta_NJ_sf_keep*NJ_dummy +
+          beta_sqrt_sf_release*sqrt(tot_rel_sf_new) +
+          beta_sqrt_bsb_keep*sqrt(tot_keep_bsb_new) +
+          beta_sqrt_bsb_release*sqrt(tot_rel_bsb_new) +
+          beta_sqrt_sf_bsb_keep*(sqrt(tot_keep_sf_new)*sqrt(tot_keep_bsb_new)) +
+          beta_sqrt_scup_catch*sqrt(tot_scup_catch) +
+          beta_cost*cost,
+        
+        vA_optout = beta_opt_out +
+          beta_opt_out_age * (age) +
+          beta_opt_out_avidity * (total_trips_12) 
+        
       )]
       
-      # Pre-compute exponential terms
-      mean_trip_data[, `:=`(exp_vA = exp(vA))]
+      # trip_data <-trip_data %>%
+      #   dplyr::mutate(
+      #     vA = beta_sqrt_sf_keep*sqrt(tot_keep_sf_new) +
+      #       #beta_NJ_sf_keep*NJ_dummy +
+      #       beta_sqrt_sf_release*sqrt(tot_rel_sf_new) +
+      #       beta_sqrt_bsb_keep*sqrt(tot_keep_bsb_new) +
+      #       beta_sqrt_bsb_release*sqrt(tot_rel_bsb_new) +
+      #       beta_sqrt_sf_bsb_keep*(sqrt(tot_keep_sf_new)*sqrt(tot_keep_bsb_new)) +
+      #       beta_sqrt_scup_catch*sqrt(tot_scup_catch) +
+      #       beta_cost*cost)
       
-      # Group by group_index and calculate probabilities and log-sums
-      mean_trip_data[, `:=`(
-        probA = exp_vA / sum(exp_vA)
-      ), by = group_index]
       
+    mean_trip_data <- data.table::as.data.table(trip_data)
       
-      mean_trip_data<- subset(mean_trip_data, alt==1) %>% 
-        dplyr::select(-domain2, -group_index, -exp_vA) 
-      
-      # Get rid of things we don't need.
-      mean_trip_data <- mean_trip_data %>% 
-        dplyr::filter(alt==1) %>% 
-        dplyr::select(-matches("beta")) %>% 
-        dplyr::select(-"alt", -"opt_out", -"vA" ,-"cost", -"age", -"total_trips_12", -"catch_draw") 
-      
-      all_vars<-c()
-      all_vars <- names(mean_trip_data)[!names(mean_trip_data) %in% c("date","mode", "tripid")]
-      all_vars
-      
-      # average outcomes across draws
-      mean_trip_data<-mean_trip_data  %>% as.data.table() %>%
-        .[,lapply(.SD, mean), by = c("date","mode", "tripid"), .SDcols = all_vars]
+    # remove big cols
+    drop_cols <- c("beta_cost","beta_opt_out","beta_opt_out_age",     
+                   "beta_opt_out_avidity","beta_sqrt_bsb_keep","beta_sqrt_bsb_release", "beta_sqrt_scup_catch", 
+                   "beta_sqrt_sf_bsb_keep", "beta_sqrt_sf_keep","beta_sqrt_sf_release", 
+                   "age", "cost", "domain2", "total_trips_12")
+    
+    drop_cols <- intersect(drop_cols, names(mean_trip_data))
+    if (length(drop_cols)) mean_trip_data[, (drop_cols) := NULL]
+    
+    # average across catch_draw
+    keep_vars <- setdiff(names(mean_trip_data), c("date","mode","tripid"))
+    mean_trip_data <- mean_trip_data[, lapply(.SD, mean),
+                                     by = .(date, mode,tripid),
+                                     .SDcols = keep_vars]
+    
+    # calculate probabilities and log-sums
+    mean_trip_data[, probA := exp(vA_trip) / (exp(vA_trip) + exp(vA_optout))]
+    
+    # Get rid of things we don't need.
+    mean_trip_data <- mean_trip_data %>%
+      dplyr::select(-"vA_trip" ,-"vA_optout", -"catch_draw") %>%
+      dplyr::arrange(date, mode, tripid)
+    
       
       # multiply the average trip probability (probA) by each catch variable to get probability-weighted catch
       list_names <- c("tot_keep_sf_new",   "tot_rel_sf_new",    "tot_keep_bsb_new",  "tot_rel_bsb_new",   "tot_keep_scup_new",
@@ -423,15 +419,10 @@ for (s in states) {
         .[,as.vector(list_names) := lapply(.SD, function(x) x * probA), .SDcols = list_names] %>%
         .[]
       
-      
-      dtrips<-feather::read_feather(file.path(iterative_input_data_cd, paste0("directed_trips_calibration_", s, ".feather"))) %>% 
-        tibble::tibble() %>%
-        dplyr::filter(draw == i) %>%
-        dplyr::select(mode, date, dtrip) %>% 
-        dplyr::filter(mode==md)
-      
+    
       mean_trip_data<-mean_trip_data %>% 
-        left_join(dtrips, by = c("mode", "date"))
+        left_join(dtripz, by = c("mode", "date")) %>% 
+        dplyr::select(-bsb_bag, -bsb_min, -fluke_bag,-fluke_min, -scup_bag, -scup_min)
       
       mean_trip_data <-mean_trip_data %>% 
         group_by(mode, date) %>% 
@@ -441,38 +432,25 @@ for (s in states) {
                       expand=sims/n_draws, 
                       n_choice_occasions=1)
       
-      mean_trip_data <- mean_trip_data %>% 
-        mutate(uniform=runif(n(), min=0, max=1)) %>% 
-        dplyr::arrange(date, mode, uniform)
+      # Expand outcomes
+      list_names <- c("tot_keep_sf_new",   "tot_rel_sf_new",  "tot_sf_catch",
+                      "tot_keep_bsb_new",   "tot_rel_bsb_new",  "tot_bsb_catch",
+                      "tot_keep_scup_new",  "tot_rel_scup_new", "tot_scup_catch",
+                      "n_choice_occasions", "probA" )
       
-      mean_trip_data1 <- mean_trip_data %>% 
-        dplyr::group_by(date, mode) %>%
-        dplyr::mutate(id_within_group = row_number()) %>% 
-        dplyr::filter(expand<1 & id_within_group<=sims) 
+      all_vars <- c(list_names)
       
-      mean_trip_data2 <- mean_trip_data %>% 
-        dplyr::filter(expand>1)  %>% 
-        dplyr::mutate(expand2=ceiling(expand)) 
+      mean_trip_data <- mean_trip_data %>%
+        data.table::as.data.table() %>%
+        .[,as.vector(all_vars) := lapply(.SD, function(x) x * expand), .SDcols = all_vars] %>%
+        .[]
       
-      row_inds <- seq_len(nrow(mean_trip_data2))
+      for (j in names(mean_trip_data)) {
+        attr(mean_trip_data[[j]], "label") <- NULL
+      }
       
-      mean_trip_data2<-mean_trip_data2 %>% 
-        slice(rep(row_inds,expand2))  
-      
-      mean_trip_data2 <- mean_trip_data2 %>%
-        dplyr::group_by(date, mode) %>%
-        dplyr::mutate(id_within_group = row_number()) %>% 
-        dplyr::filter(id_within_group<=sims) %>% 
-        dplyr::ungroup()
-      
-      results<-mean_trip_data1 %>% 
-        dplyr::bind_rows(mean_trip_data2)
-      
-      list_names = c("tot_bsb_catch","tot_keep_bsb_new","tot_keep_scup_new","tot_keep_sf_new","tot_rel_bsb_new",   
-                     "tot_rel_scup_new","tot_rel_sf_new","tot_scup_catch","tot_sf_catch",
-                     "probA","n_choice_occasions")
-      
-      aggregate_trip_data <- results %>%
+
+      aggregate_trip_data <- mean_trip_data %>%
         data.table::as.data.table() %>%
         .[,lapply(.SD, sum),  by = c("date", "mode"), .SDcols = list_names]
       

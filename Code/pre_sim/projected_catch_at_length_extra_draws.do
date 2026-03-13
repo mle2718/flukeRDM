@@ -9,10 +9,15 @@
 
 * A1) 
 * Simulated total catch by state and species 	
-use "$iterative_input_data_cd\simulated_catch_totals.dta", clear 
+import excel using "E:\Lou_projects\flukeRDM\flukeRDM_iterative_data\calibration_good_draws_extras.xlsx", clear first 
+tempfile gooddraws
+save `gooddraws', replace
 
-collapse (sum)  tot_sf_cat_sim tot_bsb_cat_sim tot_scup_cat_sim, by(state draw)
+use "E:\Lou_projects\flukeRDM\flukeRDM_iterative_data\simulated_catch_totals.dta", clear 
+merge 1:1 state mode draw using `gooddraws', keep(3) nogen
 
+collapse (sum)  tot_sf_cat_sim tot_bsb_cat_sim tot_scup_cat_sim, by(state draw2)
+rename draw draw
 reshape long tot_, i(draw state) j(species) string
 
 split species, parse(_)
@@ -31,7 +36,7 @@ save `catch2024', replace
 import delimited using "$iterative_input_data_cd/baseline_catch_at_length.csv", clear  
 sort draw state species length
 
-merge m:1 species state draw using `catch2024'
+merge m:1 species state draw using `catch2024', keep(3)
 drop _merge
 
 *A3) 
@@ -43,36 +48,12 @@ gen domain=state+"_"+species
 tempfile cal
 save `cal', replace 
 
-
-*Figures for Rachel 2/11/25
-/*
 preserve
-keep if species=="bsb"
-collapse (median) cal fitted_prob, by(state length)
-replace cal=cal/1000
-
-
-twoway ///
-    scatter cal length if state=="MA", connect(direct) msize(vsmall) sort || ///
-    scatter cal length if state=="RI", connect(direct) msize(vsmall)  sort || ///
-    scatter cal length if state=="CT", connect(direct) msize(vsmall)  sort || ///
-	scatter cal length if state=="NY", connect(direct) msize(vsmall)  sort  || /// 
-    scatter cal length if state=="NJ", connect(direct) msize(vsmall)  sort || ///
-	scatter cal length if state=="DE", connect(direct) msize(vsmall)  sort || ///
-	scatter cal length if state=="MD", connect(direct) msize(vsmall)  sort || ///
-	scatter cal length if state=="VA", connect(direct) msize(vsmall)  sort || ///
-    scatter cal length if state=="NC", connect(direct) msize(vsmall)  sort  ///
-	xtitle("Length (cm)", size(small)) ///
-    ytitle("Numbers of fish ('000s)", size(small)) ///
-	ylabel(#10, labsize(small)) xlabel(#15, labsize(small)) ///
-    legend(order(1 "MA" 2 "RI" 3 "CT" 4 "NY" 5 "NJ" 6 "DE" 7 "MD" 8 "VA" 9 "NC") ring(0) bplacement(neast) cols(1)  size(small)) ///
- title("2024 derived black sea bass catch-at-length distributions by state", size(medium) yoffset(2) ) ///
- note("Values reflect median across 125 draws of total catch", yoffset(-2))
-graph export "$figure_cd/derived_catch_at_length_2024_all.png", as(png) replace
+keep domain
+duplicates drop
+tempfile domain_list
+save `domain_list', replace
 restore
-*/
-	
-
 
 
 * B) Compute population numbers-at-length in the calibration year (2024)
@@ -90,8 +71,10 @@ gen species="sf"
 gen region="all"
 duplicates drop 
 drop year
-sample $ndraws, count
+sample 5, count
 gen draw=_n
+replace draw=draw+100
+
 tempfile sf
 save `sf', replace 
 
@@ -100,8 +83,10 @@ gen species="scup"
 gen region="all"
 duplicates drop 
 drop year
-sample $ndraws, count
+sample 5, count
 gen draw=_n
+replace draw=draw+100
+
 tempfile scup
 save `scup', replace 
 
@@ -109,8 +94,10 @@ import delimited using "$input_data_cd/length_data/fit_NAA_NORTH_2024.csv", clea
 gen species="bsb"
 gen region="north"
 duplicates drop 
-sample $ndraws, count
+sample 5, count
 replace draw=_n
+replace draw=draw+100
+
 forv i=0(1)7{
 	local v = `i'+1
 	rename v`v' a`i'
@@ -124,8 +111,9 @@ import delimited using "$input_data_cd/length_data/fit_NAA_SOUTH_2024.csv", clea
 gen species="bsb"
 gen region="south"
 duplicates drop 
-sample $ndraws, count
+sample 5, count
 replace draw=_n
+replace draw=draw+100
 
 forv i=0(1)7{
 	local v = `i'+1
@@ -195,6 +183,9 @@ replace  state="NJ" if species=="scup"& n==6
 replace state="DE" if species=="scup" & n==7
 replace state="VA" if species=="scup" & n==8
 replace state="MD" if species=="scup" & n==9
+
+gen domain=state+"_"+species
+merge m:1 domain using `domain_list', keep(3) nogen
 
 tempfile pop_naa_calibration
 save `pop_naa_calibration', replace 
@@ -271,6 +262,8 @@ order state species age length
 
 *C2)  
 gen domain=state+"_"+species
+merge m:1 domain using `domain_list', keep(3) nogen
+
 levelsof domain, local(domz)
 
 tempfile base
@@ -362,8 +355,9 @@ gen prop_raw=naa/sum_raw
 drop sum*		
 
 *C4) 
-expand $ndraws
+expand 5
 bysort length age species state: gen draw=_n
+replace draw=draw+100
 
 tempfile age_length
 save `age_length', replace
@@ -423,63 +417,6 @@ drop if length==.
 
 mvencode nal cal, mv(0) override
 gen tab=1 if cal>nal & cal!=0
-
-
-
-* figures for Rachel 2/10/26
-/*
-preserve
-keep if species=="bsb"
-
-
-tempfile base
-save `base', replace 
-
-clear
-tempfile master
-save `master', emptyok
-
-local regions "MA RI CT NY NJ DE MD VA NC"
-foreach r of local regions{
-	u `base', clear
-	keep if state=="`r'"
-
-collapse (median) cal nal, by(state length)
-append using `master'
-
-save `master', replace
-clear                            
-}
-
-use `master', clear
-
-replace cal=cal/1000
-replace nal=nal/1000
-
-local glist
-gr drop _all
-local states "MA RI CT NY NJ DE MD VA NC"
-
-foreach s of local states {
-	
-twoway ///
-    scatter cal length if state=="`s'" & length>46, sort lcol(red) lpat(solid) connect(direct) msize(vsmall) mcolor(red) || ///
-	scatter nal length if state=="`s'" & length>46, sort lcol(blue) lpat(solid)  connect(direct) msize(vsmall) mcolor(blue) ///
-    xtitle("Length (cm)", size(small)) ///
-    ytitle("") ///
-	ylabel(#5, labsize(small)) xlabel(#10, labsize(small)) ///
-    legend(order(1 "catch-at-length" 2 "numbers-at-length") ring(0) bplacement(neast) cols(2)  size(small)) ///
-	title("`s'", size(small))    name(gr_`s', replace)   
-	
-	local glist `glist' gr_`s'
-}
-	grc1leg `glist', cols(3) title("2024 catch-at-length and numbers-at-length ('000s of fish) by state" "(only length>46cm displayed)", size(medium)) ycommon xcommon ///
-	 note("Values reflect median across 125 draws of total catch", yoffset(-2))
-
-graph export "$figure_cd/catch_and_numbers_at_length_2024_by_state.png", as(png) replace
-restore 
-*/
-
 egen sumtab=sum(tab), by(domain2)
 
 
@@ -543,18 +480,6 @@ foreach d of local domz{
  use `master', clear
  append using `okay'	 
  
-preserve
-gen is_plus = (length3!=length2)
-bysort domain2: egen plus_start = min(cond(is_plus==1, length2, .))
-bysort domain2: egen plus_end   = max(cond(is_plus==1, length2, .))
-
-* Parse domain2 back into state/species/draw if needed (you already have state/species/draw columns)
-keep state species draw plus_start plus_end
-duplicates drop
-sort species state draw
-keep if species=="bsb"
-restore 
-
 egen cal3=sum(cal), by(domain2 length3)
 egen nal3=sum(nal), by(domain2 length3)
 
@@ -572,53 +497,6 @@ restore
 collapse (sum) cal nal, by(draw draw2 state species length3 domain2)
 gen ql=cal/nal
 
-
-* figures for Rachel 2/10/26
-/*
-preserve
-
-keep if species=="bsb"
-tempfile base
-save `base', replace 
-
-clear
-tempfile master
-save `master', emptyok
-
-local regions "MA RI CT NY NJ DE MD VA NC"
-foreach r of local regions{
-	u `base', clear
-	keep if state=="`r'"
-
-collapse (median) ql cal nal, by(state length3)
-append using `master'
-
-save `master', replace
-clear                            
-}
-
-use `master', clear
-twoway ///
-    scatter ql length if state=="MA", connect(direct) msize(vsmall) sort || ///
-    scatter ql length if state=="RI", connect(direct) msize(vsmall)  sort || ///
-    scatter ql length if state=="CT", connect(direct) msize(vsmall)  sort || ///
-	scatter ql length if state=="NY", connect(direct) msize(vsmall)  sort  || /// 
-    scatter ql length if state=="NJ", connect(direct) msize(vsmall)  sort || ///
-	scatter ql length if state=="DE", connect(direct) msize(vsmall)  sort || ///
-	scatter ql length if state=="MD", connect(direct) msize(vsmall)  sort || ///
-	scatter ql length if state=="VA", connect(direct) msize(vsmall)  sort || ///
-    scatter ql length if state=="NC", connect(direct) msize(vsmall)  sort  ///
-	xtitle("Length (cm)", size(small)) ///
-    ytitle("q{sub:l}", size(small)) ///
-	ylabel(#10, labsize(small)) xlabel(#15, labsize(small)) ///
-    legend(order(1 "MA" 2 "RI" 3 "CT" 4 "NY" 5 "NJ" 6 "DE" 7 "MD" 8 "VA" 9 "NC") ring(0) bplacement(nwest) cols(1)  size(small)) ///
-    title("2024 black sea bass recreational selectivity-at-length (q{sub:l} = catch{sub:l}/N{sub:l}) by state", size(medium) yoffset(2)) ///
- note("Values reflect median across 125 draws of total catch", yoffset(-2))
-graph export "$figure_cd/ql_2024_all.png", as(png) replace
-restore 
-*/
-
-
 tempfile ql
 save `ql', replace 
 
@@ -635,8 +513,10 @@ gen species="sf"
 gen region="all"
 duplicates drop 
 drop year
-sample $ndraws, count
+sample 5, count
 gen draw=_n
+replace draw=draw+100
+
 tempfile sf
 save `sf', replace 
 
@@ -645,8 +525,9 @@ gen species="scup"
 gen region="all"
 duplicates drop 
 drop year
-sample $ndraws, count
+sample 5, count
 gen draw=_n
+replace draw=draw+100
 tempfile scup
 save `scup', replace 
 
@@ -654,8 +535,10 @@ import delimited using "$input_data_cd/length_data/fit_proj_NAA_NORTH_2026.csv",
 gen species="bsb"
 gen region="north"
 duplicates drop 
-sample $ndraws, count
+sample 5, count
 replace draw=_n
+replace draw=draw+100
+
 forv i=0(1)7{
 	local v = `i'+1
 	rename v`v' a`i'
@@ -669,8 +552,9 @@ import delimited using "$input_data_cd/length_data/fit_proj_NAA_SOUTH_2026.csv",
 gen species="bsb"
 gen region="south"
 duplicates drop 
-sample $ndraws, count
+sample 5, count
 replace draw=_n
+replace draw=draw+100
 
 forv i=0(1)7{
 	local v = `i'+1
@@ -786,6 +670,9 @@ replace state="DE" if species=="scup" & n==7
 replace state="VA" if species=="scup" & n==8
 replace state="MD" if species=="scup" & n==9
 
+gen domain=state+"_"+species
+merge m:1 domain using `domain_list', keep(3) nogen
+
 *2) 
 merge 1:m age state draw species using `age_length'
 sort draw state species age length 
@@ -864,68 +751,5 @@ egen sum_cal=sum(cal_2026), by(draw state species)
 gen fitted_prob=cal_2026/sum_cal
 drop sum
 
-export delimited using "$iterative_input_data_cd/projected_catch_at_length.csv", replace 
+export delimited using "E:/Lou_projects/flukeRDM/flukeRDM_iterative_data/additional_draws/projected_catch_at_length_extra.csv", replace 
 
-
-
-
-* graphs
-/*
-import delimited using "$iterative_input_data_cd/projected_catch_at_length.csv", clear 
-keep if species=="bsb"
-tempfile base
-save `base', replace 
-
-clear
-tempfile master
-save `master', emptyok
-
-local regions "MA RI CT NY NJ DE MD VA NC"
-foreach r of local regions{
-	u `base', clear
-	keep if state=="`r'"
-
-tostring draw, replace
-gen domain3=state+"_"+draw
-encode domain3, gen(domain4)
-xtset domain4 length
-tsfill, full
-mvencode fitted , mv(0) override
-decode domain4, gen(domain5)
-split domain5, parse(_)
-replace state=domain51
-replace draw=domain52
-replace species="bsb"
-drop domain3 domain4 domain5 domain51 domain52 
-sort species state draw length 
-collapse (median) fitted , by(state length)
-append using `master'
-
-save `master', replace
-clear                            
-}
-
-use `master', clear
-
-
-
-local glist
-gr drop _all
-local states "MA RI CT NY NJ DE MD VA NC"
-
-foreach s of local states {
-	
-twoway ///
-    line fitted_prob length if state=="`s'", sort lcolor(navy) lpattern(solid)  ///
-    xtitle("Length (cm)", size(small)) ///
-    ytitle("") ///
-	ylabel(#5, labsize(small)) xlabel(#10, labsize(small)) ///
-	title("`s'", size(small))    name(gr_`s', replace)   
-	
-	local glist `glist' gr_`s'
-}
-	gr combine `glist'	,  title("2026 projected BSB fitted catch probability-at-length by state", size(medium)) ycommon xcommon ///
-	 note("Values reflect median across 125 draws of total catch", yoffset(-2)) 
-	 graph export "$figure_cd/catch_at_length_2026_all.png", as(png) replace
-
-*/

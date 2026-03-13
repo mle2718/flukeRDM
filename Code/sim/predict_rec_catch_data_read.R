@@ -2,7 +2,7 @@
 ## Run this script prior to predict rec catch
 
 #Lou's repos
-iterative_input_data_cd="E:/Lou's projects/flukeRDM/flukeRDM_iterative_data"
+iterative_input_data_cd="E:/Lou_projects/flukeRDM/flukeRDM_iterative_data"
 input_data_cd="C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025"
 
 #check
@@ -28,7 +28,7 @@ library(magrittr)
     #          have subscripts _y2 (note this is slightly different from cod and haddock 2024)
 
 
-    directed_trips<-feather::read_feather(file.path(iterative_input_data_cd, paste0("directed_trips_calibration_new_", st, ".feather"))) %>% 
+    directed_trips<-feather::read_feather(file.path(iterative_input_data_cd, paste0("directed_trips_calibration_new/directed_trips_calibration_new_", st, ".feather"))) %>% 
       tibble::tibble() %>%
       dplyr::filter(draw == dr) %>%
       dplyr::select(mode, date, 
@@ -40,30 +40,30 @@ library(magrittr)
                     scup_min_SQ=scup_min, scup_bag_SQ=scup_bag)
     
     
-    catch_data <- feather::read_feather(file.path(iterative_input_data_cd, paste0("proj_catch_draws_",st, "_", dr,".feather"))) %>% 
+    catch_data <- feather::read_feather(file.path(iterative_input_data_cd, paste0("proj_catch_draws_feather/proj_catch_draws_",st, "_", dr,".feather"))) %>% 
       dplyr::left_join(directed_trips, by=c("mode", "date")) 
     
     l_w_conversion <- readr::read_csv(file.path("C:/Users/andrew.carr-harris/Desktop/Git/flukeRDM/Data", "L_W_Conversion.csv"), show_col_types = FALSE)  %>% 
       dplyr::filter(state==st)
     
     
-    sf_size_data <- read_csv(file.path(iterative_input_data_cd, "projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
+    sf_size_data <- read_csv(file.path(iterative_input_data_cd, "miscellanous/projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
       dplyr::filter(state == st, species=="sf", draw==dr) %>% 
       dplyr::filter(!is.na(fitted_prob)) %>% 
       dplyr::select(state, fitted_prob, length, mode)
     
-    bsb_size_data <- read_csv(file.path(iterative_input_data_cd, "projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
+    bsb_size_data <- read_csv(file.path(iterative_input_data_cd, "miscellanous/projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
       dplyr::filter(state == st, species=="bsb" , draw==dr) %>% 
       dplyr::filter(!is.na(fitted_prob)) %>% 
       dplyr::select(state, fitted_prob, length, mode)
     
-    scup_size_data <- read_csv(file.path(iterative_input_data_cd, "projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
+    scup_size_data <- read_csv(file.path(iterative_input_data_cd, "miscellanous/projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
       dplyr::filter(state == st, species=="scup", draw==dr) %>% 
       dplyr::filter(!is.na(fitted_prob)) %>% 
       dplyr::select(state,  fitted_prob, length, mode)
     
     calendar_adjustments <- readr::read_csv(
-      file.path(iterative_input_data_cd, paste0("proj_year_calendar_adjustments_new_", st, ".csv")), show_col_types = FALSE) %>%
+      file.path(iterative_input_data_cd, paste0("miscellanous/proj_year_calendar_adjustments_new_", st, ".csv")), show_col_types = FALSE) %>%
       dplyr::select(-state.y) %>% 
       dplyr::rename(state=state.x) %>% 
       dplyr::filter(state == st, draw==dr) %>% 
@@ -77,7 +77,7 @@ library(magrittr)
     for (md in mode_draw) {
       
       # pull trip outcomes from the calibration year
-      base_outcomes0[[md]]<-feather::read_feather(file.path(iterative_input_data_cd, paste0("base_outcomes_new_", st, "_", md, "_", dr, ".feather"))) %>% 
+      base_outcomes0[[md]]<-feather::read_feather(file.path(iterative_input_data_cd, paste0("base_outcomes_new/base_outcomes_new_", st, "_", md, "_", dr, ".feather"))) %>% 
         data.table::as.data.table()
       
       base_outcomes0[[md]]<-base_outcomes0[[md]] %>% 
@@ -86,7 +86,7 @@ library(magrittr)
         dplyr::select(-date)
       
       # pull in data on the number of choice occasions per mode-day
-      n_choice_occasions0[[md]]<-feather::read_feather(file.path(iterative_input_data_cd, paste0("n_choice_occasions_new_", st,"_", md, "_", dr, ".feather")))  
+      n_choice_occasions0[[md]]<-feather::read_feather(file.path(iterative_input_data_cd, paste0("n_choice_occasion_new/n_choice_occasions_new_", st,"_", md, "_", dr, ".feather")))  
       n_choice_occasions0[[md]]<-n_choice_occasions0[[md]] %>% 
         dplyr::mutate(date_parsed=lubridate::dmy(date)) %>% 
         dplyr::select(-date)
@@ -102,17 +102,17 @@ library(magrittr)
       dplyr::arrange(date_parsed, mode, tripid, catch_draw)
     
     ##code correction 10/24
-    check_n_choice_occasions <- n_choice_occasions %>% 
+    check_n_choice_occasions <- n_choice_occasions %>%
       dplyr::select(date_parsed, mode) %>%
-      dplyr::distinct() 
-    
-    base_outcomes<-base_outcomes %>% 
+      dplyr::distinct()
+
+    base_outcomes<-base_outcomes %>%
       dplyr::right_join(check_n_choice_occasions, by=c("date_parsed", "mode"))
     ###end code correction 10/24
     
  
     # Pull in calibration comparison information about trip-level harvest/discard re-allocations 
-    calib_comparison<-readRDS(file.path(iterative_input_data_cd, "calibrated_model_stats_new.rds")) %>% 
+    calib_comparison<-readRDS(file.path(iterative_input_data_cd, "miscellanous/calibrated_model_stats_new.rds")) %>% 
       dplyr::filter(state==st & draw==dr ) 
     
     calib_comparison<-calib_comparison %>% 

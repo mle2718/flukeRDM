@@ -24,7 +24,7 @@
 		*Jan 1 2026 NAA to compute projected catch-at-length
 		
 *NEFSC trawl survey data from 2024, 2023, 2022 years used to create age-length keys
-		*CHECK
+
 
 *MRIP data is stored in  
 	*"smb://net/mrfss/products/mrip_estim/Public_data_cal2018"
@@ -48,11 +48,9 @@ global wavelist 1 2 3 4 5 6
 global calibration_year "(year==2024 & inlist(wave, 1, 2, 3, 4, 5, 6))"
 global calibration_year_num 2024
 
-global projection_year "(year==2025 & inlist(wave, 1, 2, 3)) | (year==2024) | (year==2022 & inlist(wave, 4, 5, 6))" //ADJUST THIS AFTER MRIP DATA RELEASE
+global projection_year "(year==2025 & inlist(wave, 1, 2, 3)) | (year==2024) | (year==2023 & inlist(wave, 4, 5, 6))" //ADJUST THIS AFTER MRIP DATA RELEASE
 
 global calibration_catch_per_trip_years "(year==2024 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2023 & inlist(wave, 6)) | (year==2023 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2022 & inlist(wave, 6))"
-
-global sq_weight_per_fish_years "(year==2024 & inlist(wave, 1, 2, 3, 4, 5, 6))" 
 
 global calibration_start_date td(01jan2024)
 global calibration_end_date td(31dec2024)
@@ -96,15 +94,6 @@ global leap_yr_days "td(29feb2024)"
 *Choose how many draws you want to create. Will create 150 for final version, from which 100 will be selected
 global ndraws 125
 
-*Set the global length to pull either ionches or centimeters from MRIP (l_in_bin or l_cm_bin)
-*global length_bin l_cm_bin
-
-*set the year to use for historical numbers at age 
-*global calibration_year_NAA 2024
-
-*set the year to use for projected numbers at age 
-*global projection_year_NAA 2025
-
 *set years of which to pull the NEFSC trawl survey data
 global NEFSC_svy_yrs "inlist(year,2024, 2023, 2022)"
 
@@ -116,7 +105,7 @@ global inflation_expansion=1.31
 global project_path "C:\Users\andrew.carr-harris\Desktop\Git\flukeRDM" /* Lou's project path */
 *global iterative_data_path "C:\Users\andrew.carr-harris\Desktop\flukeRDM_iterative_data" 
 *global project_path "C:\Users\min-yang.lee\Documents\rdmtool\lou_files\cod_haddock"  /* Min-Yang's project path */
-global iterative_data_path "E:\Lou's projects\flukeRDM\flukeRDM_iterative_data"/* Lou's path for iterative catch data that is too large to upload to GitHub*/  /* Everything Kim needs to run the model on the app */
+global iterative_data_path "E:\Lou_projects\flukeRDM\flukeRDM_iterative_data"/* Lou's path for iterative catch data that is too large to upload to GitHub*/  /* Everything Kim needs to run the model on the app */
 
 global input_data_cd "C:\Users\andrew.carr-harris\Desktop\MRIP_data_2025" /* Lou's local data path */
 global input_code_cd "${project_path}\Code\pre_sim"
@@ -130,9 +119,9 @@ global figure_cd  "${input_data_cd}\figures"
 do "$input_code_cd\MRIP data wrapper.do"
 
 
-// 2) Estimate directed trips at the month, mode, kind-of day level
+// 2) Estimate directed trips during calibration period
 do "$input_code_cd\directed_trips_calibration.do"
-		*This file calls "set regulations.do". In it you must enter the SQ regulations in the calibration and projection year. 
+		*This file calls "set regulations.do". You must enter the SQ regulations in the calibration and projection year. 
 		*THIS NEEDS TO BE ADJUSTED EVERY YEAR. 
 
 
@@ -148,7 +137,7 @@ do "$input_code_cd\survey trip costs.do"
 		* run copula_model_loop.R
 		
 		//c) generate estimates of simulated total harvest based on random draws of catch-per-trip and directed trips
-		do "$input_code_cd\catch_per_trip_calibration_part2.do"
+		do "$input_code_cd\calibration_catch_per_trip_part2.do"
 
 
 // 5) compare calibration output to MRIP, and retain total simulated harvest and discards to apply to the baseline catch-at-length distribution
@@ -157,6 +146,7 @@ do "$input_code_cd\compare calibration output to MRIP.do"
 
 // 6) Generate baseline-year catch-at-length, using the simulated harvest/discard totals from step 5
 do "$input_code_cd\catch_at_length.do"
+
 
 // 7) Generate projection-year catch-at-length, incorporating the stock assessment data
 		do "$input_code_cd\projected_catch_at_length.do"
@@ -179,32 +169,8 @@ do "$input_code_cd\catch_at_length.do"
 		do "$input_code_cd\compare projection catch to MRIP.do"
 		
 
-// 9) Generate random draws of harvest and discard weight-per-fish to use when projecting SQ scenario 
-		do "$input_code_cd\.do"
+// 9) Run the projection loop in R
 
-// Steps 7-10 are not necessary to run. They compare the disaggregated simulated catch and effort data to aggreagte MRIP estimates, and compute catch weight totals in the calibration year 
-
-
-// 10) Estimate total weight of harvest and release in calibration year, compare to simulation model output
-	*a)  compute harvest and discard-at-length from MRIP data (by age-weight equation season: Jan-Jun and July-Dec, and for the whole year)
-	
-		*do "$input_code_cd\raw_props_at_length_ab1b2_calibration.do"
-
-	*b) compute total harvest and discards from MRIP data (by age-weight equation season: Jan-Jun and July-Dec, and for the whole year)
-	
-		*do "$input_code_cd\catch_totals_calibration_month1.do"
-	
-	*c) compute the total mortality weight in the calibration year based on MRIP data and compare the simulation model output. 
-		*note that the calibration model must be run in R first, and in calibration_wrapper.R, you must uncomment:
-			*1) the line #source(paste0(code_cd, "calibration_catch_weights2.R"))
-			*2) the last code chunk in calibration_wrapper.R  
-
-		*datasets needed:
-			*Discard mortality rates for each species by month and size-class: $input_data_cd\Discard_Mortality.csv
-			*Rates are the same for cod across month and size class, but differ for haddock
-			*R code output file: calibration_catch_weights_cm.xlsx
-			
-		*do "$input_code_cd\compute catch weights calibration.do" - this file requires the 
 
 
 
