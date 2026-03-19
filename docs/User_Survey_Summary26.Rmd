@@ -9,6 +9,15 @@ output: html_document
 
 Overall positive feedback with identified issues/suggestions coming from 5 categories. 
 
+Of the 19 issues and 12 Suggestions collected from survey most already had plan for addressing. 
+
+### New Ideas
+- User guide 
+- Date slider as drop down calendar 
+- Incorporate presentation on the level of uncertainty in season changes that was give to TC
+- Information about output file structure
+- Run display message
+
 
 ## Shiny Display
 ### Issues
@@ -67,14 +76,5 @@ Overall positive feedback with identified issues/suggestions coming from 5 categ
 
 
 
-## Plan to address
-Of the 19 issues and 12 Suggestions collected from survey most already had plan for addressing. 
 
-### New Ideas
-- User guide 
-- Date slider as dropdown calendar 
-- Incorporate presentation on the level of uncertainty in season changes that was give to TC
-- Information about output file structure*
-- Run display message
-- Azure login difficulties
 
