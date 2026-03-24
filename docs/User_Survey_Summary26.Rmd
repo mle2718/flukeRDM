@@ -5,7 +5,7 @@ output: html_document
 ---
 
 ## Overview
-- **Total Respondents**: 5 (SFBSBS), 8 (Groundfish)
+- **Total Respondents**: 6 (SFBSBS), 8 (Groundfish)
 
 Overall positive feedback with identified issues/suggestions coming from 5 categories. 
 
@@ -26,6 +26,7 @@ Of the 19 issues and 12 Suggestions collected from survey most already had plan 
    - First plots not helpful (SFBSBS)
    - Run display message not helpful because it lingered (SFBSBS)
    - Calculating medians (SFBSBS)
+   - Output does not include pounds (SFBSBS)
 
 
 ### Suggestions
@@ -35,6 +36,7 @@ Of the 19 issues and 12 Suggestions collected from survey most already had plan 
    - Date slider - easier as a calendar dropdown (SFBSBS)
    - Have an all modes combined for removing mode separation (SFBSBS)
    - Incorporate presentation on the level of uncertainty in season changes that was give to TC (SFBSBS)
+   - Include regs in downloadable output (SFFBSBS)
 
 
 ## Timing
@@ -56,6 +58,9 @@ Of the 19 issues and 12 Suggestions collected from survey most already had plan 
 - Correct years included (SFBSBS)
 - North Carolina data (SFBSBS)
 - Opening closed MRIP waves (SFBSBS)
+
+### Suggestions
+- Share th effects of 1 day change, 1 change in possession, 1 inch change in size (SFBSBS)
 
 ## Communication/Documentation
 ### Issues 
