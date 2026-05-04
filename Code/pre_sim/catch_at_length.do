@@ -301,6 +301,8 @@ replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
 
+* keep only NC north based on county delineation from Tracey 
+drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187)
 
 keep if $calibration_year
 
@@ -381,6 +383,9 @@ replace state="NJ" if st==34
 replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
+
+* keep only NC north based on county delineation from Tracey 
+drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187)
 
 
 drop region
@@ -506,7 +511,8 @@ tempfile props
 save `props', replace 
 
 *Pull estimates of total harvest and discards from MRIP by region  
-u "$iterative_input_data_cd\simulated_catch_totals.dta", clear 
+u "$iterative_input_data_cd\archive\calib_catch_draws\simulated_catch_totals.dta", replace 
+
 collapse (sum) tot_sf_keep_sim tot_sf_rel_sim tot_bsb_keep_sim tot_bsb_rel_sim tot_scup_keep_sim tot_scup_rel_sim, by(state draw)
 rename tot_sf_keep_sim harvest_sf
 rename tot_bsb_keep_sim harvest_bsb
@@ -837,5 +843,5 @@ append using `bsb'
 destring draw, replace
 drop region
 order state species draw length
-export delimited using "$output_data_cd/baseline_catch_at_length.csv", replace 
+export delimited using "$input_data_cd/baseline_catch_at_length.csv", replace 
 

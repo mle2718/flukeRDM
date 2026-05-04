@@ -9,7 +9,7 @@
 
 * A1) 
 * Simulated total catch by state and species 	
-use "$iterative_input_data_cd\simulated_catch_totals.dta", clear 
+u "$iterative_input_data_cd\archive\calib_catch_draws\simulated_catch_totals.dta", clear  
 
 collapse (sum)  tot_sf_cat_sim tot_bsb_cat_sim tot_scup_cat_sim, by(state draw)
 
@@ -28,7 +28,7 @@ tempfile catch2024
 save `catch2024', replace 
 
 *A2) 
-import delimited using "$iterative_input_data_cd/baseline_catch_at_length.csv", clear  
+import delimited using "$input_data_cd/baseline_catch_at_length.csv", clear  
 sort draw state species length
 
 merge m:1 species state draw using `catch2024'
@@ -111,10 +111,8 @@ gen region="north"
 duplicates drop 
 sample $ndraws, count
 replace draw=_n
-forv i=0(1)7{
-	local v = `i'+1
-	rename v`v' a`i'
-		
+forv i=1(1)8{
+	rename v`i' a`i'	
 }
 
 tempfile bsbN
@@ -126,13 +124,10 @@ gen region="south"
 duplicates drop 
 sample $ndraws, count
 replace draw=_n
-
-forv i=0(1)7{
-	local v = `i'+1
-	rename v`v' a`i'
-		
+forv i=1(1)8{
+	rename v`i' a`i'	
 }
-egen rowtotal=rowtotal(a0-a7)
+egen rowtotal=rowtotal(a1-a8)
 tempfile bsbS
 save `bsbS', replace 
 
@@ -656,9 +651,8 @@ gen region="north"
 duplicates drop 
 sample $ndraws, count
 replace draw=_n
-forv i=0(1)7{
-	local v = `i'+1
-	rename v`v' a`i'
+forv i=1(1)8{
+	rename v`i' a`i'
 	replace a`i'=a`i'*1000
 }
 
@@ -672,12 +666,11 @@ duplicates drop
 sample $ndraws, count
 replace draw=_n
 
-forv i=0(1)7{
-	local v = `i'+1
-	rename v`v' a`i'
+forv i=1(1)8{
+	rename v`i' a`i'
 	replace a`i'=a`i'*1000
-	
 }
+
 tempfile bsbS
 save `bsbS', replace 
 
@@ -864,7 +857,7 @@ egen sum_cal=sum(cal_2026), by(draw state species)
 gen fitted_prob=cal_2026/sum_cal
 drop sum
 
-export delimited using "$iterative_input_data_cd/projected_catch_at_length.csv", replace 
+export delimited using "$input_data_cd/projected_catch_at_length.csv", replace 
 
 
 

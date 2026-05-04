@@ -40,7 +40,7 @@
 *These need to be changed every year 
 
 *Years/waves of MRIP data. 
-global yr_wvs 20221 20222 20223 20224 20225 20226 20231 20232 20233 20234 20235 20236  20241 20242 20243 20244 20245  20246 20251 20252 20253
+global yr_wvs 20221 20222 20223 20224 20225 20226 20231 20232 20233 20234 20235 20236  20241 20242 20243 20244 20245  20246 20251 20252 20253 20255
 global yearlist 2022 2023 2024 2025
 global wavelist 1 2 3 4 5 6
 
@@ -48,9 +48,7 @@ global wavelist 1 2 3 4 5 6
 global calibration_year "(year==2024 & inlist(wave, 1, 2, 3, 4, 5, 6))"
 global calibration_year_num 2024
 
-global projection_year "(year==2025 & inlist(wave, 1, 2, 3)) | (year==2024) | (year==2023 & inlist(wave, 4, 5, 6))" //ADJUST THIS AFTER MRIP DATA RELEASE
-
-global calibration_catch_per_trip_years "(year==2024 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2023 & inlist(wave, 6)) | (year==2023 & inlist(wave, 1, 2, 3, 4, 5)) | (year==2022 & inlist(wave, 6))"
+global projection_catch_per_trip_years "(year==2025 & inlist(wave, 1, 2, 3, 4)) | (year==2024) | (year==2023) | (year==2022 & inlist(wave, 5, 6))" //ADJUST THIS AFTER MRIP DATA RELEASE
 
 global calibration_start_date td(01jan2024)
 global calibration_end_date td(31dec2024)
@@ -113,6 +111,7 @@ global iterative_input_data_cd "${iterative_data_path}"
 global figure_cd  "${input_data_cd}\figures"
 
 
+global seed 03211990
 
 **************************************************Model calibration ************************************************** 
 // 1) Pull the MRIP data
@@ -134,7 +133,7 @@ do "$input_code_cd\survey trip costs.do"
 		do "$input_code_cd\catch_per_trip_calibration_part1.do"
 
 		//b) use copula model (in R) to simulate harvest and discards per-trip
-		* run copula_model_loop.R
+		* run "copula model loop calibration optimized.R"
 		
 		//c) generate estimates of simulated total harvest based on random draws of catch-per-trip and directed trips
 		do "$input_code_cd\calibration_catch_per_trip_part2.do"
@@ -153,14 +152,13 @@ do "$input_code_cd\catch_at_length.do"
 
 		
 // 8)  Estimate projected catch-per-trips at the month and mode level
-		 *will use MRIP catch data from the last two full years. 
-		 *For 2026 mgt. cycle: 2025 waves 1-4, 2024 waves 1-6, 2023 waves 5 & 6	 
+		 *use MRIP catch data from the last THREE full years. 
 		 
 		//a) compute mean catch-per-trip and standard error, imputing standard errors from historcial data when they are missing. 
 		 do "$input_code_cd\catch_per_trip_projection_part1.do"
 
 		//b) use copula model (in R) to simulate harvest and discards per-trip
-		* run copula_model_loop_projection.R
+		* run "copula model loop projection optimized.R"
 		
 		//c) generate estimates of simulated total harvest based on random draws of catch-per-trip and directed trips
 		do "$input_code_cd\catch_per_trip_projection_part2.do"
