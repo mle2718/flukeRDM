@@ -861,64 +861,43 @@ export delimited using "$input_data_cd/projected_catch_at_length.csv", replace
 
 
 
-
-* graphs
 /*
-import delimited using "$iterative_input_data_cd/projected_catch_at_length.csv", clear 
-keep if species=="bsb"
+* graphs
+import delimited using "$iterative_input_data_cd/baseline_catch_at_length.csv", clear 
+collapse (mean) fitted_prob, by(state species length)
+gen year=2024
 tempfile base
-save `base', replace 
+save `base', replace
 
-clear
-tempfile master
-save `master', emptyok
+import delimited using "$iterative_input_data_cd/projected_catch_at_length.csv", clear 
+collapse (mean) fitted_prob, by(state species length)
+gen year=2026
+append using `base'
 
-local regions "MA RI CT NY NJ DE MD VA NC"
-foreach r of local regions{
-	u `base', clear
-	keep if state=="`r'"
-
-tostring draw, replace
-gen domain3=state+"_"+draw
-encode domain3, gen(domain4)
-xtset domain4 length
-tsfill, full
-mvencode fitted , mv(0) override
-decode domain4, gen(domain5)
-split domain5, parse(_)
-replace state=domain51
-replace draw=domain52
-replace species="bsb"
-drop domain3 domain4 domain5 domain51 domain52 
-sort species state draw length 
-collapse (median) fitted , by(state length)
-append using `master'
-
-save `master', replace
-clear                            
-}
-
-use `master', clear
+keep if species=="sf"
 
 
 
 local glist
 gr drop _all
 local states "MA RI CT NY NJ DE MD VA NC"
+local states "MA"
 
 foreach s of local states {
 	
 twoway ///
-    line fitted_prob length if state=="`s'", sort lcolor(navy) lpattern(solid)  ///
+    (line fitted_prob length if state=="`s'" & year==2024, sort lcolor(navy) lpattern(solid))  ///
+	(line fitted_prob length if state=="`s'" & year==2026, sort lcolor(maroon) lpattern(solid)  ///
     xtitle("Length (cm)", size(small)) ///
     ytitle("") ///
 	ylabel(#5, labsize(small)) xlabel(#10, labsize(small)) ///
-	title("`s'", size(small))    name(gr_`s', replace)   
+	title("`s'", size(small))    name(gr_`s', replace))   
 	
 	local glist `glist' gr_`s'
 }
-	gr combine `glist'	,  title("2026 projected BSB fitted catch probability-at-length by state", size(medium)) ycommon xcommon ///
+	grc1leg `glist'	,  title("2026 projected BSB fitted catch probability-at-length by state", size(medium)) ycommon xcommon ///
 	 note("Values reflect median across 125 draws of total catch", yoffset(-2)) 
+	 
 	 graph export "$figure_cd/catch_at_length_2026_all.png", as(png) replace
 
 */
