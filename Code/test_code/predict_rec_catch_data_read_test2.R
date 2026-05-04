@@ -24,10 +24,23 @@ library(magrittr)
 #          have subscripts _y2 (note this is slightly different from cod and haddock 2024)
 
 
-directed_trips<-feather::read_feather(file.path(iterative_input_data_cd, paste0("directed_trips_calibration_new/directed_trips_calibration_new_", st, ".feather"))) %>% 
+# directed_trips<-feather::read_feather(file.path(iterative_input_data_cd, paste0("directed_trips_calibration_new/directed_trips_calibration_new_", st, ".feather"))) %>% 
+# tibble::tibble() %>%
+#   dplyr::filter(draw == dr) %>%
+#   dplyr::select(mode, date, 
+#                 bsb_bag, bsb_min, bsb_bag_y2, bsb_min_y2, 
+#                 fluke_bag, fluke_min, fluke_bag_y2,fluke_min_y2,
+#                 scup_bag, scup_min, scup_bag_y2, scup_min_y2) %>% 
+#   dplyr::mutate(fluke_min_SQ=fluke_min, fluke_bag_SQ=fluke_bag, 
+#                 bsb_min_SQ=bsb_min, bsb_bag_SQ=bsb_bag, 
+#                 scup_min_SQ=scup_min, scup_bag_SQ=scup_bag)
+
+directed_trips<-fst::read_fst(file.path(
+  iterative_input_data_cd,
+  paste0("archive/directed_trips_calibration/directed_trips_calibration_", st, ".fst"))) %>% 
   tibble::tibble() %>%
   dplyr::filter(draw == dr) %>%
-  dplyr::select(mode, date, 
+  dplyr::select(mode, date_parsed, 
                 bsb_bag, bsb_min, bsb_bag_y2, bsb_min_y2, 
                 fluke_bag, fluke_min, fluke_bag_y2,fluke_min_y2,
                 scup_bag, scup_min, scup_bag_y2, scup_min_y2) %>% 
@@ -36,27 +49,56 @@ directed_trips<-feather::read_feather(file.path(iterative_input_data_cd, paste0(
                 scup_min_SQ=scup_min, scup_bag_SQ=scup_bag)
 
 
-catch_data <- feather::read_feather(file.path(iterative_input_data_cd, paste0("proj_catch_draws_feather/proj_catch_draws_",st, "_", dr,".feather"))) %>% 
-  dplyr::left_join(directed_trips, by=c("mode", "date")) 
+# catch_data <- feather::read_feather(file.path(iterative_input_data_cd, paste0("proj_catch_draws_feather/proj_catch_draws_",st, "_", dr,".feather"))) %>% 
+#   dplyr::left_join(directed_trips, by=c("mode", "date")) 
+
+catch_data <-   catch_data <- data.table::as.data.table(
+  fst::read_fst(file.path(
+    iterative_input_data_cd,
+    paste0("archive/calib_catch_draws/calib_catch_draws_", st, "_", dr, ".fst")
+  ))
+) %>% 
+  dplyr::left_join(directed_trips, by=c("mode", "date_parsed")) 
 
 l_w_conversion <- readr::read_csv(file.path("C:/Users/andrew.carr-harris/Desktop/Git/flukeRDM/Data", "L_W_Conversion.csv"), show_col_types = FALSE)  %>% 
   dplyr::filter(state==st)
 
+# sf_size_data <- read_csv(file.path(iterative_input_data_cd, "miscellanous/projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
+#   dplyr::filter(state == st, species=="sf", draw==dr) %>% 
+#   dplyr::filter(!is.na(fitted_prob)) %>% 
+#   dplyr::select(state, fitted_prob, length, mode)
+# 
+# bsb_size_data <- read_csv(file.path(iterative_input_data_cd, "miscellanous/projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
+#   dplyr::filter(state == st, species=="bsb" , draw==dr) %>% 
+#   dplyr::filter(!is.na(fitted_prob)) %>% 
+#   dplyr::select(state, fitted_prob, length, mode)
+# 
+# scup_size_data <- read_csv(file.path(iterative_input_data_cd, "miscellanous/projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
+#   dplyr::filter(state == st, species=="scup", draw==dr) %>% 
+#   dplyr::filter(!is.na(fitted_prob)) %>% 
+#   dplyr::select(state,  fitted_prob, length, mode)
 
-sf_size_data <- read_csv(file.path(iterative_input_data_cd, "miscellanous/projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
-  dplyr::filter(state == st, species=="sf", draw==dr) %>% 
-  dplyr::filter(!is.na(fitted_prob)) %>% 
-  dplyr::select(state, fitted_prob, length, mode)
 
-bsb_size_data <- read_csv(file.path(iterative_input_data_cd, "miscellanous/projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
-  dplyr::filter(state == st, species=="bsb" , draw==dr) %>% 
-  dplyr::filter(!is.na(fitted_prob)) %>% 
-  dplyr::select(state, fitted_prob, length, mode)
+size_lookup_file = "baseline_catch_at_length.csv"
 
-scup_size_data <- read_csv(file.path(iterative_input_data_cd, "miscellanous/projected_catch_at_length_new.csv"), show_col_types = FALSE)  %>% 
-  dplyr::filter(state == st, species=="scup", draw==dr) %>% 
-  dplyr::filter(!is.na(fitted_prob)) %>% 
-  dplyr::select(state,  fitted_prob, length, mode)
+size_lookup <- data.table::as.data.table(
+  readr::read_csv(file.path(input_data_cd, size_lookup_file), show_col_types = FALSE)
+)
+
+sf_size_data <- size_lookup  %>%
+  dplyr::filter(state == st, species=="sf", draw==dr) %>%
+  dplyr::filter(!is.na(fitted_prob)) %>%
+  dplyr::select(state, fitted_prob, length)
+
+bsb_size_data <-size_lookup  %>%
+  dplyr::filter(state == st, species=="bsb" , draw==dr) %>%
+  dplyr::filter(!is.na(fitted_prob)) %>%
+  dplyr::select(state, fitted_prob, length)
+
+scup_size_data <-size_lookup  %>%
+  dplyr::filter(state == st, species=="scup", draw==dr) %>%
+  dplyr::filter(!is.na(fitted_prob)) %>%
+  dplyr::select(state,  fitted_prob, length)
 
 calendar_adjustments <- readr::read_csv(
   file.path(iterative_input_data_cd, paste0("miscellanous/proj_year_calendar_adjustments_new_", st, ".csv")), show_col_types = FALSE) %>%
@@ -66,33 +108,46 @@ calendar_adjustments <- readr::read_csv(
   dplyr::select(-dtrip, -dtrip_y2, -state, -draw)
 
 # base-year trip outcomes
-base_outcomes0 <- list()
-n_choice_occasions0 <- list()
+# base_outcomes0 <- list()
+# n_choice_occasions0 <- list()
+# 
+# mode_draw <- c("sh", "pr", "fh")
+# for (md in mode_draw) {
+#   
+#   # pull trip outcomes from the calibration year
+#   base_outcomes0[[md]]<-feather::read_feather(file.path(iterative_input_data_cd, paste0("base_outcomes_new/base_outcomes_new_", st, "_", md, "_", dr, ".feather"))) %>% 
+#     data.table::as.data.table()
+# 
+#   base_outcomes0[[md]]<-base_outcomes0[[md]] %>% 
+#     dplyr::select(-domain2) %>% 
+#     dplyr::mutate(date_parsed=lubridate::dmy(date)) %>% 
+#     dplyr::select(-date)
+#   
+#   # pull in data on the number of choice occasions per mode-day
+#   n_choice_occasions0[[md]]<-feather::read_feather(file.path(iterative_input_data_cd, paste0("n_choice_occasion_new/n_choice_occasions_new_", st,"_", md, "_", dr, ".feather")))  
+#   n_choice_occasions0[[md]]<-n_choice_occasions0[[md]] %>% 
+#     dplyr::mutate(date_parsed=lubridate::dmy(date)) %>% 
+#     dplyr::select(-date)
+#   
+# }
+# 
+# base_outcomes <- bind_rows(base_outcomes0)
+# n_choice_occasions <- bind_rows(n_choice_occasions0) %>% 
+#   dplyr::arrange(date_parsed, mode)
+# rm(base_outcomes0, n_choice_occasions0)
 
-mode_draw <- c("sh", "pr", "fh")
-for (md in mode_draw) {
-  
-  # pull trip outcomes from the calibration year
-  base_outcomes0[[md]]<-feather::read_feather(file.path(iterative_input_data_cd, paste0("base_outcomes_new/base_outcomes_new_", st, "_", md, "_", dr, ".feather"))) %>% 
-    data.table::as.data.table()
-
-  base_outcomes0[[md]]<-base_outcomes0[[md]] %>% 
-    dplyr::select(-domain2) %>% 
-    dplyr::mutate(date_parsed=lubridate::dmy(date)) %>% 
-    dplyr::select(-date)
-  
-  # pull in data on the number of choice occasions per mode-day
-  n_choice_occasions0[[md]]<-feather::read_feather(file.path(iterative_input_data_cd, paste0("n_choice_occasion_new/n_choice_occasions_new_", st,"_", md, "_", dr, ".feather")))  
-  n_choice_occasions0[[md]]<-n_choice_occasions0[[md]] %>% 
-    dplyr::mutate(date_parsed=lubridate::dmy(date)) %>% 
-    dplyr::select(-date)
-  
+base_list <- list()
+nchoice_list <- list()
+for (md in modes) {
+  base_list[[md]] <- fst::read_fst(
+    file.path(iterative_input_data_cd, "archive/base_outcomes", paste0("base_outcomes_", st, "_", md, "_", dr, "_", base_outcomes_date_tag, ".fst"))
+  )
+  nchoice_list[[md]] <- fst::read_fst(
+    file.path(iterative_input_data_cd, "archive/n_choice_occasion", paste0("n_choice_occasions_", st, "_", md, "_", dr, "_", base_outcomes_date_tag, ".fst"))
+  )
 }
-
-base_outcomes <- bind_rows(base_outcomes0)
-n_choice_occasions <- bind_rows(n_choice_occasions0) %>% 
-  dplyr::arrange(date_parsed, mode)
-rm(base_outcomes0, n_choice_occasions0)
+base_outcomes <- data.table::rbindlist(base_list, fill = TRUE, use.names = TRUE)
+n_choice_occasions <- data.table::rbindlist(nchoice_list, fill = TRUE, use.names = TRUE)
 
 ##code correction 10/24
 check_n_choice_occasions <- n_choice_occasions %>%
@@ -105,56 +160,66 @@ base_outcomes<-base_outcomes %>%
 
   
 # Pull in calibration comparison information about trip-level harvest/discard re-allocations 
-calib_comparison<-readRDS(file.path(iterative_input_data_cd, "miscellanous/calibrated_model_stats_new.rds")) %>% 
-  dplyr::filter(state==st & draw==dr ) 
+# calib_comparison<-readRDS(file.path(iterative_input_data_cd, "miscellanous/calibrated_model_stats_new.rds")) %>% 
+#   dplyr::filter(state==st & draw==dr ) 
+# 
+# calib_comparison<-calib_comparison %>% 
+#   dplyr::rename(n_legal_rel_bsb=n_legal_bsb_rel, 
+#                 n_legal_rel_scup=n_legal_scup_rel, 
+#                 n_legal_rel_sf=n_legal_sf_rel, 
+#                 n_sub_kept_bsb=n_sub_bsb_kept,
+#                 n_sub_kept_sf=n_sub_sf_kept,
+#                 n_sub_kept_scup=n_sub_scup_kept,
+#                 prop_legal_rel_bsb=prop_legal_bsb_rel,
+#                 prop_legal_rel_sf=prop_legal_sf_rel,
+#                 prop_legal_rel_scup=prop_legal_scup_rel,
+#                 prop_sub_kept_bsb=prop_sub_bsb_kept,
+#                 prop_sub_kept_sf=prop_sub_sf_kept,
+#                 prop_sub_kept_scup=prop_sub_scup_kept,
+#                 convergence_sf=sf_convergence,
+#                 convergence_bsb=bsb_convergence,
+#                 convergence_scup=scup_convergence) 
+# 
+# ##########
+# # List of species suffixes
+# species_suffixes <- c("sf", "bsb", "scup")
+# 
+# # Get all variable names
+# all_vars <- names(calib_comparison)
+# 
+# # Identify columns that are species-specific (contain _sf, _bsb, or _scup)
+# species_specific_vars <- all_vars[
+#   str_detect(all_vars, paste0("(_", species_suffixes, ")$", collapse = "|"))
+# ]
+# 
+# id_vars <- setdiff(all_vars, species_specific_vars)
+# 
+# calib_comparison<-calib_comparison %>% 
+#   dplyr::select(mode, all_of(species_specific_vars))
+# 
+# # Extract base variable names (without _sf, _bsb, _scup)
+# base_names <- unique(str_replace(species_specific_vars, "_(sf|bsb|scup)$", ""))
+# 
+# # Pivot the data longer on the species-specific columns
+# calib_comparison <- calib_comparison %>%
+#   pivot_longer(
+#     cols = all_of(species_specific_vars),
+#     names_to = c(".value", "species"),
+#     names_pattern = "(.*)_(sf|bsb|scup)"
+#   ) %>% 
+#   dplyr::distinct()
 
-calib_comparison<-calib_comparison %>% 
-  dplyr::rename(n_legal_rel_bsb=n_legal_bsb_rel, 
-                n_legal_rel_scup=n_legal_scup_rel, 
-                n_legal_rel_sf=n_legal_sf_rel, 
-                n_sub_kept_bsb=n_sub_bsb_kept,
-                n_sub_kept_sf=n_sub_sf_kept,
-                n_sub_kept_scup=n_sub_scup_kept,
-                prop_legal_rel_bsb=prop_legal_bsb_rel,
-                prop_legal_rel_sf=prop_legal_sf_rel,
-                prop_legal_rel_scup=prop_legal_scup_rel,
-                prop_sub_kept_bsb=prop_sub_bsb_kept,
-                prop_sub_kept_sf=prop_sub_sf_kept,
-                prop_sub_kept_scup=prop_sub_scup_kept,
-                convergence_sf=sf_convergence,
-                convergence_bsb=bsb_convergence,
-                convergence_scup=scup_convergence) 
 
-##########
-# List of species suffixes
-species_suffixes <- c("sf", "bsb", "scup")
+###
+calib_file = file.path(iterative_input_data_cd, "archive/miscellaneous/calibrated_model_stats.fst")
 
-# Get all variable names
-all_vars <- names(calib_comparison)
+calib <- data.table::as.data.table(fst::read_fst(calib_file))
+if (!"all_keep_to_rel" %in% names(calib)) {
+  calib[, all_keep_to_rel := as.integer(p_keep_to_rel >= 1)]
+}
+calib[is.na(all_keep_to_rel), all_keep_to_rel := as.integer(p_keep_to_rel >= 1)]
+calib <- calib[, .(state, mode, draw, species, floor_used_in, keep_to_rel, rel_to_keep,
+                   p_rel_to_keep, p_keep_to_rel, all_keep_to_rel)]
 
-# Identify columns that are species-specific (contain _sf, _bsb, or _scup)
-species_specific_vars <- all_vars[
-  str_detect(all_vars, paste0("(_", species_suffixes, ")$", collapse = "|"))
-]
-
-id_vars <- setdiff(all_vars, species_specific_vars)
-
-calib_comparison<-calib_comparison %>% 
-  dplyr::select(mode, all_of(species_specific_vars))
-
-# Extract base variable names (without _sf, _bsb, _scup)
-base_names <- unique(str_replace(species_specific_vars, "_(sf|bsb|scup)$", ""))
-
-# Pivot the data longer on the species-specific columns
-calib_comparison <- calib_comparison %>%
-  pivot_longer(
-    cols = all_of(species_specific_vars),
-    names_to = c(".value", "species"),
-    names_pattern = "(.*)_(sf|bsb|scup)"
-  ) %>% 
-  dplyr::distinct()
-
-
-#  }
-#}
-
+calib_comparison<-calib %>% 
+    dplyr::filter(state==st & draw==dr ) 
