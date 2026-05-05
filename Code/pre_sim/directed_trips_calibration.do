@@ -517,7 +517,7 @@ return list
 
 replace state="`s'" if state==""
 
-do "$input_code_cd/set regulations.do"	
+do "$input_code_cd/set_regulations.do"	
 
 /*
 preserve
