@@ -44,8 +44,10 @@ if (!("pct_diff_catch" %in% names(baseline_output0)) && all(c("diff_catch", "MRI
 }
 
 states <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+states <- c("MA", "RI")
+
 mode_draw <- c("sh", "pr", "fh")
-draws <- 1:n_simulations
+draws <- 1:3
 
 # states <- c("MA")
 # mode_draw <- c("pr")
@@ -764,7 +766,7 @@ if (nrow(problem_rows) > 0) {
     calibrated_combined2[, (suffix_cols) := NULL]
     
     # reorder columns
-    setcolorder(calibrated_combined2, c("state", "mode", "draw", "species", base_names))
+    #setcolorder(calibrated_combined2, c("state", "mode", "draw", "species", base_names))
     
     
 # replace original problematic rows with the rerun rows
@@ -781,13 +783,14 @@ if (nrow(calibrated_combined2) > 0) {
     use.names = TRUE,
     fill = TRUE
   )
+}else{
+  calibrated_combined_final<- calibrated_combined
 }
-
 
 # optional final sort
 data.table::setorderv(calibrated_combined_final, c("state", "mode", "draw", "species"))
 
-# check for any probelm rows 
+# check for any problem rows 
 problem_rows <- calibrated_combined_final[
   , needs_rerun := mapply(
     needs_floor4_rerun,

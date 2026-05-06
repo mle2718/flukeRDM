@@ -4,6 +4,7 @@
 # reallocation parameters from calibrated_model_stats.csv.
 
 # Three parts to this file:
+  # globals
   # helper functions
   # main functions
   # projection 
@@ -12,7 +13,23 @@ library(data.table)
 library(fst)
 library(readr)
 
-# Helpers 
+## Globals
+iterative_input_data_cd="E:/Lou_projects/flukeRDM/flukeRDM_iterative_data"
+
+n_choice_occ_cd<-file.path(iterative_input_data_cd, "archive/n_choice_occasion")
+base_outcome_cd<-file.path(iterative_input_data_cd, "archive/base_outcomes")
+misc_cd<-file.path(iterative_input_data_cd, "archive/miscellaneous")
+proj_catch_cd<-file.path(iterative_input_data_cd, "archive/proj_catch_draws")
+
+
+states <- c("MA", "RI")
+modes = c("sh", "pr", "fh") 
+ndraws<-50
+n_simulations<-3
+draws<-1:n_simulations
+n_sims<-max(draws)
+
+## Helper functions 
 safe_divide <- function(num, den) {
   ifelse(is.na(den) | den == 0, NA_real_, num / den)
 }
@@ -31,12 +48,10 @@ calc_prob_trip <- function(v_trip, v_optout) {
   out
 }
 
-
 parse_date_any <- function(x) {
   data.table::as.IDate(as.Date(
     x,
-    tryFormats = c("%d%b%Y", "%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y")
-  ))
+    tryFormats = c("%d%b%Y", "%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y")))
 }
 
 read_fst_any <- function(path_candidates) {
@@ -50,27 +65,14 @@ read_fst_any <- function(path_candidates) {
 months_dt <- data.table::data.table(month = 1:12)
 
 
-# Globals
-iterative_input_data_cd="E:/Lou_projects/flukeRDM/flukeRDM_iterative_data"
-input_data_cd="C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025"
-
-states <- c("MA")
-modes = c("sh", "pr", "fh") 
-# st<-"CT"
-ndraws<-50
-n_simulations<-10
-
-
-# Functions
-
+## Main functions
 # Pull common input data 
 read_projection_common_inputs <- function(iterative_input_data_cd,
-                                          input_data_cd,
                                           states,
                                           draws,
                                           size_lookup_file = "projected_catch_at_length.csv",
-                                          calib_file = file.path(iterative_input_data_cd, "archive/miscellaneous/calibrated_model_stats.fst"),
-                                          lw_file = file.path("C:/Users/andrew.carr-harris/Desktop/Git/flukeRDM/Data/L_W_Conversion.csv")) {
+                                          calib_file = file.path(misc_cd, "calibrated_model_stats.fst"),
+                                          lw_file = file.path(misc_cd, "L_W_Conversion.csv")) {
   
   l_w_conversion <- data.table::as.data.table(readr::read_csv(lw_file, show_col_types = FALSE))
   if (!is.null(states) && "state" %in% names(l_w_conversion)) {
@@ -78,9 +80,8 @@ read_projection_common_inputs <- function(iterative_input_data_cd,
   }
   data.table::setkeyv(l_w_conversion, intersect(c("state", "species", "month"), names(l_w_conversion)))
   
-  
   size_lookup <- data.table::as.data.table(
-    readr::read_csv(file.path(input_data_cd, size_lookup_file), show_col_types = FALSE))
+    readr::read_csv(file.path(misc_cd, size_lookup_file), show_col_types = FALSE))
   
   if (!"mode" %in% names(size_lookup)) size_lookup[, mode := NA_character_]
   size_lookup <- size_lookup[!is.na(fitted_prob), .(state, draw, species, mode, fitted_prob, length)]
@@ -96,16 +97,14 @@ read_projection_common_inputs <- function(iterative_input_data_cd,
     size_lookup_wt,
     l_w_conversion,
     by = c("species", "month", "state"),
-    all.x = TRUE
-  )
+    all.x = TRUE  )
   
   size_lookup_wt[, fish_weight_lb := data.table::fcase(
     species == "scup",
     exp(ln_a + b * log(length)) * 2.20462262185,
     species %chin% c("sf", "bsb"),
     a * length^b * 2.20462262185,
-    default = NA_real_
-  )]
+    default = NA_real_)]
   
   calib <- data.table::as.data.table(fst::read_fst(calib_file))
   if (!"all_keep_to_rel" %in% names(calib)) {
@@ -123,8 +122,8 @@ read_projection_common_inputs <- function(iterative_input_data_cd,
     lapply(states, function(st) {
       dt <- data.table::as.data.table(
         fst::read_fst(file.path(
-          iterative_input_data_cd,
-          paste0("archive/directed_trips_calibration/directed_trips_calibration_", st, ".fst"))))
+          misc_cd,
+          paste0("directed_trips_calibration_", st, ".fst"))))
       dt[, state := st]
       dt}),
     fill = TRUE,
@@ -135,8 +134,8 @@ read_projection_common_inputs <- function(iterative_input_data_cd,
       dt <- data.table::as.data.table(
         readr::read_csv(
           file.path(
-            iterative_input_data_cd,
-            paste0("archive/miscellaneous/proj_year_calendar_adjustments/proj_year_calendar_adjustments_", st, ".csv")),
+            misc_cd,
+            paste0("proj_year_calendar_adjustments_", st, ".csv")),
           show_col_types = FALSE))
       dt[state == st]
     }),
@@ -168,9 +167,7 @@ simulate_species_project <- function(catch_dt,
   
   pos_dt <- catch_dt[
     get(cfg$catch_col) > 0,
-    c(key_cols, cfg$catch_col, cfg$bag_col, cfg$min_col),
-    with = FALSE
-  ]
+    c(key_cols, cfg$catch_col, cfg$bag_col, cfg$min_col),  with = FALSE ]
   
   if (nrow(pos_dt) == 0L || nrow(size_dt) == 0L || sum(size_dt$fitted_prob, na.rm = TRUE) <= 0) {
     return(list(trip = data.table::data.table(), length = data.table::data.table()))
@@ -187,16 +184,14 @@ simulate_species_project <- function(catch_dt,
     size_dt$length,
     .N,
     replace = TRUE,
-    prob = size_dt$fitted_prob
-  )]
+    prob = size_dt$fitted_prob)]
   
   fish_dt[, month := data.table::month(parse_date_any(date_parsed))]
   
   fish_dt[
     size_dt,
     fish_weight_lb := i.fish_weight_lb,
-    on = .(fitted_length = length, month)
-  ]
+    on = .(fitted_length = length, month) ]
   
   fish_dt[, posskeep := fifelse(fitted_length >= min_sz, 1L, 0L)]
   setorder(fish_dt, date_parsed, mode, tripid, catch_draw, fishid)
@@ -297,9 +292,7 @@ simulate_species_project <- function(catch_dt,
       paste0("tot_keep_", sp, "_util"),
       paste0("tot_rel_", sp, "_util"),
       paste0("tot_keep_", sp, "_weight_lb_new"),
-      paste0("tot_rel_", sp, "_weight_lb_new")
-    )
-  )
+      paste0("tot_rel_", sp, "_weight_lb_new")) )
   
   trip_out <- trip_pos
   data.table::setkeyv(trip_out, c("date_parsed", "mode", "tripid", "catch_draw"))
@@ -323,29 +316,28 @@ species_config <- data.table(
 )
 
 ### Final Projection call
-draws<-1:n_simulations
-n_sims<-max(draws)
 
 common_inputs <- read_projection_common_inputs(
   iterative_input_data_cd = iterative_input_data_cd,
-  input_data_cd = input_data_cd,
-  states = st,
+  states = states,
   draws = draws)
+
+k<-1
+predictions_list<-list()
 
 system.time({
   
-  predictions_list<-list()
-  
-  for (dr in draws){
+  for (st in states){
+    for (dr in draws){
     
     # State-level directed trips, filtered to draw.
-    directed_trips <- common_inputs$directed_trips[draw == dr]
+    directed_trips <- common_inputs$directed_trips[draw == dr & state==st]
     
     # Projection catch draws.
     catch_data <- data.table::as.data.table(
       fst::read_fst(file.path(
-        iterative_input_data_cd,
-        paste0("archive/proj_catch_draws/proj_catch_draws_", st, "_", dr, ".fst")
+        proj_catch_cd,
+        paste0("proj_catch_draws_", st, "_", dr, ".fst")
       ))
     )
     data.table::setkey(directed_trips, mode, date_parsed)
@@ -372,17 +364,16 @@ system.time({
     nchoice_list <- list()
     for (md in modes) {
       base_list[[md]] <- fst::read_fst(
-        file.path(iterative_input_data_cd, "archive/base_outcomes", 
-                  paste0("base_outcomes_", st, "_", md, "_", dr, ".fst"))
-      )
+        file.path(base_outcome_cd,
+                  paste0("base_outcomes_", st, "_", md, "_", dr, ".fst")))
+      
       nchoice_list[[md]] <- fst::read_fst(
-        file.path(iterative_input_data_cd, "archive/n_choice_occasion", 
-                  paste0("n_choice_occasions_", st, "_", md, "_", dr, ".fst"))
-      )
+        file.path(n_choice_occ_cd,
+                  paste0("n_choice_occasions_", st, "_", md, "_", dr, ".fst")))
     }
+    
     base_outcomes <- data.table::rbindlist(base_list, fill = TRUE, use.names = TRUE)
     n_choice_occasions <- data.table::rbindlist(nchoice_list, fill = TRUE, use.names = TRUE)
-    
     
     util_cols <- grep("^tot_(keep|rel)_.*_util$", names(base_outcomes), value = TRUE)
     if (length(util_cols)) data.table::setnames(base_outcomes, old = util_cols, new = paste0(util_cols, "_base"))
@@ -420,8 +411,7 @@ system.time({
           size_dt = size_dt,
           calib_row = calib_row,
           cfg = cfg,
-          mode_value = NULL
-        )
+          mode_value = NULL )
       }
     }
     sim_results <- sim_results[!vapply(sim_results, is.null, logical(1))]
@@ -448,8 +438,7 @@ system.time({
     trip_data[, `:=`(
       tot_cat_sf_new = tot_keep_sf_new + tot_rel_sf_new,
       tot_cat_bsb_new = tot_keep_bsb_new + tot_rel_bsb_new,
-      tot_cat_scup_new = tot_keep_scup_new + tot_rel_scup_new
-    )]
+      tot_cat_scup_new = tot_keep_scup_new + tot_rel_scup_new)]
     
     key_cols <- c("date_parsed", "mode", "tripid", "catch_draw")
     
@@ -489,41 +478,34 @@ system.time({
         beta_sqrt_scup_catch * sqrt(tot_cat_scup_new) +
         beta_cost * cost,
       
-      v_optout = beta_opt_out + beta_opt_out_age * age + beta_opt_out_avidity * total_trips_12
-    )]
+      v_optout = beta_opt_out + beta_opt_out_age * age + beta_opt_out_avidity * total_trips_12)]
     
     mean_drop_cols <- intersect(
       c("beta_opt_out", "beta_opt_out_age", "beta_opt_out_avidity",
         "beta_sqrt_bsb_keep", "beta_sqrt_bsb_release", "beta_sqrt_scup_catch",
         "beta_sqrt_sf_bsb_keep", "beta_sqrt_sf_keep", "beta_sqrt_sf_release",
         "age", "cost", "total_trips_12", "catch_draw"),
-      names(trip_data)
-    )
+      names(trip_data))
     
     mean_vars <- setdiff(
       names(trip_data),
-      c("date_parsed", "mode", "tripid", mean_drop_cols)
-    )
+      c("date_parsed", "mode", "tripid", mean_drop_cols))
     
-    mean_trip_data <- trip_data[
-      ,
+    mean_trip_data <- trip_data[,
       lapply(.SD, mean),
       by = .(date_parsed, mode, tripid),
-      .SDcols = mean_vars
-    ]
+      .SDcols = mean_vars]
     
     mean_trip_data[, `:=`(
       prob0 = exp(v0_trip) / (exp(v0_trip) + exp(v_optout)),
       probA = exp(vA_trip) / (exp(vA_trip) + exp(v_optout)),
       log_sum_alt = log((exp(vA_trip) + exp(v_optout))),
-      log_sum_base = log((exp(v0_trip) + exp(v_optout)))
-    )]
+      log_sum_base = log((exp(v0_trip) + exp(v_optout)))  )]
     
     # CV
     # Here I take the negative of the CS formula for easier interpretability of model output
     mean_trip_data[, `:=`(
-      CV = -(1/beta_cost)*(log_sum_alt - log_sum_base)
-    )]
+      CV = -(1/beta_cost)*(log_sum_alt - log_sum_base))]
     
     
     new_cols <- c("tot_keep_sf_new", "tot_rel_sf_new", "tot_cat_sf_new",
@@ -538,7 +520,7 @@ system.time({
         "tot_keep_bsb_base", "tot_rel_bsb_base", "tot_cat_bsb_base",
         "tot_keep_scup_base", "tot_rel_scup_base", "tot_cat_scup_base", 
         "log_sum_alt", "log_sum_base", "beta_cost"),
-      names(mean_trip_data) )
+      names(mean_trip_data))
     
     util_cols <- grep("util", names(mean_trip_data), value = TRUE)
     cols_to_drop <- unique(c(base_cols_drop, util_cols))
@@ -554,18 +536,18 @@ system.time({
     
     #Optional calendar adjustments from common_inputs, if available.
     
-    # calendar_adjustments <- data.table::copy(common_inputs$calendar_adjustments[state == st & draw == dr])
-    # 
-    # drop_cols <- intersect(c("dtrip", "dtrip_y2", "state", "draw"), names(calendar_adjustments))
-    # if (length(drop_cols)) calendar_adjustments[, (drop_cols) := NULL]
-    # 
-    # mean_trip_data <- merge(mean_trip_data, calendar_adjustments, by = c("mode", "month"), all.x = TRUE)
-    mean_trip_data <- mean_trip_data %>% 
-      dplyr::mutate(expansion_factor=1)
+    calendar_adjustments <- data.table::copy(common_inputs$calendar_adjustments[state == st & draw == dr])
+
+    drop_cols <- intersect(c("dtrip", "dtrip_y2", "state", "draw"), names(calendar_adjustments))
+    if (length(drop_cols)) calendar_adjustments[, (drop_cols) := NULL]
+
+    mean_trip_data <- merge(mean_trip_data, calendar_adjustments, by = c("mode", "month"), all.x = TRUE)
+    # mean_trip_data <- mean_trip_data %>% 
+    #   dplyr::mutate(expansion_factor=1)
     
     #mean_trip_data[is.na(expansion_factor), expansion_factor := 1]
     mean_trip_data[is.na(n_choice_occasions), n_choice_occasions := 0]
-    mean_trip_data[, expand := n_choice_occasions * expansion_factor / ndraws]
+    mean_trip_data[, expand := (n_choice_occasions * expansion_factor) / ndraws]
     
     scale_cols <- c(new_cols, "probA", "prob0", "CV")
     
@@ -588,17 +570,20 @@ system.time({
     model_output_long[, iteration := dr]
     model_output_long[, state := st]
     
-    predictions_list[[dr]]<-model_output_long
+    predictions_list[[k]]<-model_output_long
     
+    k<-k+1
+    
+    }
   }
 })
 
 prediction_draws <- dplyr::bind_rows(predictions_list)
 
 # Final outputting of results - merge to baseline year data and compute differences
-calib_file = file.path(iterative_input_data_cd, "archive/miscellaneous/calibrated_model_stats.fst")
+calib_file = file.path(misc_cd, "calibrated_model_stats.fst")
 calib_read <- data.table::as.data.table(fst::read_fst(calib_file))
-calib <- calib_read %>% dplyr::filter(state==st & draw<=n_sims)
+calib <- calib_read %>% dplyr::filter(state %in% states & draw<=n_sims)
 
 data.table::setDT(prediction_draws)
 data.table::setDT(calib)
