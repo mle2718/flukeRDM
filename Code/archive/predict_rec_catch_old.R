@@ -251,6 +251,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   mean_trip_data <- trip_data %>% data.table::data.table() %>% 
     .[, group_index := .GRP, by = .(date_parsed, mode, catch_draw, tripid)]
   
+  rm(trip_data)
   # expand the data to create two alternatives, representing the alternatives available in choice survey
   mean_trip_data <- mean_trip_data %>%
     dplyr::mutate(n_alt = rep(2,nrow(.))) %>%
@@ -297,6 +298,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   mean_trip_data <- mean_trip_data %>% 
     dplyr::filter(alt==1) %>% 
     dplyr::select(-matches("beta")) %>% 
+    dplyr::select(-dplyr::any_of("i.domain2")) %>% 
     dplyr::select(-"alt", -"opt_out", -"vA" , -"v0",-"exp_v0", -"exp_vA", 
                   -"cost", -"age", -"total_trips_12", -"catch_draw", -"group_index", 
                   -"log_sum_alt", -"log_sum_base", -"tot_keep_sf_base",  -"tot_rel_sf_base",  -"tot_cat_sf_base", 
@@ -305,7 +307,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   all_vars<-c()
   all_vars <- names(mean_trip_data)[!names(mean_trip_data) %in% c("date_parsed","mode", "tripid")]
-  
+
   #all_vars
   # average outcomes across draws
   mean_trip_data<-mean_trip_data  %>% data.table::as.data.table() %>%
@@ -391,6 +393,8 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     , mode := "all modes"
   ]
   
+  rm(mean_trip_data)
+  
   # Combine and reshape
   model_output1 <- data.table::rbindlist(list(aggregate_trip_data_mode, aggregate_trip_data_allmodes), use.names=TRUE)
   model_output1_long <- data.table::melt(
@@ -402,9 +406,13 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   )
   
   model_output1_long[, metric := data.table::fifelse(metric == "change_CS", "CV",
-                                                     data.table::fifelse(metric == "n_trips_alt", "predicted trips", "metric"))]
+                                                     data.table::fifelse(metric == "n_trips_alt", "predicted trips", as.character(metric)))]
 
-
+  model_output1_long[, metric := as.character(metric)]
+  model_output1_long[, metric := fifelse(metric == "change_CS", "CV",
+                        fifelse(metric == "n_trips_alt", "predicted_trips", metric))
+  ]
+  
   model_output1_long$species<-"NA"
   
   model_output1_long_base<-model_output1_long %>% 
@@ -440,6 +448,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   length_data1 <- length_data[, .SD, .SDcols = c("date_parsed", "mode", pattern_vars)]
   length_data1[, month := lubridate::month(date_parsed)]
   
+  rm(length_data)
   ## Aggregate sums by mode + month
   length_data1 <- length_data1[, lapply(.SD, sum), 
                                by = .(mode, month), 
@@ -525,6 +534,7 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     value.name = "value"
   )
   
+  rm(length_data1)
   ## Remove NAs
   length_data_long <- length_data_long[!is.na(value)]
   
@@ -534,12 +544,12 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
   
   length_data_long_all[, mode := "all modes"]
   
+  
   ## Final bind
   length_output <- data.table::rbindlist(list(length_data_long_all, length_data_long) ,
     use.names = TRUE,
     fill = TRUE
   )
-  
   
   predictions <- data.table::rbindlist(
     list(length_output, model_output1_long),
@@ -547,8 +557,6 @@ predict_rec_catch <- function(st, dr, directed_trips, catch_data,
     fill = TRUE) %>% 
     dplyr::mutate(state = st, draw=dr)
   
-  predictions<-predictions %>% 
-    dplyr::mutate(state=st, draw=dr)
   
   print("Finished predict_rec_catch")
 
