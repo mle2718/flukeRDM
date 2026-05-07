@@ -1,6 +1,6 @@
 ## Generate coastwide values grouped
 
-policy_lookup <- read_csv(here::here("Data/PolicyShortList.csv"))
+policy_lookup <- read_csv(here::here("Data/Data_final/Management Measures Template Updated.csv"))
 
 # file path
 filepath <- here::here("output/")
@@ -11,7 +11,7 @@ options(tibble.name_repair = "minimal")
 policy_nested <- policy_lookup %>%
   group_by(Region, ID_Number) %>%
   summarise(
-    state_map = list(setNames(Model_Name, State)),
+    state_map = list(setNames(`Policy Name`, State)),
     .groups = "drop"
   )
 
@@ -59,6 +59,7 @@ SQ <- SQ_data_adj %>%
          SQ_model = model) %>%
   select(-c(new_draw, value, model)) 
 
+#state = c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
 #all_results <- vector("list", nrow(policy_grid))
 all_results <- vector("list", nrow(run_grid))
 
@@ -90,6 +91,10 @@ for(i in seq_len(nrow(run_grid))) {
   files_keep <- filenames[
     mapply(function(file, state) {
       
+      if (is.na(state)) return(FALSE)
+      
+      if (!state %in% names(policy_map_run)) return(FALSE)
+      
       policy <- policy_map_run[[state]]
       if (is.null(policy)) return(FALSE)
       
@@ -98,6 +103,8 @@ for(i in seq_len(nrow(run_grid))) {
     }, filenames, file_states)
   ]
   
+  print(i)
+  print(files_keep)
   data_list <- map_dfr(files_keep, read_csv)
   
   data_adj <- data_list %>% 
@@ -133,8 +140,17 @@ for(i in seq_len(nrow(run_grid))) {
                      SQ_value = sum(SQ_value)) %>% 
     dplyr::mutate(pct_diff = (value - SQ_value) / (SQ_value)  * 100) %>%
     dplyr::group_by(species, metric) %>%
-    dplyr::summarise(median_pct_diff = round(median(pct_diff),2)) %>%
-    tidyr::pivot_wider(names_from = species, values_from = median_pct_diff)
+    dplyr::summarise(median_pct_diff = round(median(pct_diff),2), 
+                     median_value = median(value)) %>%
+    tidyr::pivot_wider(names_from = species, values_from = c(median_pct_diff, median_value)) %>% 
+    dplyr::rename_with(
+      ~ gsub("median_pct_diff_(.*)", "\\1 % change", .x),
+      starts_with("median_pct_diff")
+    ) %>%
+    dplyr::rename_with(
+      ~ gsub("median_value_(.*)", "\\1 harvest weight", .x),
+      starts_with("median_value")
+    )
   
   north_df <- as_tibble_row(north_map)
   south_df <- as_tibble_row(south_map)
@@ -155,6 +171,6 @@ for(i in seq_len(nrow(run_grid))) {
 
 write.csv(
   all_results,
-  here::here("all_coastwide_results1.csv"),
+  here::here("coastwide_results_compared2.csv"),
   row.names = FALSE)
 
