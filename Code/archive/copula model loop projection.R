@@ -1,7 +1,15 @@
+# ---- packages ----
+required_pkgs <- c(
+  "survey", "copula", "MASS", "fitdistrplus", "readxl",
+  "weights", "wCorr", "patchwork", "Hmisc", "tidyr",
+  "dplyr", "ggplot2", "writexl", "plyr", "conflicted"
+)
 
-# Install required packages if needed
-install.packages(c("survey", "copula", "MASS", "fitdistrplus", "readxl", "weights", "wCorr"))
-install.packages("patchwork")
+missing_pkgs <- required_pkgs[!vapply(required_pkgs, requireNamespace, logical(1), quietly = TRUE)]
+if (length(missing_pkgs) > 0) {
+  stop("Install these packages before running the script: ",
+       paste(missing_pkgs, collapse = ", "))
+}
 
 library(patchwork)
 library(survey)
@@ -17,21 +25,121 @@ library(dplyr)
 library(ggplot2)
 library(writexl)
 library(plyr)
-library(dplyr)
+library(conflicted)
 
 conflicts_prefer(dplyr::filter)
+conflicts_prefer(dplyr::select)
+conflicts_prefer(dplyr::mutate)
+conflicts_prefer(dplyr::summarise)
 
-#s<-"DE"
+# ---- controls ----
+n_sim   <- 5000
+n_draws <- 10
+n_reps  <- 200
 
-state_datasets <- list()
-statez<-c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
-statez<-c("CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+statez <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+statez <- c("MA")
+
+input_file <- "E:/Lou_projects/flukeRDM/flukeRDM_iterative_data/archive/proj_catch_draws/projected_mrip_catch_processed.xlsx"
+
+full_df <- readxl::read_xlsx(input_file)
+
+# ---- helper functions ----
+
+get_rep_stat <- function(svy_obj) {
+  out <- survey::svymean(svy_obj, return.replicates = TRUE, na.rm = TRUE)
+  list(
+    mean = as.numeric(coef(out)),
+    reps = as.numeric(attr(out, "replicates"))
+  )
+}
+
+get_rep_var <- function(df, varname, rep_design) {
+  rep_wgts <- survey::weights(rep_design, type = "analysis")
+  out <- sapply(seq_len(ncol(rep_wgts)), function(i) {
+    rep_data <- rep_wgts[, i]
+    svy_var <- survey::svydesign(
+      ids = ~psu_id,
+      strata = ~strat_id,
+      weights = ~rep_data,
+      nest = TRUE,
+      data = df
+    )
+    as.numeric(coef(survey::svyvar(stats::as.formula(paste0("~", varname)), svy_var, na.rm = TRUE)))
+  })
+  as.numeric(out)
+}
+
+safe_theta <- function(mu, var, theta_cap = 1000) {
+  mu  <- pmax(as.numeric(mu), 1e-8)
+  var <- pmax(as.numeric(var), 1e-8)
+  theta <- mu^2 / pmax(var - mu, 1e-6)
+  theta <- pmax(theta, 1e-6)
+  theta <- pmin(theta, theta_cap)
+  theta[!is.finite(theta)] <- theta_cap
+  theta
+}
+
+weighted_sample_for_copula <- function(df, value_cols, n_sim, weight_col = "wp_int", jitter_ties = FALSE) {
+  w <- df[[weight_col]]
+  w[is.na(w) | w < 0] <- 0
+  
+  if (sum(w) <= 0) {
+    stop("All sampling weights are zero or missing in this domain.")
+  }
+  
+  idx <- sample.int(
+    n = nrow(df),
+    size = min(n_sim, nrow(df)),
+    replace = TRUE,
+    prob = w
+  )
+  
+  out <- df[idx, , drop = FALSE]
+  
+  if (jitter_ties) {
+    for (v in value_cols) {
+      out[[v]] <- out[[v]] + stats::runif(nrow(out), -1e-8, 1e-8)
+    }
+  }
+  
+  out
+}
+
+cap_with_resample <- function(x, max_x) {
+  x <- round(x)
+  x[x < 0] <- 0
+  
+  if (all(x <= max_x)) return(x)
+  
+  x_cap <- pmin(x, max_x)
+  overflow <- which(x > max_x)
+  excess <- sum(x[overflow] - max_x)
+  
+  while (excess > 0) {
+    candidates <- which(x_cap < max_x)
+    if (length(candidates) == 0) break
+    
+    room <- max_x - x_cap[candidates]
+    probs <- room / sum(room)
+    chosen <- sample(candidates, size = 1, prob = probs)
+    x_cap[chosen] <- x_cap[chosen] + 1
+    excess <- excess - 1
+  }
+  
+  x_cap
+}
+
+n_psu <- function(df) {
+  dplyr::n_distinct(df$psu_id)
+}
+
+
 
 for(s in statez) {
   
   # Load data
-  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/baseline_mrip_catch_processed.xlsx") %>% 
-    filter(state==s)
+  df <- full_df %>% dplyr::filter(state == s)
   
   
   
@@ -44,8 +152,6 @@ for(s in statez) {
   
   # I used copula model to simulate 1), whereas 2) and 3) are distributed NB
   
-  n_sim <- 5000   # number of samples per draw
-  n_draws <- 150  # number of simulated datasets
   
   
   ############ SUMMER FLOUNDER ############
@@ -77,78 +183,59 @@ for(s in statez) {
       
       df <- df_full1 %>% filter(my_dom_id_string == dom)
       
-
+      
       # Define survey design
-      svy_design <- svydesign(ids=~psu_id,strata=~strat_id,
-                              weights=~wp_int,nest=TRUE,data=df)
+      svy_design <- survey::svydesign(
+        ids = ~psu_id,
+        strata = ~strat_id,
+        weights = ~wp_int,
+        nest = TRUE,
+        data = df
+      )
       options(survey.lonely.psu = "certainty")
       
-      # Estimate means, variances using survey design
-      mean_keep <- svymean(~sf_keep, svy_design)
-      mean_rel  <- svymean(~sf_rel,  svy_design)
+      # Point estimates
+      mean_keep <- survey::svymean(~sf_keep, svy_design, na.rm = TRUE)
+      mean_rel  <- survey::svymean(~sf_rel,  svy_design, na.rm = TRUE)
       
-      var_keep <- attr(mean_keep, "var")
-      var_rel  <- attr(mean_rel, "var")
+      mu_keep  <- as.numeric(coef(mean_keep))
+      mu_rel   <- as.numeric(coef(mean_rel))
+      var_keep <- as.numeric(attr(mean_keep, "var"))
+      var_rel  <- as.numeric(attr(mean_rel,  "var"))
       
-      mu_keep <- coef(mean_keep)
-      mu_rel  <- coef(mean_rel)
-      
-      
-      # Handle zero or missing variance (certainty units)
-      # Use imputed linearized standard error 
-      if (is.na(var_keep) || var_keep == 0) {
-        imputed_se <- mean(df$sesf_keep)  
-        var_keep <- imputed_se^2
+      # Fallback SEs
+      if (!is.finite(var_keep) || is.na(var_keep) || var_keep <= 0) {
+        var_keep <- mean(df$sesf_keep, na.rm = TRUE)^2
+      }
+      if (!is.finite(var_rel) || is.na(var_rel) || var_rel <= 0) {
+        var_rel <- mean(df$sesf_rel, na.rm = TRUE)^2
       }
       
-      if (is.na(var_rel) || var_rel == 0) {
-        imputed_se <- mean(df$sesf_rel)  
-        var_rel <- imputed_se^2
-      }
+      max_keep <- round(max(df$sf_keep, na.rm = TRUE)) + 2
+      max_rel  <- round(max(df$sf_rel,  na.rm = TRUE)) + 6
       
-      max_keep <- round(max(df$sf_keep))+2
-      max_rel <- round(max(df$sf_rel))+6
-      
-      mu_keep
-      mu_rel
-      var_keep
-      var_rel
-      
-      # Bootstrap replicate design (R = number of replicates)
-      rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
+      # Bootstrap replicate design
+      rep_design <- survey::as.svrepdesign(svy_design, type = "bootstrap", replicates = n_reps)
       
       # Replicate means
-      rep_means_keep <- coef(svymean(~sf_keep, rep_design, return.replicates = TRUE, na.rm = TRUE))  # scalar mean
-      rep_means_rel  <- coef(svymean(~sf_rel,  rep_design, return.replicates = TRUE, na.rm = TRUE))
+      rep_keep_obj <- get_rep_stat(~sf_keep, rep_design)
+      rep_rel_obj  <- get_rep_stat(~sf_rel,  rep_design)
+      
+      rep_means_keep <- rep_keep_obj$reps
+      rep_means_rel  <- rep_rel_obj$reps
       
       # Replicate variances
-      # Extract the full replicate weights matrix
-      rep_wgts <- weights(rep_design, type = "analysis")  # matrix: rows = obs, cols = replicates
+      rep_vars_keep <- get_rep_var(df, "sf_keep", rep_design)
+      rep_vars_rel  <- get_rep_var(df, "sf_rel",  rep_design)
       
-      # Now loop over columns (replicates)
-      rep_vars_keep <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~sf_keep, svy_var, na.rm = TRUE))
-      })
+      # Negative binomial size parameters
+      rep_theta_keep <- safe_theta(rep_means_keep, rep_vars_keep)
+      rep_theta_rel  <- safe_theta(rep_means_rel,  rep_vars_rel)
       
-      rep_vars_rel <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~sf_rel, svy_var, na.rm = TRUE))
-      })
-      
-      # Estimate dispersion for negative binomial
-      # Protect against negative denominators
-      rep_theta_keep <- rep_means_keep^2 / pmax(rep_vars_keep - rep_means_keep, 1e-6)
-      rep_theta_rel  <- rep_means_rel^2  / pmax(rep_vars_rel  - rep_means_rel,  1e-6)
-      rep_theta_rel <- pmin(rep_theta_rel, 1000) 
-      # Estimate NB dispersion for when there is only one PSU 
-      if (nrow(df)==1) {
-        theta_hat_keep_single <- mu_keep^2 / pmax((var_keep - mu_keep), 1e-6)
-        theta_hat_rel_single <- mu_rel^2 / pmax((var_rel - mu_rel), 1e-6)
+      # Better single-PSU / low-PSU fallback
+      if (n_psu(df) <= 1) {
+        theta_hat_keep_single <- safe_theta(mu_keep, var_keep)
+        theta_hat_rel_single  <- safe_theta(mu_rel,  var_rel)
       }
       
       # Fit the copula to a sample (max 5000 obs.) of the original data b/c it can take a while if N is large
@@ -156,7 +243,7 @@ for(s in statez) {
       df$w_int_rounded <- round(df$wp_int)
       df_expanded <- uncount(df, weights = w_int_rounded) 
       df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), n_sim)) 
-
+      
       
       # Create pseudo-observations (rank-based empirical CDFs)
       df_expanded <- df_expanded %>%
@@ -167,32 +254,36 @@ for(s in statez) {
           u_rel  = rank_rel / (n() + 1)
         )
       
+
       # Fit copula using pseudo-observations
       
       u_mat <- cbind(df_expanded$u_keep, df_expanded$u_rel)
       
-
+      
       
       tau_hat <- cor(u_mat[,1], u_mat[,2], method = "kendall")
-
+      
       # Assess dependence:
       # tau>=0.3: use Gumbel copula
       # tau<=-.3: normal copula, which allows for negative dependence. 
       # -.3>=tau<=.3: frank copula, for moderate, neutral dependence
       
-
-      if (tau_hat >= 0.3) {
-        cop <- gumbelCopula(dim = 2)
-        cop_name <- "Gumbel"
-      } else if (tau_hat <= -0.3) {
-        cop <- normalCopula(dim = 2)
-        cop_name <- "Gaussian"
-      } else {
-        cop <- frankCopula(dim = 2)
-        cop_name <- "Frank"
-      }
       
-      copula_fit <- fitCopula(cop, u_mat, method = "mpl", start=1)
+      copula_fit <- try({
+        if (tau_hat >= 0.3) {
+          copula::fitCopula(copula::gumbelCopula(dim = 2), u_mat, method = "mpl", start = 1)
+        } else if (tau_hat <= -0.3) {
+          copula::fitCopula(copula::normalCopula(dim = 2), u_mat, method = "mpl")
+        } else {
+          copula::fitCopula(copula::frankCopula(dim = 2), u_mat, method = "mpl", start = 1)
+        }
+      }, silent = TRUE)
+      
+      if (inherits(copula_fit, "try-error")) {
+        tau_hat <- 0
+        cop_name <- "Gaussian_fallback_independenceish"
+        copula_fit <- copula::fitCopula(copula::normalCopula(dim = 2), u_mat, method = "mpl")
+      }
       
       
       
@@ -201,20 +292,18 @@ for(s in statez) {
       i <- 1
       while (i <= n_draws) {
         
-       sim_u <- rCopula(n_sim, copula_fit@copula)
+        sim_u <- rCopula(n_sim, copula_fit@copula)
         
         # Sample mu_keep and mu_rel with uncertainty
         sampled_mu_keep <-  rnorm(1, mu_keep, sqrt(var_keep))
         sampled_mu_rel  <- rnorm(1, mu_rel,  sqrt(var_rel))
         
-        if (nrow(df)==1) {
-          sampled_theta_keep <- theta_hat_keep_single       # Single-PSU theta
-          sampled_theta_rel <- theta_hat_rel_single         # Single-PSU theta
-        }
-        
-        if (nrow(df)>1) {
-          sampled_theta_keep <- sample(rep_theta_keep, 1, replace = TRUE) # Sample theta when there are multiple PSUs
-          sampled_theta_rel  <- sample(rep_theta_rel,  1, replace = TRUE) # Sample theta when there are multiple PSUs
+        if (n_psu(df) <= 1) {
+          sampled_theta_keep <- theta_hat_keep_single
+          sampled_theta_rel  <- theta_hat_rel_single
+        } else {
+          sampled_theta_keep <- sample(rep_theta_keep, 1, replace = TRUE)
+          sampled_theta_rel  <- sample(rep_theta_rel,  1, replace = TRUE)
         }
         
         
@@ -224,12 +313,13 @@ for(s in statez) {
         # Convert uniform to NB using quantiles
         sim_rel  <- qnbinom(sim_u[,2], size = sampled_theta_rel, mu = sampled_mu_rel)
         
-        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
+        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
+ 
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
           total_excess_keep <- sum(excess_keep)
-          
+
           # Set max values to max_keep
           sim_keep[sim_keep > max_keep] <- max_keep
           
@@ -300,7 +390,7 @@ for(s in statez) {
   rm(list = setdiff(ls(), keep))
   
   
-
+  
   
   ################
   
@@ -315,72 +405,66 @@ for(s in statez) {
       df <- df_full2 %>% filter(my_dom_id_string == dom)
       
       # Define survey design
-      svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
+      svy_design <- survey::svydesign(
+        ids = ~psu_id,
+        strata = ~strat_id,
+        weights = ~wp_int,
+        nest = TRUE,
+        data = df
+      )
       options(survey.lonely.psu = "certainty")
       
-      max_rel <- round(max(df$sf_rel))+6
+      # Point estimates
+      mean_rel  <- survey::svymean(~sf_rel,  svy_design, na.rm = TRUE)
       
-      df$w_int_rounded <- round(df$wp_int)
-      df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
-      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), 5000)) 
-      obs_sd_rel <- sd(df_expanded$sf_rel)
+      mu_rel   <- as.numeric(coef(mean_rel))
+      var_rel  <- as.numeric(attr(mean_rel,  "var"))
       
-      # Estimate means, variances using survey design
-      mean_rel <- svymean(~sf_rel, svy_design)
-      mu_rel <- coef(mean_rel)
-      var_rel <- attr(mean_rel, "var")
-      
-      # Handle zero or missing variance (certainty units)
-      # Use imputed linearized standard error 
-      if (is.na(var_rel) || var_rel == 0) {
-        imputed_se <- mean(df$sesf_rel)  
-        var_rel <- imputed_se^2
+      # Fallback SEs
+      if (!is.finite(var_rel) || is.na(var_rel) || var_rel <= 0) {
+        var_rel <- mean(df$sesf_rel, na.rm = TRUE)^2
       }
+      
+      max_rel  <- round(max(df$sf_rel,  na.rm = TRUE)) + 6
       
       # Bootstrap replicate design
-      rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
+      rep_design <- survey::as.svrepdesign(svy_design, type = "bootstrap", replicates = n_reps)
       
-      # Extract the full replicate weights matrix
-      rep_wgts <- weights(rep_design, type = "analysis")  # matrix: rows = obs, cols = replicates
+      # Replicate means
+      rep_rel_obj  <- get_rep_stat(~sf_rel,  rep_design)
       
-      # Replicate mean and variance
-      rep_means_rel <- coef(svymean(~sf_rel, rep_design, return.replicates = TRUE, na.rm = TRUE))
+      rep_means_rel  <- rep_rel_obj$reps
       
-      rep_vars_rel <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~sf_rel, svy_var, na.rm = TRUE))
-      })
+      # Replicate variances
+      rep_vars_rel  <- get_rep_var(df, "sf_rel",  rep_design)
       
-      # Estimate NB dispersion (theta)
-      rep_theta_rel <- rep_means_rel^2 / pmax(rep_vars_rel - rep_means_rel, 1e-6)
+      # Negative binomial size parameters
+      rep_theta_rel  <- safe_theta(rep_means_rel,  rep_vars_rel)
       
-      # Estimate NB dispersion for when there is only one PSU 
-      if (nrow(df)==1) {
-        theta_hat_single <- mu_rel^2 / pmax((var_rel - mu_rel), 1e-6)
+      # Better single-PSU / low-PSU fallback
+      if (n_psu(df) <= 1) {
+        theta_hat_rel_single  <- safe_theta(mu_rel,  var_rel)
       }
+      
       
       sim_datasets <- vector("list", n_draws)
       i <- 1
       while (i <= n_draws) {
         
-        sampled_mu <- rnorm(1, mu_rel, sqrt(var_rel))  # Sample mean with uncertainty  
+        sampled_mu <- max(1e-8, rnorm(1, mu_rel, sqrt(var_rel)))
         
-        if (nrow(df)==1) {
-          sampled_theta <- theta_hat_single         # Single-PSU theta
+        if (n_psu(df) <= 1) {
+          sampled_theta <- theta_hat_rel_single
+        } else {
+          sampled_theta  <- sample(rep_theta_rel,  1, replace = TRUE)
         }
         
-        if (nrow(df)>1) {
-          sampled_theta <- sample(rep_theta_rel, 1, replace = TRUE)         # Sample theta
-          
-        }
-        
+
         sim_rel <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
         
-        if (!any(is.na(sim_rel))) {
-          
+        if (!any(is.na(sim_rel)) && !any(is.infinite(sim_rel))) {
+
           ####### REDISTRIBUTE RELEASE ########
           excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
           total_excess_rel <- sum(excess_rel)
@@ -444,71 +528,65 @@ for(s in statez) {
       df <- df_full3 %>% filter(my_dom_id_string == dom)
       
       # Define survey design
-      svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
+      svy_design <- survey::svydesign(
+        ids = ~psu_id,
+        strata = ~strat_id,
+        weights = ~wp_int,
+        nest = TRUE,
+        data = df
+      )
       options(survey.lonely.psu = "certainty")
       
-      max_keep <- round(max(df$sf_keep))+2
-      
-      df$w_int_rounded <- round(df$wp_int)
-      df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
-      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), 5000)) 
-      obs_sd_keep <- sd(df_expanded$sf_keep)
-      
-      # Estimate means, variances using survey design
-      mean_keep <- svymean(~sf_keep, svy_design)
-      mu_keep <- coef(mean_keep)
-      var_keep <- attr(mean_keep, "var")
-      
-      # Handle zero or missing variance (certainty units)
-      # Use imputed linearized standard error 
-      if (is.na(var_keep) || var_keep == 0) {
-        imputed_se <- mean(df$sesf_keep)  
-        var_keep <- imputed_se^2
+      # Point estimates
+      mean_keep <- survey::svymean(~sf_keep, svy_design, na.rm = TRUE)
+
+      mu_keep  <- as.numeric(coef(mean_keep))
+      var_keep <- as.numeric(attr(mean_keep, "var"))
+
+      # Fallback SEs
+      if (!is.finite(var_keep) || is.na(var_keep) || var_keep <= 0) {
+        var_keep <- mean(df$sesf_keep, na.rm = TRUE)^2
       }
+
       
-      
+      max_keep <- round(max(df$sf_keep, na.rm = TRUE)) + 2
+
       # Bootstrap replicate design
-      rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
+      rep_design <- survey::as.svrepdesign(svy_design, type = "bootstrap", replicates = n_reps)
       
-      # Extract the full replicate weights matrix
-      rep_wgts <- weights(rep_design, type = "analysis")  # matrix: rows = obs, cols = replicates
-      
-      # Replicate mean and variance
-      rep_means_keep <- coef(svymean(~sf_keep, rep_design, return.replicates = TRUE, na.rm = TRUE))
-      
-      rep_vars_keep <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~sf_keep, svy_var, na.rm = TRUE))
-      })
-      
-      # Estimate NB dispersion (theta)
-      rep_theta_keep <- rep_means_keep^2 / pmax(rep_vars_keep - rep_means_keep, 1e-6)
-      
-      # Estimate NB dispersion for when there is only one PSU 
-      if (nrow(df)==1) {
-        theta_hat_single <- mu_keep^2 / pmax((var_keep - mu_keep), 1e-6)
+      # Replicate means
+      rep_keep_obj <- get_rep_stat(~sf_keep, rep_design)
+
+      rep_means_keep <- rep_keep_obj$reps
+
+      # Replicate variances
+      rep_vars_keep <- get_rep_var(df, "sf_keep", rep_design)
+
+      # Negative binomial size parameters
+      rep_theta_keep <- safe_theta(rep_means_keep, rep_vars_keep)
+
+      # Better single-PSU / low-PSU fallback
+      if (n_psu(df) <= 1) {
+        theta_hat_keep_single <- safe_theta(mu_keep, var_keep)
       }
       
       sim_datasets <- vector("list", n_draws)
       i <- 1
       while (i <= n_draws) {
         
-        sampled_mu <- rnorm(1, mu_keep, sqrt(var_keep))                    # Sample mean with uncertainty
+        sampled_mu <- max(1e-8, rnorm(1, mu_keep, sqrt(var_keep)))
         
-        if (nrow(df)==1) {
-          sampled_theta <- theta_hat_single         # Single-PSU theta
-        }
-        
-        if (nrow(df)>1) {
+        if (n_psu(df) <= 1) {
+          sampled_theta <- theta_hat_keep_single         # Single-PSU theta
+        } else {
           sampled_theta <- sample(rep_theta_keep, 1, replace = TRUE)         # Sample theta
           
         }
         
+
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
-        if (!any(is.na(sim_keep))) {
+        if (!any(is.na(sim_keep)) && !any(is.infinite(sim_keep))) {
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -617,109 +695,69 @@ for(s in statez) {
       
       df <- df_full5 %>% filter(my_dom_id_string == dom)
       
-      # Define survey design
-      svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
+      svy_design <- survey::svydesign(
+        ids = ~psu_id,
+        strata = ~strat_id,
+        weights = ~wp_int,
+        nest = TRUE,
+        data = df
+      )
       options(survey.lonely.psu = "certainty")
       
-      max_rel <- round(max(df$sf_rel))+6
-      max_keep <- round(max(df$sf_keep))+2
+      mean_rel  <- survey::svymean(~sf_rel,  svy_design, na.rm = TRUE)
+      mean_keep <- survey::svymean(~sf_keep, svy_design, na.rm = TRUE)
       
-      df$w_int_rounded <- round(df$wp_int)
-      df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
-      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), 5000)) 
-      obs_sd_rel <- sd(df_expanded$sf_rel)
+      mu_rel  <- as.numeric(coef(mean_rel))
+      mu_keep <- as.numeric(coef(mean_keep))
       
-      # Estimate means, variances using survey design
-      mean_rel <- svymean(~sf_rel, svy_design)
-      mu_rel <- coef(mean_rel)
-      var_rel <- attr(mean_rel, "var")
+      var_rel  <- as.numeric(attr(mean_rel,  "var"))
+      var_keep <- as.numeric(attr(mean_keep, "var"))
       
-      # Handle zero or missing variance (certainty units)
-      # Use imputed linearized standard error 
-      if (is.na(var_rel) || var_rel == 0) {
-        imputed_se <- mean(df$sesf_rel)  
-        var_rel <- imputed_se^2
+      if (!is.finite(var_rel) || is.na(var_rel) || var_rel <= 0) {
+        var_rel <- mean(df$sesf_rel, na.rm = TRUE)^2
+      }
+      if (!is.finite(var_keep) || is.na(var_keep) || var_keep <= 0) {
+        var_keep <- mean(df$sesf_keep, na.rm = TRUE)^2
       }
       
-      mean_keep <- svymean(~sf_keep, svy_design)
-      mu_keep <- coef(mean_keep)
-      var_keep <- attr(mean_keep, "var")
+      rep_design <- survey::as.svrepdesign(svy_design, type = "bootstrap", replicates = n_reps)
       
-      # Handle zero or missing variance (certainty units)
-      # Use imputed linearized standard error 
-      if (is.na(var_keep) || var_keep == 0) {
-        imputed_se <- mean(df$sesf_keep)  
-        var_keep <- imputed_se^2
+      rep_rel_obj  <- get_rep_stat(~sf_rel,  rep_design)
+      rep_keep_obj <- get_rep_stat(~sf_keep, rep_design)
+      
+      rep_means_rel  <- rep_rel_obj$reps
+      rep_means_keep <- rep_keep_obj$reps
+      
+      rep_vars_rel  <- get_rep_var(df, "sf_rel",  rep_design)
+      rep_vars_keep <- get_rep_var(df, "sf_keep", rep_design)
+      
+      rep_theta_rel  <- safe_theta(rep_means_rel,  rep_vars_rel)
+      rep_theta_keep <- safe_theta(rep_means_keep, rep_vars_keep)
+      
+      if (n_psu(df) <= 1) {
+        theta_hat_rel_single  <- safe_theta(mu_rel,  var_rel)
+        theta_hat_keep_single <- safe_theta(mu_keep, var_keep)
       }
-      
-      # Bootstrap replicate design
-      rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
-      
-      # Extract the full replicate weights matrix
-      rep_wgts <- weights(rep_design, type = "analysis")  # matrix: rows = obs, cols = replicates
-      
-      # Replicate mean and variance
-      rep_means_rel <- coef(svymean(~sf_rel, rep_design, return.replicates = TRUE, na.rm = TRUE))
-      rep_means_keep <- coef(svymean(~sf_keep, rep_design, return.replicates = TRUE, na.rm = TRUE))
-      
-      rep_vars_rel <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~sf_rel, svy_var, na.rm = TRUE))
-      })
-      
-      rep_vars_keep <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~sf_keep, svy_var, na.rm = TRUE))
-      })
-      
-      # Estimate NB dispersion (theta)
-      rep_theta_rel <- rep_means_rel^2 / pmax(rep_vars_rel - rep_means_rel, 1e-6)
-      rep_theta_keep <- rep_vars_keep^2 / pmax(rep_vars_keep - rep_vars_keep, 1e-6)
-      
-      # Estimate NB dispersion for when there is only one PSU 
-      if (nrow(df)==1) {
-        theta_hat_rel_single <- mu_rel^2 / pmax((var_rel - mu_rel), 1e-6)
-      }
-      
-      if (nrow(df)==1) {
-        theta_hat_keep_single <- mu_keep^2 / pmax((var_keep - mu_keep), 1e-6)
-      }
-      
       
       sim_datasets <- vector("list", n_draws)
       i <- 1
       while (i <= n_draws) {
         
-        sampled_mu_rel <- rnorm(1, mu_rel, sqrt(var_rel))  # Sample mean with uncertainty  
-        sampled_mu_keep <- rnorm(1, mu_keep, sqrt(var_keep))  # Sample mean with uncertainty  
+        sampled_mu_rel  <- max(1e-8, rnorm(1, mu_rel,  sqrt(var_rel)))
+        sampled_mu_keep <- max(1e-8, rnorm(1, mu_keep, sqrt(var_keep)))
         
-        if (nrow(df)==1) {
-          sampled_theta_rel <- theta_hat_rel_single         # Single-PSU theta
+        if (n_psu(df) <= 1) {
+          sampled_theta_rel  <- theta_hat_rel_single
+          sampled_theta_keep <- theta_hat_keep_single
+        } else {
+          sampled_theta_rel  <- sample(rep_theta_rel,  1, replace = TRUE)
+          sampled_theta_keep <- sample(rep_theta_keep, 1, replace = TRUE)
         }
         
-        if (nrow(df)==1) {
-          sampled_theta_keep <- theta_hat_keep_single         # Single-PSU theta
-        }
-        
-        if (nrow(df)>1) {
-          sampled_theta_rel <- sample(rep_theta_rel, 1, replace = TRUE)         # Sample theta
-          
-        }
-        
-        if (nrow(df)>1) {
-          sampled_theta_keep <- sample(rep_theta_keep, 1, replace = TRUE)         # Sample theta
-          
-        }
-        
-        
-        sim_rel <- qnbinom(runif(n_sim), size = sampled_theta_rel, mu = sampled_mu_rel)
+        sim_rel  <- qnbinom(runif(n_sim), size = sampled_theta_rel,  mu = sampled_mu_rel)
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta_keep, mu = sampled_mu_keep)
         
-        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
+         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -757,7 +795,11 @@ for(s in statez) {
           
           my_dom_id_string<-dom
           
-          sim_datasets[[i]] <- data.frame(sim_id = i, sf_keep_sim = sim_keep, sf_rel_sim = sim_rel,  my_dom_id_string = my_dom_id_string) 
+          sim_datasets[[i]] <- data.frame(
+            sim_id = i, 
+            sf_keep_sim = sim_keep, 
+            sf_rel_sim = sim_rel,  
+            my_dom_id_string = my_dom_id_string) 
           
           i <- i + 1  # Only increment if no NaNs
         }
@@ -782,7 +824,7 @@ for(s in statez) {
       group_by(my_dom_id_string, sim_id) %>%
       mutate(id = row_number()) %>%
       ungroup()
-
+    
   }
   
   # List the objects you want to keep
@@ -818,8 +860,7 @@ for(s in statez) {
   
   
   ############ BLACK SEA BASS ############  
-  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/baseline_mrip_catch_processed.xlsx") %>% 
-    filter(state==s)
+  df <- full_df %>% dplyr::filter(state == s)
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0
   df_full1 <- df %>% filter(bsb_keep_and_rel==1 )
@@ -844,73 +885,59 @@ for(s in statez) {
     
     for (dom in unique(df_full1$my_dom_id_string)) {
       df <- df_full1 %>% filter(my_dom_id_string == dom)
-
+      
       # Define survey design
-      svy_design <- svydesign(ids=~psu_id,strata=~strat_id,
-                              weights=~wp_int,nest=TRUE,data=df)
+      svy_design <- survey::svydesign(
+        ids = ~psu_id,
+        strata = ~strat_id,
+        weights = ~wp_int,
+        nest = TRUE,
+        data = df
+      )
       options(survey.lonely.psu = "certainty")
       
-      # Estimate means, variances using survey design
-      mean_keep <- svymean(~bsb_keep, svy_design)
-      mean_rel  <- svymean(~bsb_rel,  svy_design)
+      # Point estimates
+      mean_keep <- survey::svymean(~bsb_keep, svy_design, na.rm = TRUE)
+      mean_rel  <- survey::svymean(~bsb_rel,  svy_design, na.rm = TRUE)
       
-      var_keep <- attr(mean_keep, "var")
-      var_rel  <- attr(mean_rel, "var")
+      mu_keep  <- as.numeric(coef(mean_keep))
+      mu_rel   <- as.numeric(coef(mean_rel))
+      var_keep <- as.numeric(attr(mean_keep, "var"))
+      var_rel  <- as.numeric(attr(mean_rel,  "var"))
       
-      mu_keep <- coef(mean_keep)
-      mu_rel  <- coef(mean_rel)
-      
-      
-      # Handle zero or missing variance (certainty units)
-      # Use imputed linearized standard error 
-      if (is.na(var_keep) || var_keep == 0) {
-        imputed_se <- mean(df$sebsb_keep)  
-        var_keep <- imputed_se^2
+      # Fallback SEs
+      if (!is.finite(var_keep) || is.na(var_keep) || var_keep <= 0) {
+        var_keep <- mean(df$sebsb_keep, na.rm = TRUE)^2
+      }
+      if (!is.finite(var_rel) || is.na(var_rel) || var_rel <= 0) {
+        var_rel <- mean(df$sebsb_rel, na.rm = TRUE)^2
       }
       
-      if (is.na(var_rel) || var_rel == 0) {
-        imputed_se <- mean(df$sebsb_rel)  
-        var_rel <- imputed_se^2
-      }
+      max_keep <- round(max(df$bsb_keep, na.rm = TRUE)) + 2
+      max_rel  <- round(max(df$bsb_rel,  na.rm = TRUE)) + 6
       
-      max_keep <- round(max(df$bsb_keep))+2
-      max_rel <- round(max(df$bsb_rel))+6
-      
-      # Bootstrap replicate design (R = number of replicates)
-      rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
+      # Bootstrap replicate design
+      rep_design <- survey::as.svrepdesign(svy_design, type = "bootstrap", replicates = n_reps)
       
       # Replicate means
-      rep_means_keep <- coef(svymean(~bsb_keep, rep_design, return.replicates = TRUE, na.rm = TRUE))  # scalar mean
-      rep_means_rel  <- coef(svymean(~bsb_rel,  rep_design, return.replicates = TRUE, na.rm = TRUE))
+      rep_keep_obj <- get_rep_stat(~bsb_keep, rep_design)
+      rep_rel_obj  <- get_rep_stat(~bsb_rel,  rep_design)
+      
+      rep_means_keep <- rep_keep_obj$reps
+      rep_means_rel  <- rep_rel_obj$reps
       
       # Replicate variances
-      # Extract the full replicate weights matrix
-      rep_wgts <- weights(rep_design, type = "analysis")  # matrix: rows = obs, cols = replicates
+      rep_vars_keep <- get_rep_var(df, "bsb_keep", rep_design)
+      rep_vars_rel  <- get_rep_var(df, "bsb_rel",  rep_design)
       
-      # Now loop over columns (replicates)
-      rep_vars_keep <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~bsb_keep, svy_var, na.rm = TRUE))
-      })
+      # Negative binomial size parameters
+      rep_theta_keep <- safe_theta(rep_means_keep, rep_vars_keep)
+      rep_theta_rel  <- safe_theta(rep_means_rel,  rep_vars_rel)
       
-      rep_vars_rel <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~bsb_rel, svy_var, na.rm = TRUE))
-      })
-      
-      # Estimate dispersion for negative binomial
-      # Protect against negative denominators
-      rep_theta_keep <- rep_means_keep^2 / pmax(rep_vars_keep - rep_means_keep, 1e-6)
-      rep_theta_rel  <- rep_means_rel^2  / pmax(rep_vars_rel  - rep_means_rel,  1e-6)
-      
-      # Estimate NB dispersion for when there is only one PSU 
-      if (nrow(df)==1) {
-        theta_hat_keep_single <- mu_keep^2 / pmax((var_keep - mu_keep), 1e-6)
-        theta_hat_rel_single <- mu_rel^2 / pmax((var_rel - mu_rel), 1e-6)
+      # Better single-PSU / low-PSU fallback
+      if (n_psu(df) <= 1) {
+        theta_hat_keep_single <- safe_theta(mu_keep, var_keep)
+        theta_hat_rel_single  <- safe_theta(mu_rel,  var_rel)
       }
       
       # Fit the copula to a sample (max 5000 obs.) of the original data b/c it can take a while if N is large
@@ -939,18 +966,21 @@ for(s in statez) {
       
       tau_hat <- cor(u_mat[,1], u_mat[,2], method = "kendall")
       
-      if (tau_hat >= 0.3) {
-        cop <- gumbelCopula(dim = 2)
-        cop_name <- "Gumbel"
-      } else if (tau_hat <= -0.3) {
-        cop <- normalCopula(dim = 2)
-        cop_name <- "Gaussian"
-      } else {
-        cop <- frankCopula(dim = 2)
-        cop_name <- "Frank"
-      }
+      copula_fit <- try({
+        if (tau_hat >= 0.3) {
+          copula::fitCopula(copula::gumbelCopula(dim = 2), u_mat, method = "mpl", start = 1)
+        } else if (tau_hat <= -0.3) {
+          copula::fitCopula(copula::normalCopula(dim = 2), u_mat, method = "mpl")
+        } else {
+          copula::fitCopula(copula::frankCopula(dim = 2), u_mat, method = "mpl", start = 1)
+        }
+      }, silent = TRUE)
       
-      copula_fit <- fitCopula(cop, u_mat, method = "mpl", start=1)
+      if (inherits(copula_fit, "try-error")) {
+        tau_hat <- 0
+        cop_name <- "Gaussian_fallback_independenceish"
+        copula_fit <- copula::fitCopula(copula::normalCopula(dim = 2), u_mat, method = "mpl")
+      }
       
       
       
@@ -965,16 +995,13 @@ for(s in statez) {
         sampled_mu_keep <-  rnorm(1, mu_keep, sqrt(var_keep))
         sampled_mu_rel  <- rnorm(1, mu_rel,  sqrt(var_rel))
         
-        if (nrow(df)==1) {
-          sampled_theta_keep <- theta_hat_keep_single       # Single-PSU theta
-          sampled_theta_rel <- theta_hat_rel_single         # Single-PSU theta
+      if (n_psu(df) <= 1) {
+          sampled_theta_keep <- theta_hat_keep_single
+          sampled_theta_rel  <- theta_hat_rel_single
+        } else {
+          sampled_theta_keep <- sample(rep_theta_keep, 1, replace = TRUE)
+          sampled_theta_rel  <- sample(rep_theta_rel,  1, replace = TRUE)
         }
-        
-        if (nrow(df)>1) {
-          sampled_theta_keep <- sample(rep_theta_keep, 1, replace = TRUE) # Sample theta when there are multiple PSUs
-          sampled_theta_rel  <- sample(rep_theta_rel,  1, replace = TRUE) # Sample theta when there are multiple PSUs
-        }
-        
         
         # Convert uniform to NB using quantiles
         sim_keep <- qnbinom(sim_u[,1], size = sampled_theta_keep, mu = sampled_mu_keep)
@@ -983,7 +1010,7 @@ for(s in statez) {
         # Convert uniform to NB using quantiles
         sim_rel  <- qnbinom(sim_u[,2], size = sampled_theta_rel, mu = sampled_mu_rel)
         
-        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
+         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -1054,7 +1081,7 @@ for(s in statez) {
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
-
+  
   ################
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)==0
@@ -1068,71 +1095,64 @@ for(s in statez) {
       df <- df_full2 %>% filter(my_dom_id_string == dom)
       
       # Define survey design
-      svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
+      svy_design <- survey::svydesign(
+        ids = ~psu_id,
+        strata = ~strat_id,
+        weights = ~wp_int,
+        nest = TRUE,
+        data = df
+      )
       options(survey.lonely.psu = "certainty")
       
-      max_rel <- round(max(df$bsb_rel))+6
+      # Point estimates
+      mean_rel  <- survey::svymean(~bsb_rel,  svy_design, na.rm = TRUE)
       
-      df$w_int_rounded <- round(df$wp_int)
-      df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
-      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), 5000)) 
-      obs_sd_rel <- sd(df_expanded$bsb_rel)
+      mu_rel   <- as.numeric(coef(mean_rel))
+      var_rel  <- as.numeric(attr(mean_rel,  "var"))
       
-      # Estimate means, variances using survey design
-      mean_rel <- svymean(~bsb_rel, svy_design)
-      mu_rel <- coef(mean_rel)
-      var_rel <- attr(mean_rel, "var")
-      
-      # Handle zero or missing variance (certainty units)
-      # Use imputed linearized standard error 
-      if (is.na(var_rel) || var_rel == 0) {
-        imputed_se <- mean(df$sebsb_rel)  
-        var_rel <- imputed_se^2
+      # Fallback SEs
+
+      if (!is.finite(var_rel) || is.na(var_rel) || var_rel <= 0) {
+        var_rel <- mean(df$sebsb_rel, na.rm = TRUE)^2
       }
       
+      max_rel  <- round(max(df$bsb_rel,  na.rm = TRUE)) + 6
+      
       # Bootstrap replicate design
-      rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
+      rep_design <- survey::as.svrepdesign(svy_design, type = "bootstrap", replicates = n_reps)
       
-      # Extract the full replicate weights matrix
-      rep_wgts <- weights(rep_design, type = "analysis")  # matrix: rows = obs, cols = replicates
+      # Replicate means
+      rep_rel_obj  <- get_rep_stat(~bsb_rel,  rep_design)
       
-      # Replicate mean and variance
-      rep_means_rel <- coef(svymean(~bsb_rel, rep_design, return.replicates = TRUE, na.rm = TRUE))
+      rep_means_rel  <- rep_rel_obj$reps
       
-      rep_vars_rel <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~bsb_rel, svy_var, na.rm = TRUE))
-      })
+      # Replicate variances
+      rep_vars_rel  <- get_rep_var(df, "bsb_rel",  rep_design)
       
-      # Estimate NB dispersion (theta)
-      rep_theta_rel <- rep_means_rel^2 / pmax(rep_vars_rel - rep_means_rel, 1e-6)
+      # Negative binomial size parameters
+      rep_theta_rel  <- safe_theta(rep_means_rel,  rep_vars_rel)
       
-      # Estimate NB dispersion for when there is only one PSU 
-      if (nrow(df)==1) {
-        theta_hat_single <- mu_rel^2 / pmax((var_rel - mu_rel), 1e-6)
+      # Better single-PSU / low-PSU fallback
+      if (n_psu(df) <= 1) {
+        theta_hat_rel_single  <- safe_theta(mu_rel,  var_rel)
       }
       
       sim_datasets <- vector("list", n_draws)
       i <- 1
       while (i <= n_draws) {
         
-        sampled_mu <- rnorm(1, mu_rel, sqrt(var_rel))  # Sample mean with uncertainty  
-        
-        if (nrow(df)==1) {
-          sampled_theta <- theta_hat_single         # Single-PSU theta
-        }
-        
-        if (nrow(df)>1) {
-          sampled_theta <- sample(rep_theta_rel, 1, replace = TRUE)         # Sample theta
-          
+        sampled_mu <- max(1e-8, rnorm(1, mu_rel, sqrt(var_rel)))
+
+        if (n_psu(df) <= 1) {
+          sampled_theta <- theta_hat_rel_single
+        } else {
+          sampled_theta <- sample(rep_theta_rel, 1, replace = TRUE)         # Sample thet
         }
         
         sim_rel <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
         
-        if (!any(is.na(sim_rel))) {
+        if (!any(is.na(sim_rel)) && !any(is.infinite(sim_rel))) {
           
           ####### REDISTRIBUTE RELEASE ########
           excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
@@ -1197,71 +1217,63 @@ for(s in statez) {
       df <- df_full3 %>% filter(my_dom_id_string == dom)
       
       # Define survey design
-      svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
+      svy_design <- survey::svydesign(
+        ids = ~psu_id,
+        strata = ~strat_id,
+        weights = ~wp_int,
+        nest = TRUE,
+        data = df
+      )
       options(survey.lonely.psu = "certainty")
       
-      max_keep <- round(max(df$bsb_keep))+2
-      
-      df$w_int_rounded <- round(df$wp_int)
-      df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
-      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), 5000)) 
-      obs_sd_keep <- sd(df_expanded$bsb_keep)
-      
-      # Estimate means, variances using survey design
-      mean_keep <- svymean(~bsb_keep, svy_design)
-      mu_keep <- coef(mean_keep)
-      var_keep <- attr(mean_keep, "var")
-      
-      # Handle zero or missing variance (certainty units)
-      # Use imputed linearized standard error 
-      if (is.na(var_keep) || var_keep == 0) {
-        imputed_se <- mean(df$sebsb_keep)  
-        var_keep <- imputed_se^2
+      # Point estimates
+      mean_keep <- survey::svymean(~bsb_keep, svy_design, na.rm = TRUE)
+
+      mu_keep  <- as.numeric(coef(mean_keep))
+      var_keep <- as.numeric(attr(mean_keep, "var"))
+
+      # Fallback SEs
+      if (!is.finite(var_keep) || is.na(var_keep) || var_keep <= 0) {
+        var_keep <- mean(df$sebsb_keep, na.rm = TRUE)^2
       }
+
       
-      
+      max_keep <- round(max(df$bsb_keep, na.rm = TRUE)) + 2
+
       # Bootstrap replicate design
-      rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
+      rep_design <- survey::as.svrepdesign(svy_design, type = "bootstrap", replicates = n_reps)
       
-      # Extract the full replicate weights matrix
-      rep_wgts <- weights(rep_design, type = "analysis")  # matrix: rows = obs, cols = replicates
-      
-      # Replicate mean and variance
-      rep_means_keep <- coef(svymean(~bsb_keep, rep_design, return.replicates = TRUE, na.rm = TRUE))
-      
-      rep_vars_keep <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~bsb_keep, svy_var, na.rm = TRUE))
-      })
-      
-      # Estimate NB dispersion (theta)
-      rep_theta_keep <- rep_means_keep^2 / pmax(rep_vars_keep - rep_means_keep, 1e-6)
-      
-      # Estimate NB dispersion for when there is only one PSU 
-      if (nrow(df)==1) {
-        theta_hat_single <- mu_keep^2 / pmax((var_keep - mu_keep), 1e-6)
+      # Replicate means
+      rep_keep_obj <- get_rep_stat(~bsb_keep, rep_design)
+
+      rep_means_keep <- rep_keep_obj$reps
+
+      # Replicate variances
+      rep_vars_keep <- get_rep_var(df, "bsb_keep", rep_design)
+
+      # Negative binomial size parameters
+      rep_theta_keep <- safe_theta(rep_means_keep, rep_vars_keep)
+
+      # Better single-PSU / low-PSU fallback
+      if (n_psu(df) <= 1) {
+        theta_hat_keep_single <- safe_theta(mu_keep, var_keep)
       }
       
       sim_datasets <- vector("list", n_draws)
       i <- 1
       while (i <= n_draws) {
         
-        sampled_mu <- rnorm(1, mu_keep, sqrt(var_keep))                    # Sample mean with uncertainty
-        
-        if (nrow(df)==1) {
-          sampled_theta <- theta_hat_single         # Single-PSU theta
-        }
-        
-        if (nrow(df)>1) {
+        sampled_mu <- max(1e-8, rnorm(1, mu_keep, sqrt(var_keep)))
+
+        if (n_psu(df) <= 1) {
+          sampled_theta <- theta_hat_keep_single         # Single-PSU theta
+        } else {
           sampled_theta <- sample(rep_theta_keep, 1, replace = TRUE)         # Sample theta
-          
         }
         
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
-        if (!any(is.na(sim_keep))) {
+        if (!any(is.na(sim_keep)) && !any(is.infinite(sim_keep))) {
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -1371,109 +1383,69 @@ for(s in statez) {
       
       df <- df_full5 %>% filter(my_dom_id_string == dom)
       
-      # Define survey design
-      svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
+      svy_design <- survey::svydesign(
+        ids = ~psu_id,
+        strata = ~strat_id,
+        weights = ~wp_int,
+        nest = TRUE,
+        data = df
+      )
       options(survey.lonely.psu = "certainty")
       
-      max_rel <- round(max(df$bsb_rel))+6
-      max_keep <- round(max(df$bsb_keep))+2
+      mean_rel  <- survey::svymean(~bsb_rel,  svy_design, na.rm = TRUE)
+      mean_keep <- survey::svymean(~bsb_keep, svy_design, na.rm = TRUE)
       
-      df$w_int_rounded <- round(df$wp_int)
-      df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
-      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), 5000)) 
-      obs_sd_rel <- sd(df_expanded$bsb_rel)
+      mu_rel  <- as.numeric(coef(mean_rel))
+      mu_keep <- as.numeric(coef(mean_keep))
       
-      # Estimate means, variances using survey design
-      mean_rel <- svymean(~bsb_rel, svy_design)
-      mu_rel <- coef(mean_rel)
-      var_rel <- attr(mean_rel, "var")
+      var_rel  <- as.numeric(attr(mean_rel,  "var"))
+      var_keep <- as.numeric(attr(mean_keep, "var"))
       
-      # Handle zero or missing variance (certainty units)
-      # Use imputed linearized standard error 
-      if (is.na(var_rel) || var_rel == 0) {
-        imputed_se <- mean(df$sebsb_rel)  
-        var_rel <- imputed_se^2
+      if (!is.finite(var_rel) || is.na(var_rel) || var_rel <= 0) {
+        var_rel <- mean(df$sebsb_rel, na.rm = TRUE)^2
+      }
+      if (!is.finite(var_keep) || is.na(var_keep) || var_keep <= 0) {
+        var_keep <- mean(df$sebsb_keep, na.rm = TRUE)^2
       }
       
-      mean_keep <- svymean(~bsb_keep, svy_design)
-      mu_keep <- coef(mean_keep)
-      var_keep <- attr(mean_keep, "var")
+      rep_design <- survey::as.svrepdesign(svy_design, type = "bootstrap", replicates = n_reps)
       
-      # Handle zero or missing variance (certainty units)
-      # Use imputed linearized standard error 
-      if (is.na(var_keep) || var_keep == 0) {
-        imputed_se <- mean(df$sebsb_keep)  
-        var_keep <- imputed_se^2
+      rep_rel_obj  <- get_rep_stat(~bsb_rel,  rep_design)
+      rep_keep_obj <- get_rep_stat(~bsb_keep, rep_design)
+      
+      rep_means_rel  <- rep_rel_obj$reps
+      rep_means_keep <- rep_keep_obj$reps
+      
+      rep_vars_rel  <- get_rep_var(df, "bsb_rel",  rep_design)
+      rep_vars_keep <- get_rep_var(df, "bsb_keep", rep_design)
+      
+      rep_theta_rel  <- safe_theta(rep_means_rel,  rep_vars_rel)
+      rep_theta_keep <- safe_theta(rep_means_keep, rep_vars_keep)
+      
+      if (n_psu(df) <= 1) {
+        theta_hat_rel_single  <- safe_theta(mu_rel,  var_rel)
+        theta_hat_keep_single <- safe_theta(mu_keep, var_keep)
       }
-      
-      # Bootstrap replicate design
-      rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
-      
-      # Extract the full replicate weights matrix
-      rep_wgts <- weights(rep_design, type = "analysis")  # matrix: rows = obs, cols = replicates
-      
-      # Replicate mean and variance
-      rep_means_rel <- coef(svymean(~bsb_rel, rep_design, return.replicates = TRUE, na.rm = TRUE))
-      rep_means_keep <- coef(svymean(~bsb_keep, rep_design, return.replicates = TRUE, na.rm = TRUE))
-      
-      rep_vars_rel <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~bsb_rel, svy_var, na.rm = TRUE))
-      })
-      
-      rep_vars_keep <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~bsb_keep, svy_var, na.rm = TRUE))
-      })
-      
-      # Estimate NB dispersion (theta)
-      rep_theta_rel <- rep_means_rel^2 / pmax(rep_vars_rel - rep_means_rel, 1e-6)
-      rep_theta_keep <- rep_vars_keep^2 / pmax(rep_vars_keep - rep_vars_keep, 1e-6)
-      
-      # Estimate NB dispersion for when there is only one PSU 
-      if (nrow(df)==1) {
-        theta_hat_rel_single <- mu_rel^2 / pmax((var_rel - mu_rel), 1e-6)
-      }
-      
-      if (nrow(df)==1) {
-        theta_hat_keep_single <- mu_keep^2 / pmax((var_keep - mu_keep), 1e-6)
-      }
-      
       
       sim_datasets <- vector("list", n_draws)
       i <- 1
       while (i <= n_draws) {
         
-        sampled_mu_rel <- rnorm(1, mu_rel, sqrt(var_rel))  # Sample mean with uncertainty  
-        sampled_mu_keep <- rnorm(1, mu_keep, sqrt(var_keep))  # Sample mean with uncertainty  
+        sampled_mu_rel  <- max(1e-8, rnorm(1, mu_rel,  sqrt(var_rel)))
+        sampled_mu_keep <- max(1e-8, rnorm(1, mu_keep, sqrt(var_keep)))
         
-        if (nrow(df)==1) {
-          sampled_theta_rel <- theta_hat_rel_single         # Single-PSU theta
+        if (n_psu(df) <= 1) {
+          sampled_theta_rel  <- theta_hat_rel_single
+          sampled_theta_keep <- theta_hat_keep_single
+        } else {
+          sampled_theta_rel  <- sample(rep_theta_rel,  1, replace = TRUE)
+          sampled_theta_keep <- sample(rep_theta_keep, 1, replace = TRUE)
         }
         
-        if (nrow(df)==1) {
-          sampled_theta_keep <- theta_hat_keep_single         # Single-PSU theta
-        }
-        
-        if (nrow(df)>1) {
-          sampled_theta_rel <- sample(rep_theta_rel, 1, replace = TRUE)         # Sample theta
-          
-        }
-        
-        if (nrow(df)>1) {
-          sampled_theta_keep <- sample(rep_theta_keep, 1, replace = TRUE)         # Sample theta
-          
-        }
-        
-        
-        sim_rel <- qnbinom(runif(n_sim), size = sampled_theta_rel, mu = sampled_mu_rel)
+        sim_rel  <- qnbinom(runif(n_sim), size = sampled_theta_rel,  mu = sampled_mu_rel)
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta_keep, mu = sampled_mu_keep)
         
-        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
+         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -1532,11 +1504,11 @@ for(s in statez) {
     }
     
     final_result5 <- bind_rows(all_results5) %>% 
-    group_by(my_dom_id_string, sim_id) %>%
+      group_by(my_dom_id_string, sim_id) %>%
       mutate(id = row_number()) %>%
       ungroup()
     
-    }
+  }
   
   # List the objects you want to keep
   keep <- c("final_result1", "final_result2","final_result3", "final_result4","final_result5", "df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s",  "combined_results_SF")
@@ -1570,8 +1542,7 @@ for(s in statez) {
   
   
   ############ SCUP ############  
-  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/baseline_mrip_catch_processed.xlsx") %>% 
-    filter(state==s)
+  df <- full_df %>% dplyr::filter(state == s)
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0
   df_full1 <- df %>% filter(scup_keep_and_rel==1 )
@@ -1600,74 +1571,57 @@ for(s in statez) {
       df <- df_full1 %>% filter(my_dom_id_string == dom)
       
       # Define survey design
-      svy_design <- svydesign(ids=~psu_id,strata=~strat_id,
-                              weights=~wp_int,nest=TRUE,data=df)
+      svy_design <- survey::svydesign(
+        ids = ~psu_id,
+        strata = ~strat_id,
+        weights = ~wp_int,
+        nest = TRUE,
+        data = df
+      )
       options(survey.lonely.psu = "certainty")
       
-      # Estimate means, variances using survey design
-      sum_keep <- svytotal(~scup_keep, svy_design)
-      sum_rel <- svytotal(~scup_rel, svy_design)
+      # Point estimates
+      mean_keep <- survey::svymean(~scup_keep, svy_design, na.rm = TRUE)
+      mean_rel  <- survey::svymean(~scup_rel,  svy_design, na.rm = TRUE)
       
-      mean_keep <- svymean(~scup_keep, svy_design)
-      mean_rel  <- svymean(~scup_rel,  svy_design)
+      mu_keep  <- as.numeric(coef(mean_keep))
+      mu_rel   <- as.numeric(coef(mean_rel))
+      var_keep <- as.numeric(attr(mean_keep, "var"))
+      var_rel  <- as.numeric(attr(mean_rel,  "var"))
       
-      var_keep <- attr(mean_keep, "var")
-      var_rel  <- attr(mean_rel, "var")
-      
-      mu_keep <- coef(mean_keep)
-      mu_rel  <- coef(mean_rel)
-      
-      
-      # Handle zero or missing variance (certainty units)
-      # Use imputed linearized standard error 
-      if (is.na(var_keep) || var_keep == 0) {
-        imputed_se <- mean(df$sescup_keep)  
-        var_keep <- imputed_se^2
+      # Fallback SEs
+      if (!is.finite(var_keep) || is.na(var_keep) || var_keep <= 0) {
+        var_keep <- mean(df$sescup_keep, na.rm = TRUE)^2
+      }
+      if (!is.finite(var_rel) || is.na(var_rel) || var_rel <= 0) {
+        var_rel <- mean(df$sescup_rel, na.rm = TRUE)^2
       }
       
-      if (is.na(var_rel) || var_rel == 0) {
-        imputed_se <- mean(df$sescup_rel)  
-        var_rel <- imputed_se^2
-      }
+      max_keep <- round(max(df$scup_keep, na.rm = TRUE)) + 2
+      max_rel  <- round(max(df$scup_rel,  na.rm = TRUE)) + 6
       
-      max_keep <- round(max(df$scup_keep))+2
-      max_rel <- round(max(df$scup_rel))+6
-      
-      # Bootstrap replicate design (R = number of replicates)
-      rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
+      # Bootstrap replicate design
+      rep_design <- survey::as.svrepdesign(svy_design, type = "bootstrap", replicates = n_reps)
       
       # Replicate means
-      rep_means_keep <- coef(svymean(~scup_keep, rep_design, return.replicates = TRUE, na.rm = TRUE))  # scalar mean
-      rep_means_rel  <- coef(svymean(~scup_rel,  rep_design, return.replicates = TRUE, na.rm = TRUE))
+      rep_keep_obj <- get_rep_stat(~scup_keep, rep_design)
+      rep_rel_obj  <- get_rep_stat(~scup_rel,  rep_design)
+      
+      rep_means_keep <- rep_keep_obj$reps
+      rep_means_rel  <- rep_rel_obj$reps
       
       # Replicate variances
-      # Extract the full replicate weights matrix
-      rep_wgts <- weights(rep_design, type = "analysis")  # matrix: rows = obs, cols = replicates
+      rep_vars_keep <- get_rep_var(df, "scup_keep", rep_design)
+      rep_vars_rel  <- get_rep_var(df, "scup_rel",  rep_design)
       
-      # Now loop over columns (replicates)
-      rep_vars_keep <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~scup_keep, svy_var, na.rm = TRUE))
-      })
+      # Negative binomial size parameters
+      rep_theta_keep <- safe_theta(rep_means_keep, rep_vars_keep)
+      rep_theta_rel  <- safe_theta(rep_means_rel,  rep_vars_rel)
       
-      rep_vars_rel <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~scup_rel, svy_var, na.rm = TRUE))
-      })
-      
-      # Estimate dispersion for negative binomial
-      # Protect against negative denominators
-      rep_theta_keep <- rep_means_keep^2 / pmax(rep_vars_keep - rep_means_keep, 1e-6)
-      rep_theta_rel  <- rep_means_rel^2  / pmax(rep_vars_rel  - rep_means_rel,  1e-6)
-      
-      # Estimate NB dispersion for when there is only one PSU 
-      if (nrow(df)==1) {
-        theta_hat_keep_single <- mu_keep^2 / pmax((var_keep - mu_keep), 1e-6)
-        theta_hat_rel_single <- mu_rel^2 / pmax((var_rel - mu_rel), 1e-6)
+      # Better single-PSU / low-PSU fallback
+      if (n_psu(df) <= 1) {
+        theta_hat_keep_single <- safe_theta(mu_keep, var_keep)
+        theta_hat_rel_single  <- safe_theta(mu_rel,  var_rel)
       }
       
       # Fit the copula to a sample (max 5000 obs.) of the original data b/c it can take a while if N is large
@@ -1675,9 +1629,9 @@ for(s in statez) {
       df$w_int_rounded <- round(df$wp_int)
       df_expanded <- uncount(df, weights = w_int_rounded) 
       df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), n_sim)) 
-    
       
-            # Create pseudo-observations (rank-based empirical CDFs)
+      
+      # Create pseudo-observations (rank-based empirical CDFs)
       df_expanded <- df_expanded %>%
         mutate(
           rank_keep = rank(scup_keep, ties.method = "average"),
@@ -1697,18 +1651,21 @@ for(s in statez) {
       
       tau_hat <- cor(u_mat[,1], u_mat[,2], method = "kendall")
       
-      if (tau_hat >= 0.3) {
-        cop <- gumbelCopula(dim = 2)
-        cop_name <- "Gumbel"
-      } else if (tau_hat <= -0.3) {
-        cop <- normalCopula(dim = 2)
-        cop_name <- "Gaussian"
-      } else {
-        cop <- frankCopula(dim = 2)
-        cop_name <- "Frank"
-      }
+      copula_fit <- try({
+        if (tau_hat >= 0.3) {
+          copula::fitCopula(copula::gumbelCopula(dim = 2), u_mat, method = "mpl", start = 1)
+        } else if (tau_hat <= -0.3) {
+          copula::fitCopula(copula::normalCopula(dim = 2), u_mat, method = "mpl")
+        } else {
+          copula::fitCopula(copula::frankCopula(dim = 2), u_mat, method = "mpl", start = 1)
+        }
+      }, silent = TRUE)
       
-      copula_fit <- fitCopula(cop, u_mat, method = "mpl", start=1)
+      if (inherits(copula_fit, "try-error")) {
+        tau_hat <- 0
+        cop_name <- "Gaussian_fallback_independenceish"
+        copula_fit <- copula::fitCopula(copula::normalCopula(dim = 2), u_mat, method = "mpl")
+      }
       
       
       
@@ -1716,23 +1673,20 @@ for(s in statez) {
       sim_datasets <- list()
       i <- 1
       while (i <= n_draws) {
-
+        
         sim_u <- rCopula(n_sim, copula_fit@copula)
         
         # Sample mu_keep and mu_rel with uncertainty
         sampled_mu_keep <-  rnorm(1, mu_keep, sqrt(var_keep))
         sampled_mu_rel  <- rnorm(1, mu_rel,  sqrt(var_rel))
         
-        if (nrow(df)==1) {
-          sampled_theta_keep <- theta_hat_keep_single       # Single-PSU theta
-          sampled_theta_rel <- theta_hat_rel_single         # Single-PSU theta
+       if (n_psu(df) <= 1) {
+          sampled_theta_keep <- theta_hat_keep_single
+          sampled_theta_rel  <- theta_hat_rel_single
+        } else {
+          sampled_theta_keep <- sample(rep_theta_keep, 1, replace = TRUE)
+          sampled_theta_rel  <- sample(rep_theta_rel,  1, replace = TRUE)
         }
-        
-        if (nrow(df)>1) {
-          sampled_theta_keep <- sample(rep_theta_keep, 1, replace = TRUE) # Sample theta when there are multiple PSUs
-          sampled_theta_rel  <- sample(rep_theta_rel,  1, replace = TRUE) # Sample theta when there are multiple PSUs
-        }
-        
         
         # Convert uniform to NB using quantiles
         sim_keep <- qnbinom(sim_u[,1], size = sampled_theta_keep, mu = sampled_mu_keep)
@@ -1741,7 +1695,7 @@ for(s in statez) {
         # Convert uniform to NB using quantiles
         sim_rel  <- qnbinom(sim_u[,2], size = sampled_theta_rel, mu = sampled_mu_rel)
         
-        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
+         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -1827,71 +1781,62 @@ for(s in statez) {
       df <- df_full2 %>% filter(my_dom_id_string == dom)
       
       # Define survey design
-      svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
+      svy_design <- survey::svydesign(
+        ids = ~psu_id,
+        strata = ~strat_id,
+        weights = ~wp_int,
+        nest = TRUE,
+        data = df
+      )
       options(survey.lonely.psu = "certainty")
       
-      max_rel <- round(max(df$scup_rel))+6
+      # Point estimates
+      mean_rel  <- survey::svymean(~scup_rel,  svy_design, na.rm = TRUE)
       
-      df$w_int_rounded <- round(df$wp_int)
-      df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
-      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), 5000)) 
-      obs_sd_rel <- sd(df_expanded$scup_rel)
+      mu_rel   <- as.numeric(coef(mean_rel))
+      var_rel  <- as.numeric(attr(mean_rel,  "var"))
       
-      # Estimate means, variances using survey design
-      mean_rel <- svymean(~scup_rel, svy_design)
-      mu_rel <- coef(mean_rel)
-      var_rel <- attr(mean_rel, "var")
-      
-      # Handle zero or missing variance (certainty units)
-      # Use imputed linearized standard error 
-      if (is.na(var_rel) || var_rel == 0) {
-        imputed_se <- mean(df$sescup_rel)  
-        var_rel <- imputed_se^2
+      # Fallback SEs
+      if (!is.finite(var_rel) || is.na(var_rel) || var_rel <= 0) {
+        var_rel <- mean(df$sescup_rel, na.rm = TRUE)^2
       }
       
+      max_rel  <- round(max(df$scup_rel,  na.rm = TRUE)) + 6
+      
       # Bootstrap replicate design
-      rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
+      rep_design <- survey::as.svrepdesign(svy_design, type = "bootstrap", replicates = n_reps)
       
-      # Extract the full replicate weights matrix
-      rep_wgts <- weights(rep_design, type = "analysis")  # matrix: rows = obs, cols = replicates
+      # Replicate means
+      rep_rel_obj  <- get_rep_stat(~scup_rel,  rep_design)
       
-      # Replicate mean and variance
-      rep_means_rel <- coef(svymean(~scup_rel, rep_design, return.replicates = TRUE, na.rm = TRUE))
+      rep_means_rel  <- rep_rel_obj$reps
       
-      rep_vars_rel <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~scup_rel, svy_var, na.rm = TRUE))
-      })
+      # Replicate variances
+      rep_vars_rel  <- get_rep_var(df, "scup_rel",  rep_design)
       
-      # Estimate NB dispersion (theta)
-      rep_theta_rel <- rep_means_rel^2 / pmax(rep_vars_rel - rep_means_rel, 1e-6)
+      # Negative binomial size parameters
+      rep_theta_rel  <- safe_theta(rep_means_rel,  rep_vars_rel)
       
-      # Estimate NB dispersion for when there is only one PSU 
-      if (nrow(df)==1) {
-        theta_hat_single <- mu_rel^2 / pmax((var_rel - mu_rel), 1e-6)
+      # Better single-PSU / low-PSU fallback
+      if (n_psu(df) <= 1) {
+        theta_hat_rel_single  <- safe_theta(mu_rel,  var_rel)
       }
       
       sim_datasets <- vector("list", n_draws)
       i <- 1
       while (i <= n_draws) {
         
-        sampled_mu <- rnorm(1, mu_rel, sqrt(var_rel))  # Sample mean with uncertainty  
+        sampled_mu <- max(1e-8, rnorm(1, mu_rel, sqrt(var_rel)))
         
-        if (nrow(df)==1) {
-          sampled_theta <- theta_hat_single         # Single-PSU theta
-        }
-        
-        if (nrow(df)>1) {
+         if (n_psu(df) <= 1) {
+          sampled_theta <- theta_hat_rel_single         # Single-PSU theta
+        } else {
           sampled_theta <- sample(rep_theta_rel, 1, replace = TRUE)         # Sample theta
-          
         }
-        
         sim_rel <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
         
-        if (!any(is.na(sim_rel))) {
+        if (!any(is.na(sim_rel)) && !any(is.infinite(sim_rel))) {
           
           ####### REDISTRIBUTE RELEASE ########
           excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
@@ -1956,71 +1901,63 @@ for(s in statez) {
       df <- df_full3 %>% filter(my_dom_id_string == dom)
       
       # Define survey design
-      svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
+      svy_design <- survey::svydesign(
+        ids = ~psu_id,
+        strata = ~strat_id,
+        weights = ~wp_int,
+        nest = TRUE,
+        data = df
+      )
       options(survey.lonely.psu = "certainty")
       
-      max_keep <- round(max(df$scup_keep))+2
-      
-      df$w_int_rounded <- round(df$wp_int)
-      df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
-      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), 5000)) 
-      obs_sd_keep <- sd(df_expanded$scup_keep)
-      
-      # Estimate means, variances using survey design
-      mean_keep <- svymean(~scup_keep, svy_design)
-      mu_keep <- coef(mean_keep)
-      var_keep <- attr(mean_keep, "var")
-      
-      # Handle zero or missing variance (certainty units)
-      # Use imputed linearized standard error 
-      if (is.na(var_keep) || var_keep == 0) {
-        imputed_se <- mean(df$sescup_keep)  
-        var_keep <- imputed_se^2
+      # Point estimates
+      mean_keep <- survey::svymean(~scup_keep, svy_design, na.rm = TRUE)
+
+      mu_keep  <- as.numeric(coef(mean_keep))
+      var_keep <- as.numeric(attr(mean_keep, "var"))
+
+      # Fallback SEs
+      if (!is.finite(var_keep) || is.na(var_keep) || var_keep <= 0) {
+        var_keep <- mean(df$sescup_keep, na.rm = TRUE)^2
       }
-      
-      
+
+      max_keep <- round(max(df$scup_keep, na.rm = TRUE)) + 2
+
       # Bootstrap replicate design
-      rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
+      rep_design <- survey::as.svrepdesign(svy_design, type = "bootstrap", replicates = n_reps)
       
-      # Extract the full replicate weights matrix
-      rep_wgts <- weights(rep_design, type = "analysis")  # matrix: rows = obs, cols = replicates
-      
-      # Replicate mean and variance
-      rep_means_keep <- coef(svymean(~scup_keep, rep_design, return.replicates = TRUE, na.rm = TRUE))
-      
-      rep_vars_keep <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~scup_keep, svy_var, na.rm = TRUE))
-      })
-      
-      # Estimate NB dispersion (theta)
-      rep_theta_keep <- rep_means_keep^2 / pmax(rep_vars_keep - rep_means_keep, 1e-6)
-      
-      # Estimate NB dispersion for when there is only one PSU 
-      if (nrow(df)==1) {
-        theta_hat_single <- mu_keep^2 / pmax((var_keep - mu_keep), 1e-6)
+      # Replicate means
+      rep_keep_obj <- get_rep_stat(~scup_keep, rep_design)
+
+      rep_means_keep <- rep_keep_obj$reps
+
+      # Replicate variances
+      rep_vars_keep <- get_rep_var(df, "scup_keep", rep_design)
+
+      # Negative binomial size parameters
+      rep_theta_keep <- safe_theta(rep_means_keep, rep_vars_keep)
+
+      # Better single-PSU / low-PSU fallback
+      if (n_psu(df) <= 1) {
+        theta_hat_keep_single <- safe_theta(mu_keep, var_keep)
       }
       
       sim_datasets <- vector("list", n_draws)
       i <- 1
       while (i <= n_draws) {
         
-        sampled_mu <- rnorm(1, mu_keep, sqrt(var_keep))                    # Sample mean with uncertainty
+        sampled_mu <- max(1e-8, rnorm(1, mu_keep, sqrt(var_keep)))
         
-        if (nrow(df)==1) {
-          sampled_theta <- theta_hat_single         # Single-PSU theta
-        }
-        
-        if (nrow(df)>1) {
+      if (n_psu(df) <= 1) {
+          sampled_theta <- theta_hat_keep_single         # Single-PSU theta
+          
+        } else {
           sampled_theta <- sample(rep_theta_keep, 1, replace = TRUE)         # Sample theta
           
-        }
-        
+        }        
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
-        if (!any(is.na(sim_keep))) {
+        if (!any(is.na(sim_keep)) && !any(is.infinite(sim_keep))) {
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -2073,7 +2010,7 @@ for(s in statez) {
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
-
+  
   ### MEAN(DISCARDS-PER-TRIP)==0, MEAN(HARVEST-PER-TRIP)==0
   if (nrow(df_full4) > 0) {
     
@@ -2116,10 +2053,10 @@ for(s in statez) {
   # List the objects you want to keep
   keep <- c("final_result1", "final_result2","final_result3", "final_result4","df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
   
-
+  
   # Remove everything else
   rm(list = setdiff(ls(), keep))
-
+  
   
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0 BUT positive values of harvest/discards never occur simultaneously
@@ -2131,109 +2068,69 @@ for(s in statez) {
       
       df <- df_full5 %>% filter(my_dom_id_string == dom)
       
-      # Define survey design
-      svy_design <- svydesign(ids = ~psu_id, strata = ~strat_id, weights = ~wp_int, data = df, nest = TRUE)
+      svy_design <- survey::svydesign(
+        ids = ~psu_id,
+        strata = ~strat_id,
+        weights = ~wp_int,
+        nest = TRUE,
+        data = df
+      )
       options(survey.lonely.psu = "certainty")
       
-      max_rel <- round(max(df$scup_rel))+6
-      max_keep <- round(max(df$scup_keep))+2
+      mean_rel  <- survey::svymean(~scup_rel,  svy_design, na.rm = TRUE)
+      mean_keep <- survey::svymean(~scup_keep, svy_design, na.rm = TRUE)
       
-      df$w_int_rounded <- round(df$wp_int)
-      df_expanded <- uncount(df, weights = w_int_rounded) #expand the data so that each row represents a single trip outcome
-      df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), 5000)) 
-      obs_sd_rel <- sd(df_expanded$scup_rel)
+      mu_rel  <- as.numeric(coef(mean_rel))
+      mu_keep <- as.numeric(coef(mean_keep))
       
-      # Estimate means, variances using survey design
-      mean_rel <- svymean(~scup_rel, svy_design)
-      mu_rel <- coef(mean_rel)
-      var_rel <- attr(mean_rel, "var")
+      var_rel  <- as.numeric(attr(mean_rel,  "var"))
+      var_keep <- as.numeric(attr(mean_keep, "var"))
       
-      # Handle zero or missing variance (certainty units)
-      # Use imputed linearized standard error 
-      if (is.na(var_rel) || var_rel == 0) {
-        imputed_se <- mean(df$sescup_rel)  
-        var_rel <- imputed_se^2
+      if (!is.finite(var_rel) || is.na(var_rel) || var_rel <= 0) {
+        var_rel <- mean(df$sescup_rel, na.rm = TRUE)^2
+      }
+      if (!is.finite(var_keep) || is.na(var_keep) || var_keep <= 0) {
+        var_keep <- mean(df$sescup_keep, na.rm = TRUE)^2
       }
       
-      mean_keep <- svymean(~scup_keep, svy_design)
-      mu_keep <- coef(mean_keep)
-      var_keep <- attr(mean_keep, "var")
+      rep_design <- survey::as.svrepdesign(svy_design, type = "bootstrap", replicates = n_reps)
       
-      # Handle zero or missing variance (certainty units)
-      # Use imputed linearized standard error 
-      if (is.na(var_keep) || var_keep == 0) {
-        imputed_se <- mean(df$sescup_keep)  
-        var_keep <- imputed_se^2
+      rep_rel_obj  <- get_rep_stat(~scup_rel,  rep_design)
+      rep_keep_obj <- get_rep_stat(~scup_keep, rep_design)
+      
+      rep_means_rel  <- rep_rel_obj$reps
+      rep_means_keep <- rep_keep_obj$reps
+      
+      rep_vars_rel  <- get_rep_var(df, "scup_rel",  rep_design)
+      rep_vars_keep <- get_rep_var(df, "scup_keep", rep_design)
+      
+      rep_theta_rel  <- safe_theta(rep_means_rel,  rep_vars_rel)
+      rep_theta_keep <- safe_theta(rep_means_keep, rep_vars_keep)
+      
+      if (n_psu(df) <= 1) {
+        theta_hat_rel_single  <- safe_theta(mu_rel,  var_rel)
+        theta_hat_keep_single <- safe_theta(mu_keep, var_keep)
       }
-      
-      # Bootstrap replicate design
-      rep_design <- as.svrepdesign(svy_design, type = "bootstrap", replicates = 200)
-      
-      # Extract the full replicate weights matrix
-      rep_wgts <- weights(rep_design, type = "analysis")  # matrix: rows = obs, cols = replicates
-      
-      # Replicate mean and variance
-      rep_means_rel <- coef(svymean(~scup_rel, rep_design, return.replicates = TRUE, na.rm = TRUE))
-      rep_means_keep <- coef(svymean(~scup_keep, rep_design, return.replicates = TRUE, na.rm = TRUE))
-      
-      rep_vars_rel <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~scup_rel, svy_var, na.rm = TRUE))
-      })
-      
-      rep_vars_keep <- sapply(1:ncol(rep_wgts),  function(i) {
-        rep_data <- rep_wgts[, i]
-        svy_var  <- svydesign(ids=~psu_id,strata=~strat_id,
-                              nest=TRUE, weights = ~rep_data, data = df)
-        coef(svyvar(~scup_keep, svy_var, na.rm = TRUE))
-      })
-      
-      # Estimate NB dispersion (theta)
-      rep_theta_rel <- rep_means_rel^2 / pmax(rep_vars_rel - rep_means_rel, 1e-6)
-      rep_theta_keep <- rep_vars_keep^2 / pmax(rep_vars_keep - rep_vars_keep, 1e-6)
-      
-      # Estimate NB dispersion for when there is only one PSU 
-      if (nrow(df)==1) {
-        theta_hat_rel_single <- mu_rel^2 / pmax((var_rel - mu_rel), 1e-6)
-      }
-      
-      if (nrow(df)==1) {
-        theta_hat_keep_single <- mu_keep^2 / pmax((var_keep - mu_keep), 1e-6)
-      }
-      
       
       sim_datasets <- vector("list", n_draws)
       i <- 1
       while (i <= n_draws) {
         
-        sampled_mu_rel <- rnorm(1, mu_rel, sqrt(var_rel))  # Sample mean with uncertainty  
-        sampled_mu_keep <- rnorm(1, mu_keep, sqrt(var_keep))  # Sample mean with uncertainty  
+        sampled_mu_rel  <- max(1e-8, rnorm(1, mu_rel,  sqrt(var_rel)))
+        sampled_mu_keep <- max(1e-8, rnorm(1, mu_keep, sqrt(var_keep)))
         
-        if (nrow(df)==1) {
-          sampled_theta_rel <- theta_hat_rel_single         # Single-PSU theta
+        if (n_psu(df) <= 1) {
+          sampled_theta_rel  <- theta_hat_rel_single
+          sampled_theta_keep <- theta_hat_keep_single
+        } else {
+          sampled_theta_rel  <- sample(rep_theta_rel,  1, replace = TRUE)
+          sampled_theta_keep <- sample(rep_theta_keep, 1, replace = TRUE)
         }
         
-        if (nrow(df)==1) {
-          sampled_theta_keep <- theta_hat_keep_single         # Single-PSU theta
-        }
-        
-        if (nrow(df)>1) {
-          sampled_theta_rel <- sample(rep_theta_rel, 1, replace = TRUE)         # Sample theta
-          
-        }
-        
-        if (nrow(df)>1) {
-          sampled_theta_keep <- sample(rep_theta_keep, 1, replace = TRUE)         # Sample theta
-          
-        }
-        
-        
-        sim_rel <- qnbinom(runif(n_sim), size = sampled_theta_rel, mu = sampled_mu_rel)
+        sim_rel  <- qnbinom(runif(n_sim), size = sampled_theta_rel,  mu = sampled_mu_rel)
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta_keep, mu = sampled_mu_keep)
         
-        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
+         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -2276,7 +2173,7 @@ for(s in statez) {
           i <- i + 1  # Only increment if no NaNs
         }
         
-
+        
       }
       
       # Combine all simulations
@@ -2293,7 +2190,7 @@ for(s in statez) {
     }
     
     final_result5 <- bind_rows(all_results5) %>%
-    group_by(my_dom_id_string, sim_id) %>%
+      group_by(my_dom_id_string, sim_id) %>%
       mutate(id = row_number()) %>%
       ungroup()    
   }
@@ -2346,7 +2243,7 @@ for(s in statez) {
     safe_name <- gsub("[^A-Za-z0-9_]", "_", name)
     
     # Write to Excel
-    write_xlsx(split_datasets[[name]], paste0("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/calib_catch_draws_", s, "_", safe_name, ".xlsx"))
+    write_xlsx(split_datasets[[name]], paste0("E:/Lou_projects/flukeRDM/flukeRDM_iterative_data/archive/proj_catch_draws/proj_catch_draws_", s, "_", safe_name, ".xlsx"))
   }
   
   rm(catch_draws, combined_results_BSB, combined_results_SF, combined_results_SCUP, split_datasets)

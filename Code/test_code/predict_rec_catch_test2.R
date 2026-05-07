@@ -19,16 +19,24 @@
   mode_draw <- c("sh", "pr", "fh")
   
   #Step 2: Reorganize calibration parameters#
+  # calib_lookup <- calib_comparison %>%
+  #   dplyr::select(mode, species, rel_to_keep, keep_to_rel,
+  #                 p_rel_to_keep, p_keep_to_rel,
+  #                 prop_sub_kept, prop_legal_rel) %>%
+  #   tidyr::pivot_wider(
+  #     names_from = species,
+  #     values_from = c(rel_to_keep, keep_to_rel, p_rel_to_keep, p_keep_to_rel, prop_sub_kept, prop_legal_rel),
+  #     names_glue = "{.value}_{species}"
+  #   )
+  
   calib_lookup <- calib_comparison %>%
     dplyr::select(mode, species, rel_to_keep, keep_to_rel, 
-                  p_rel_to_keep, p_keep_to_rel, 
-                  prop_sub_kept, prop_legal_rel) %>%
+                  p_rel_to_keep, p_keep_to_rel) %>%
     tidyr::pivot_wider(
       names_from = species,
-      values_from = c(rel_to_keep, keep_to_rel, p_rel_to_keep, p_keep_to_rel, prop_sub_kept, prop_legal_rel),
+      values_from = c(rel_to_keep, keep_to_rel, p_rel_to_keep, p_keep_to_rel),
       names_glue = "{.value}_{species}"
     )
-  
   setDT(calib_lookup)
   setkey(calib_lookup, mode)
   
@@ -52,7 +60,7 @@
                          bsb_size_data = bsb_size_data)
   
   bsb_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
-    dplyr::select(-date, -mode, -catch_draw, -tripid)
+    dplyr::select(-date_parsed, -mode, -catch_draw, -tripid)
   
   data.table::setkey(bsb_trip_data, domain2)
   
@@ -69,7 +77,7 @@
                          scup_size_data = scup_size_data)
   
   scup_trip_data <- rbindlist(lapply(results_list, `[[`, "trip_data")) %>% 
-    dplyr::select(-date, -mode, -catch_draw, -tripid)
+    dplyr::select(-date_parsed, -mode, -catch_draw, -tripid)
   
   data.table::setkey(scup_trip_data, domain2)
   
@@ -89,7 +97,7 @@
   trip_data <- merge(trip_data_a, scup_trip_data, by = "domain2", all = TRUE)
   
   trip_data[is.na(trip_data)] <- 0
-  
+  #trip_data_check<-copy(trip_data)
   # sf_catch_check<-sum(sf_trip_data$tot_keep_sf_new+sf_trip_data$tot_rel_sf_new)
   # bsb_catch_check<-sum(bsb_trip_data$tot_keep_bsb_new+bsb_trip_data$tot_rel_bsb_new)
   # scup_catch_check<-sum(scup_trip_data$tot_keep_scup_new+scup_trip_data$tot_rel_scup_new)
@@ -107,27 +115,27 @@
   
   # First merge sf and bsb
   length_temp <- merge(size_data_sf, size_data_bsb,
-                       by = c("date", "mode", "tripid", "catch_draw"),
+                       by = c("date_parsed", "mode", "tripid", "catch_draw"),
                        all = TRUE)
 
   # Then merge the result with scup
   length_data <- merge(length_temp, size_data_scup,
-                       by = c("date", "mode", "tripid", "catch_draw"),
+                       by = c("date_parsed", "mode", "tripid", "catch_draw"),
                        all = TRUE)
 
   #First merge sf and bsb zero catches
   zero_catch_temp<- merge(zero_catch_sf, zero_catch_bsb,
-                          by = c("date", "mode", "tripid", "catch_draw"),
+                          by = c("date_parsed", "mode", "tripid", "catch_draw"),
                           all = TRUE)
 
   # Then merge the zero catches result with scup
   zero_catch_check <- merge(zero_catch_temp, zero_catch_scup,
-                            by = c("date", "mode", "tripid", "catch_draw"),
+                            by = c("date_parsed", "mode", "tripid", "catch_draw"),
                             all = TRUE)[
                               tot_keep_sf_new == 0 & tot_rel_sf_new == 0 &
                                 tot_keep_bsb_new == 0 & tot_rel_bsb_new == 0 &
                                 tot_keep_scup_new == 0 & tot_rel_scup_new == 0,
-                              .(date, mode, tripid, catch_draw)
+                              .(date_parsed, mode, tripid, catch_draw)
                             ]
 
 
@@ -184,18 +192,17 @@
   data.table::setDT(base_outcomes)
   
   # Mutate efficiently
-  trip_data[, date_parsed := lubridate::dmy(date)]
+  #trip_data[, date_parsed := lubridate::dmy(date)]
   trip_data[, `:=`(
     tot_cat_scup_new = tot_keep_scup_new + tot_rel_scup_new,
     tot_cat_bsb_new  = tot_keep_bsb_new + tot_rel_bsb_new,
-    tot_cat_sf_new   = tot_keep_sf_new + tot_rel_sf_new,
-    date = NULL
+    tot_cat_sf_new   = tot_keep_sf_new + tot_rel_sf_new
     
   )]
   
 
   
-  length_data[, date_parsed := lubridate::dmy(date)][, date := NULL]
+  #length_data[, date_parsed := lubridate::dmy(date)][, date := NULL]
   trip_data <- trip_data[base_outcomes, on = .(date_parsed, mode, tripid, catch_draw), nomatch = 0L]
   
   
@@ -262,7 +269,7 @@
   trip_data[, `:=`(
      v0_trip = beta_sqrt_sf_keep*sqrt_keep_sf_base +
       #beta_NJ_sf_keep*NJ_dummy +
-      beta_sqrt_sf_release*sqrt_keep_sf_base +
+      beta_sqrt_sf_release*sqrt_rel_sf_base +
       beta_sqrt_bsb_keep*sqrt_keep_bsb_base +
       beta_sqrt_bsb_release*sqrt_rel_bsb_base +
       beta_sqrt_sf_bsb_keep*(sqrt_keep_sf_base * sqrt_keep_bsb_base) +
@@ -364,7 +371,7 @@
     dplyr::left_join(calendar_adjustments, by = c("mode", "month")) %>% 
     dplyr::rename(n_choice_occasions0=n_choice_occasions, 
                   estimated_trips0=estimated_trips) %>% 
-    dplyr::mutate(n_choice_occasions=n_choice_occasions0*expansion_factor,
+    dplyr::mutate(n_choice_occasions=n_choice_occasions0*1,
                   expand=n_choice_occasions/ndraws) 
   
   

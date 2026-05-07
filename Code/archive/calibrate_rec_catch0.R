@@ -2,6 +2,18 @@
 
 #This is the calibration-year trip simulation WITHOUT any adjustments for illegal harvest or voluntary release
 
+MRIP_comparison = read_dta(file.path(iterative_input_data_cd,"simulated_catch_totals.dta")) %>% 
+  dplyr::rename(estimated_trips=tot_dtrip_sim, 
+                sf_catch=tot_sf_cat_sim, 
+                bsb_catch=tot_bsb_cat_sim, 
+                scup_catch=tot_scup_cat_sim, 
+                sf_keep=tot_sf_keep_sim, 
+                bsb_keep=tot_bsb_keep_sim, 
+                scup_keep=tot_scup_keep_sim,
+                sf_rel=tot_sf_rel_sim, 
+                bsb_rel=tot_bsb_rel_sim, 
+                scup_rel=tot_scup_rel_sim) 
+
 states <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
 # s<-"MA"
 # md<-"pr"

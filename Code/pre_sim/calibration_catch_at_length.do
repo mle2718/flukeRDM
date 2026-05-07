@@ -1,16 +1,14 @@
 
-* This file generates catch-at-length distributions for each species for:
-		* a) the calibration year. 
-		* b) the projection year, which is created using (a) along with stock assessment numbers-at-age projections 
+* This file generates catch-at-length distributions for each species for the calibration year. 
 
 * The general strategy is:
-		* a) 
 			* 1) pull release length data and compute proportion released-at-length
 			* 2) multiply (1) by an estimate of total discards to get numbers released-at-length
 			* 3) pull harvest length data and compute proportion harvest-at-length
 			* 4) multiply (3) by an estimate of total harvest to get numbers released-at-length 
 			* 5) sum (2) and (5) across length categories to get catch-at-length 
-		* b) 
+			* 6) fit observed catch-at-length to gamma distirbution, use estimated paramters to simulate fitted distribution 
+			
 			* 1) use the catch-at-length distribution from a) and projected N_l to compute recreational selectivity-at-length (q_l=catch_l/N_l) in calibation year 
 			* 2) Multiply q_l by next year's projection of N_l to compute projected N_l over 100 draws from the projected numbers-at-length distribution
 			
@@ -301,6 +299,8 @@ replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
 
+* keep only NC north based on county delineation from Tracey 
+drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187)
 
 keep if $calibration_year
 
@@ -381,6 +381,9 @@ replace state="NJ" if st==34
 replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
+
+* keep only NC north based on county delineation from Tracey 
+drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187)
 
 
 drop region
@@ -506,7 +509,8 @@ tempfile props
 save `props', replace 
 
 *Pull estimates of total harvest and discards from MRIP by region  
-u "$iterative_input_data_cd\simulated_catch_totals.dta", clear 
+u "$iterative_input_data_cd\archive\calib_catch_draws\simulated_catch_totals.dta", replace 
+
 collapse (sum) tot_sf_keep_sim tot_sf_rel_sim tot_bsb_keep_sim tot_bsb_rel_sim tot_scup_keep_sim tot_scup_rel_sim, by(state draw)
 rename tot_sf_keep_sim harvest_sf
 rename tot_bsb_keep_sim harvest_bsb
@@ -565,8 +569,9 @@ drop sumcatch
 * note: I restrict the range of fitted values to within the min/max length of observed catch
 preserve 
 rename length fitted_length
-keep fitted_length observed_prob catch species region domain
+keep fitted_length observed_prob catch species region domain draw
 duplicates drop
+export delimited using "$input_data_cd/baseline_observed_catch_at_length.csv", replace 
 tempfile observed_prob
 save `observed_prob', replace
 restore
@@ -837,5 +842,5 @@ append using `bsb'
 destring draw, replace
 drop region
 order state species draw length
-export delimited using "$output_data_cd/baseline_catch_at_length.csv", replace 
+export delimited using "$input_data_cd/baseline_catch_at_length.csv", replace 
 

@@ -1,5 +1,6 @@
 
 
+import delimited using "$input_data_cd/baseline_observed_catch_at_length.csv", clear 
 
  
 * A) First generate 2024 catch-at-lengths. I do this by:
@@ -87,17 +88,23 @@ restore
 
 import delimited using "$input_data_cd/length_data/J1_2024Summer_Flounder.csv", clear
 gen species="sf"
-gen region="all"
+gen region="NO"
 duplicates drop 
 drop year
 sample $ndraws, count
 gen draw=_n
+expand 2, gen(dup)
+replace region="SO" if dup==1
+drop dup
+expand 2 if region=="SO", gen(dup)
+replace region="NJ" if dup==1
+drop dup
 tempfile sf
 save `sf', replace 
 
 import delimited using "$input_data_cd/length_data/J1_2024Scup.csv", clear
 gen species="scup"
-gen region="all"
+gen region="CST"
 duplicates drop 
 drop year
 sample $ndraws, count
@@ -107,7 +114,7 @@ save `scup', replace
 
 import delimited using "$input_data_cd/length_data/fit_NAA_NORTH_2024.csv", clear
 gen species="bsb"
-gen region="north"
+gen region="NO"
 duplicates drop 
 sample $ndraws, count
 replace draw=_n
@@ -120,21 +127,25 @@ save `bsbN', replace
 
 import delimited using "$input_data_cd/length_data/fit_NAA_SOUTH_2024.csv", clear
 gen species="bsb"
-gen region="south"
+gen region="SO"
 duplicates drop 
 sample $ndraws, count
 replace draw=_n
 forv i=1(1)8{
 	rename v`i' a`i'	
 }
-egen rowtotal=rowtotal(a1-a8)
+
+expand 2, gen(dup)
+replace region="NJ" if dup==1
+drop dup
 tempfile bsbS
 save `bsbS', replace 
 
 append using `bsbN'
 append using `scup'
 append using `sf'
-order species region draw
+order species region draw a0
+mvencode a*, mv(0) override
 
 reshape long a, i(species region draw) j(age) string
 destring age, replace
@@ -147,49 +158,6 @@ tempfile pop2024
 save `pop2024', replace
 restore
 
-
-*B3) 
-expand 4 if species=="bsb" & region=="north"
-bysort draw species region age: gen n=_n 
-gen  state="MA" if species=="bsb" & region=="north" & n==1
-replace state="RI" if species=="bsb" & region=="north" & n==2
-replace state="CT" if species=="bsb" & region=="north" & n==3
-replace state="NY" if species=="bsb" & region=="north" & n==4
-drop n
-
-expand 5 if species=="bsb" & region=="south"
-bysort draw species region age: gen n=_n 
-replace  state="NJ" if species=="bsb" & region=="south" & n==1
-replace state="DE" if species=="bsb" & region=="south" & n==2
-replace state="VA" if species=="bsb" & region=="south" & n==3
-replace state="MD" if species=="bsb" & region=="south" & n==4
-replace state="NC" if species=="bsb" & region=="south" & n==5
-drop n
-
-expand 9 if species=="sf"
-bysort draw species region age: gen n=_n 
-replace  state="MA" if species=="sf" & n==1
-replace state="RI" if species=="sf" & n==2
-replace state="CT" if species=="sf" & n==3
-replace state="NY" if species=="sf" & n==4
-replace state="NC" if species=="sf" & n==5
-replace  state="NJ" if species=="sf"& n==6
-replace state="DE" if species=="sf" & n==7
-replace state="VA" if species=="sf" & n==8
-replace state="MD" if species=="sf" & n==9
-drop n
-
-expand 9 if species=="scup"
-bysort draw species region age: gen n=_n 
-replace  state="MA" if species=="scup" & n==1
-replace state="RI" if species=="scup" & n==2
-replace state="CT" if species=="scup" & n==3
-replace state="NY" if species=="scup" & n==4
-replace state="NC" if species=="scup" & n==5
-replace  state="NJ" if species=="scup"& n==6
-replace state="DE" if species=="scup" & n==7
-replace state="VA" if species=="scup" & n==8
-replace state="MD" if species=="scup" & n==9
 
 tempfile pop_naa_calibration
 save `pop_naa_calibration', replace 
@@ -242,31 +210,32 @@ replace species="bsb" if svspp==141
 replace species="scup" if svspp==143 
 
 keep if $NEFSC_svy_yrs
-replace age=7 if age>=7
+replace age=8 if age>=8
 
 collapse (sum) countage, by(species age length)
 rename count naa
 
-expand 9 
-bysort species length age: gen n=_n 
-gen state="MA" if n==1
-replace state="MD" if n==2
-replace state="RI" if n==3
-replace state="CT" if n==4
-replace state="NY" if n==5
-replace state="NJ" if n==6
-replace state="DE" if n==7
-replace state="VA" if n==8
-replace state="NC" if n==9
-drop n
+gen region="CST" if species=="scup"
+expand 2 if species=="sf", gen(dup)
+replace region="NO" if species=="sf" & dup==0
+replace region="SO" if species=="sf" & dup==1
+drop dup
+expand 2 if species=="sf" & region=="NO", gen(dup)
+replace region="NJ" if species=="sf" & dup==1
+drop dup
+expand 2 if species=="bsb", gen(dup)
+replace region="NO" if species=="bsb" & dup==0
+replace region="SO" if species=="bsb" & dup==1
+drop dup
+expand 2 if species=="bsb" & region=="NO", gen(dup)
+replace region="NJ" if species=="bsb" & dup==1
+drop dup
 
-sort state species age length 
-order state species age length 
+gen domain2=species+"_"+region
 
 
 *C2)  
-gen domain=state+"_"+species
-levelsof domain, local(domz)
+levelsof domain2, local(domz)
 
 tempfile base
 save `base', replace
@@ -275,50 +244,38 @@ clear
 tempfile master
 save `master', emptyok
 
-foreach d of local domz{
-	
-	*local d="CT_bsb"
-	u `cal', clear 
-	su length if domain=="`d'" & fitted!=.
+foreach s of local domz{
+	u `base', clear 
+	keep if domain=="`s'"
+	/*
+	import delimited using "$input_data_cd/baseline_observed_catch_at_length.csv", clear 
+	gen domain2=species+"_"+region	
+
+	su fitted_length if domain2=="bsb_NJ" & observed!=.
 	local min=`r(min)'
 	local max=`r(max)'
 	
-	clear 
-	set obs 2
-	gen length=`r(min)' if _n==1
-	replace length =`r(max)' if _n==2
-	tsset length
-	tsfill, full
-	expand 8
-	bysort length: gen age=_n
-	replace age=age-1
-
-	tempfile range
-	save `range', replace 
-	
 	u `base', clear 
-	keep if domain=="`d'"
-	merge 1:1 length age using `range', keep(2 3) nogen
-	sort age length 
+	keep if domain2=="bsb_NJ"
 	
 	tsset age length
 	tsfill, full
 	mvencode naa, mv(0) override 
-
-	sort age length 
-	replace domain="`d'" if domain==""
+	keep if length>=`min' & length<=`max'
 	
+	sort age length 
+	replace domain2="`s'" if domain2==""
+	*/
 
 levelsof age, local(ages)
 foreach a of local ages{
-	
+	drop if age==`a' & naa==0
 	*su length if age==`a' & count!=0
 	*lowess count length if age==`a' & length>=`r(min)' & length<=`r(max)', adjust bwidth(.3) gen(s`a') nograph
 	lowess naa length if age==`a' , adjust bwidth(.3) gen(s`a') nograph
 
 	replace s`a'=0 if s`a'<=0
 }
-egen smoothed_naa=rowtotal(s0-s7)
 
 append using `master'
 save `master', replace
@@ -326,12 +283,10 @@ clear
 }
 
 use `master', clear
+egen smoothed_naa=rowtotal(s0-s8)
 
-drop s0-s7
-drop species state
-split domain, parse(_)
-rename domain1 state
-rename domain2 species
+drop s0-s8
+
 
 /*
 levelsof age if species=="sf" & state=="NJ", local(ages)
@@ -349,29 +304,30 @@ grc1leg `graphnames'
 
 
 *C3)  
-egen sum_smooth=sum(smoothed_naa), by(age species state)	
+egen sum_smooth=sum(smoothed_naa), by(age species)	
 gen prop_smoothed=smoothed/sum	
 
-egen sum_raw=sum(naa), by(age species state)	
+egen sum_raw=sum(naa), by(age species )	
 gen prop_raw=naa/sum_raw	
 drop sum*		
 
 *C4) 
 expand $ndraws
-bysort length age species state: gen draw=_n
+bysort length age species region: gen draw=_n
 
 tempfile age_length
 save `age_length', replace
 
 *C5)  
-merge m:1 species state age draw using `pop_naa_calibration'
+merge m:1 species region age draw using `pop_naa_calibration'
 replace pop_naa=pop_naa*1000
 
-sort draw species state age length   
+sort draw species region age length   
 
-gen nal=pop_naa*prop_smoothed
+gen nal_smoothed=pop_naa*prop_smoothed
+gen nal_raw=pop_naa*prop_raw
 
-collapse (sum) nal, by(draw species state length)
+collapse (sum) nal*, by(draw species region length)
 
 preserve
 *collapse (mean) nal, by(state species length)
@@ -396,8 +352,8 @@ graph export "$figure_cd/sf_nal_2024.png", as(png) replace
 drop nal_1000
 */
 
-order draw state species length nal
-sort draw state species length nal
+order draw region species length nal*
+sort draw region species length 
 
 tempfile nal
 save `nal', replace 
@@ -410,15 +366,30 @@ save `nal', replace
 
 
 *Merge back to catch-at-lengths
-merge 1:1 species state draw length using `cal'
+preserve
+import delimited using "$input_data_cd/baseline_observed_catch_at_length.csv", clear 
+rename fitted length 
+tempfile cal
+save `cal', replace
+restore 
+merge m:1 species region draw length using `cal'
 
 tostring draw, gen(draw2)
-gen domain2=state+"_"+species+"_"+draw2
+gen domain2=region+"_"+species+"_"+draw2
 drop if length==.
 
-mvencode nal cal, mv(0) override
-gen tab=1 if cal>nal & cal!=0
+mvencode nal* catch, mv(0) override
 
+*gen length_in=round(length/2.54)
+*collapse (sum) catch nal*, by(length_in region species draw)
+
+sort draw region species length 
+
+gen tab_smooth=1 if catch>nal_smooth 
+gen tab_raw=1 if catch>nal_raw
+tab tab_smooth
+tab tab_raw
+drop tab
 
 
 * figures for Rachel 2/10/26
