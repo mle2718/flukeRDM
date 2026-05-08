@@ -36,1410 +36,209 @@ if `r(N)'>0{
 */
 
 
-************** Generate catch draw files ******************
 
-* This code pulls in the catch-per-trip data estimated by the copula function in R
-* note: split this into one or afew states at a time to avoid memory issues 
+ 
+* faster version 
+local regions "MA RI CT NY NJ DE MD VA NC"
+set more off
+*set rmsg off
 
-local statez "MA"
-foreach s of local statez {
-
-    forvalues i = 1/100 {
-
-		*local s = "RI"
-		*local i=1
-		*----------------------------------------------------
-        * Read simulated catch draws
-        *----------------------------------------------------
-        import excel using "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.xlsx", clear firstrow
-
-        distinct id
-        local n_simulated_draw = r(ndistinct) //number of catch draws simulation per strata
-		di `n_simulated_draw'
-		
-		replace sf_rel_sim=round(sf_rel_sim)
-		replace bsb_rel_sim=round(bsb_rel_sim)
-		replace scup_rel_sim=round(scup_rel_sim)
-
-        gen sf_cat  = sf_keep_sim + sf_rel_sim
-        gen bsb_cat = bsb_keep_sim + bsb_rel_sim
-        gen scup_cat = scup_keep_sim + scup_rel_sim
-
-        mvencode sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat,  mv(0) override
-
-        order my my_dom_id_string sim_id id sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat
-
-        compress                     
-        tempfile base
-        save `base', replace
-
-        *----------------------------------------------------
-        * Pull directed trips for draw `i'
-        *----------------------------------------------------
+foreach s of local regions {
 	
-        import excel using "$iterative_input_data_cd\directed_trips_calibration_new_`s'.xlsx", clear firstrow 
-        keep if draw == `i'
+	*local s "DE"
+    import delimited using "$iterative_input_data_cd\archive\directed_trips_calibration\directed_trips_calibration_`s'.csv", clear
 
-        * waves
-        gen wave = 1 if inlist(month,1,2)
-        replace wave=2 if inlist(month,3,4)
-        replace wave=3 if inlist(month,5,6)
-        replace wave=4 if inlist(month,7,8)
-        replace wave=5 if inlist(month,9,10)
-        replace wave=6 if inlist(month,11,12)
+    gen double date_num = date(date, "DMY")
+	drop month month1
+    gen byte   month    = month(date_num)
+    gen str2   month1   = string(month, "%02.0f")
+    gen byte   wave     = cond(inlist(month,1,2),1, ///
+                        cond(inlist(month,3,4),2, ///
+                        cond(inlist(month,5,6),3, ///
+                        cond(inlist(month,7,8),4, ///
+                        cond(inlist(month,9,10),5,6)))))
+    drop date_num
 
-        tostring month1,  replace
-        tostring wave, gen(wave1)
+    drop if dtrip==0
 
-        drop if dtrip == 0
+    *gen str2 state = substr(region,1,2)
 
-        keep day_i date mode month month1 dtrip wave wave1 draw day
-
-        gen domain1 = mode + "_" + date
-        gen domain  = mode + "_" + wave1
-        encode domain1, gen(domain3)
-
-        expand 50
-        bysort domain1 : gen tripid = _n
-        expand 30
-        bysort domain1 tripid: gen catch_draw = _n
-
-        gen my_dom_id_string = "`s'_" + wave1 + "_" + mode + "_SF"
-        levelsof my_dom_id_string, local(domains)
-
-        compress                     
-        tempfile trips
-        save `trips', replace
-        clear                        
-
-        *----------------------------------------------------
-        * Loop over domains inside state/draw
-        *----------------------------------------------------
-		 * Mata objects can pile up — clear every state iteration 
-		 
-		mata: mata clear
-		clear
-		tempfile master
-		save `master', emptyok
-		
-       foreach d of local domains {
-
-            *  (i)  Trips skeleton for this domain
-            use `trips', clear
-
-            keep if my_dom_id_string == "`d'"
-
-            gen merge_id = _n
-            levelsof wave, local(wv)
-            levelsof mode, local(md)
-
-            tempfile trips2
-            save `trips2', replace
-            local n = _N                   
-            clear                           
-
-            *  (ii)  Catch draw rows for the same domain
-            use `base', clear
-            keep if my_dom_id_string == "`d'"
-			           
-			count
-			local n_obs=`r(N)'
-			
-            if `n_obs' == 0 {     
-				set obs `n'
-                foreach v in sf_keep_sim sf_rel_sim sf_cat bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat {
-                    replace `v' = 0
-                }
-                gen merge_id = _n
-                replace my_dom_id_string = "`d'"
-            }
-			
-            else {
-                local expand = ceil(`n' / `n_simulated_draw')
-				di `expand'
-                expand `expand'
-                sample `n', count
-                gen merge_id = _n
-            }
-
-            merge 1:1 merge_id using `trips2', keep(3) nogen
-            drop merge_id                     
-
-
-            keep my_dom_id_string draw ///
-                 sf_keep_sim sf_cat sf_rel_sim ///
-                 bsb_keep_sim bsb_rel_sim bsb_cat ///
-                 scup_keep_sim scup_rel_sim scup_cat ///
-                 mode month date day_i dtrip wave ///
-                 tripid catch_draw   day 
-
-            order draw my_dom_id_string mode date month day wave day_i tripid catch_draw dtrip
-
-            sort date tripid catch_draw
-            compress                         
-
-        // Append to growing master dataset
-        append using `master'
-        save `master', replace
-        clear                            
-        }
-
-        *----------------------------------------------------
-        * combine domains and write output for draw i
-        *----------------------------------------------------
-		use `master', clear
-		compress                             
-
-        save "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.dta", replace
-        clear                               
-    }
-}
-
-
-local statez "RI"
-foreach s of local statez {
-
-    forvalues i = 1/100 {
-
-		*local s = "RI"
-		*local i=1
-		*----------------------------------------------------
-        * Read simulated catch draws
-        *----------------------------------------------------
-        import excel using "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.xlsx", clear firstrow
-
-        distinct id
-        local n_simulated_draw = r(ndistinct) //number of catch draws simulation per strata
-		di `n_simulated_draw'
-		
-		replace sf_rel_sim=round(sf_rel_sim)
-		replace bsb_rel_sim=round(bsb_rel_sim)
-		replace scup_rel_sim=round(scup_rel_sim)
-
-        gen sf_cat  = sf_keep_sim + sf_rel_sim
-        gen bsb_cat = bsb_keep_sim + bsb_rel_sim
-        gen scup_cat = scup_keep_sim + scup_rel_sim
-
-        mvencode sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat,  mv(0) override
-
-        order my my_dom_id_string sim_id id sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat
-
-        compress                     
-        tempfile base
-        save `base', replace
-
-        *----------------------------------------------------
-        * Pull directed trips for draw `i'
-        *----------------------------------------------------
+	drop  dtrip *_bag *_min *_y2
 	
-        import excel using "$iterative_input_data_cd\directed_trips_calibration_new_`s'.xlsx", clear firstrow 
-        keep if draw == `i'
+	tempfile base
+    save `base', replace
 
-        * waves
-        gen wave = 1 if inlist(month,1,2)
-        replace wave=2 if inlist(month,3,4)
-        replace wave=3 if inlist(month,5,6)
-        replace wave=4 if inlist(month,7,8)
-        replace wave=5 if inlist(month,9,10)
-        replace wave=6 if inlist(month,11,12)
+    *-----------------------------------------
+    * 2) Loop draws
+    *-----------------------------------------
+	forvalues i=1/$ndraws {
+		*local i 1
+        use `base', clear
+        keep if draw==`i'
 
-        tostring month1,  replace
-        tostring wave, gen(wave1)
-
-        drop if dtrip == 0
-
-        keep day_i date mode month month1 dtrip wave wave1 draw day
-
-        gen domain1 = mode + "_" + date
-        gen domain  = mode + "_" + wave1
-        encode domain1, gen(domain3)
-
+        * Expand to 50 trips x 30 catch draws within each (mode,date)
+        egen long dom = group(mode date)   // replaces encode(domain1)
         expand 50
-        bysort domain1 : gen tripid = _n
+        bysort mode date: gen int tripid = _n
         expand 30
-        bysort domain1 tripid: gen catch_draw = _n
+        bysort mode date tripid: gen byte catch_draw = _n
 
-        gen my_dom_id_string = "`s'_" + wave1 + "_" + mode + "_SF"
-        levelsof my_dom_id_string, local(domains)
-
-        compress                     
-        tempfile trips
-        save `trips', replace
-        clear                        
-
-        *----------------------------------------------------
-        * Loop over domains inside state/draw
-        *----------------------------------------------------
-		 * Mata objects can pile up — clear every state iteration 
-		 
-		mata: mata clear
-		clear
-		tempfile master
-		save `master', emptyok
+		egen group=group(date tripid mode)
 		
-       foreach d of local domains {
+		qui distinct group if mode=="pr"
+		local n_pr = `r(ndistinct)'
+		
+		qui distinct group if mode=="fh"
+		local n_fh = `r(ndistinct)'
+		
+		qui distinct group if mode=="sh"
+		local n_sh = `r(ndistinct)'
+		
+		preserve 
+		keep date mode tripid
+		duplicates drop 
+		by mode: gen mode_id=_n
+		tempfile mode_id
+		save `mode_id', replace
+		restore 
+		
+		merge m:1 date mode tripid using `mode_id', keep(3) nogen  
+		
+		qui distinct group if wave==1
+		local n_wave1 = `r(ndistinct)'
+		
+		qui distinct group if wave==2
+		local n_wave2 = `r(ndistinct)'
+		
+		qui distinct group if wave==3
+		local n_wave3 = `r(ndistinct)'
+		
+		qui distinct group if wave==4
+		local n_wave4 = `r(ndistinct)'
+		
+		qui distinct group if wave==5
+		local n_wave5 = `r(ndistinct)'
+		
+		qui distinct group if wave==6
+		local n_wave6 = `r(ndistinct)'
+		
+		preserve 
+		keep date wave tripid
+		duplicates drop 
+		sort date wave tripid
+		bysort wave: gen wave_id=_n
+		tempfile wave_id
+		save `wave_id', replace
+		restore 
+		
+		merge m:1 date wave tripid using `wave_id', keep(3) nogen  
+		
+		
+        preserve
+            import excel using "$iterative_input_data_cd\archive\proj_catch_draws\proj_catch_draws_`s'_`i'.xlsx", clear firstrow
+            split my_dom_id_string, parse(_)
+            *rename my_dom_id_string1 state
+            rename my_dom_id_string2 wave
+            rename my_dom_id_string3 mode
+            drop my_dom_id_string4 
+            keep my_dom_id_string state wave mode  sf_* bsb_* scup_*
+            tempfile excelpool
+            save `excelpool', replace
+        restore
 
-            *  (i)  Trips skeleton for this domain
-            use `trips', clear
+        *---------------------------------------
+        * BIG SPEEDUP:
+        * sample catch outcomes by (mode,wave)
+        *---------------------------------------
+        egen long g = group(mode wave)
+        bysort g: gen long gid = _n
+        bysort g: gen long n_g = _N
+        levelsof g, local(gs)
 
-            keep if my_dom_id_string == "`d'"
+        tempfile trips_expanded
+        save `trips_expanded', replace
 
-            gen merge_id = _n
-            levelsof wave, local(wv)
-            levelsof mode, local(md)
+        * Build catch outcomes dataset with keys (g, gid)
+        clear
+        tempfile catchall
+        save `catchall', emptyok replace
+        local seeded 0
 
-            tempfile trips2
-            save `trips2', replace
-            local n = _N                   
-            clear                           
+        foreach gg of local gs {
+		*local gg 10
+            use `trips_expanded', clear
+            keep if g==`gg'
+            keep mode wave 
+            local md  = mode[1]
+            local wv  = wave[1]
+            local n_needed = _N
+			di "`md'"
+			di "`wv'"
+			di `n_needed'
+            use `excelpool', clear
+            keep if wave=="`wv'" & mode=="`md'"
 
-            *  (ii)  Catch draw rows for the same domain
-            use `base', clear
-            keep if my_dom_id_string == "`d'"
-			           
-			count
-			local n_obs=`r(N)'
+			quietly count
+			local mult = ceil(`n_needed'/r(N))
+			expand `mult'
+			sample `n_needed', count
 			
-            if `n_obs' == 0 {     
-				set obs `n'
-                foreach v in sf_keep_sim sf_rel_sim sf_cat bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat {
-                    replace `v' = 0
-                }
-                gen merge_id = _n
-                replace my_dom_id_string = "`d'"
+            * If you need more control: ensure enough rows before sampling
+            quietly count
+            if (r(N) < `n_needed') {
+                di as error "Not enough catch rows for st=`st' draw=`i' mode=`md' wave=`wv' need=`n_needed' have=" r(N)
+                continue
             }
-			
+
+            gen long g   = `gg'
+            gen long gid = _n
+			destring wave, replace
+
+            tempfile chunk
+            save `chunk', replace
+
+            if (`seeded'==0) {
+                use `chunk', clear
+				destring wave, replace
+                save `catchall', replace
+                local seeded 1
+            }
             else {
-                local expand = ceil(`n' / `n_simulated_draw')
-				di `expand'
-                expand `expand'
-                sample `n', count
-                gen merge_id = _n
+                use `catchall', clear
+                append using `chunk'
+				destring wave, replace
+                save `catchall', replace
             }
-
-            merge 1:1 merge_id using `trips2', keep(3) nogen
-            drop merge_id                     
-
-
-            keep my_dom_id_string draw ///
-                 sf_keep_sim sf_cat sf_rel_sim ///
-                 bsb_keep_sim bsb_rel_sim bsb_cat ///
-                 scup_keep_sim scup_rel_sim scup_cat ///
-                 mode month date day_i dtrip wave ///
-                 tripid catch_draw   day 
-
-            order draw my_dom_id_string mode date month day wave day_i tripid catch_draw dtrip
-
-            sort date tripid catch_draw
-            compress                         
-
-        // Append to growing master dataset
-        append using `master'
-        save `master', replace
-        clear                            
         }
-
-        *----------------------------------------------------
-        * combine domains and write output for draw i
-        *----------------------------------------------------
-		use `master', clear
-		compress                             
-
-        save "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.dta", replace
-        clear                               
-    }
-}
-
-
-local statez "CT"
-foreach s of local statez {
-
-    forvalues i = 1/100 {
-
-		*local s = "RI"
-		*local i=1
-		*----------------------------------------------------
-        * Read simulated catch draws
-        *----------------------------------------------------
-        import excel using "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.xlsx", clear firstrow
-
-        distinct id
-        local n_simulated_draw = r(ndistinct) //number of catch draws simulation per strata
-		di `n_simulated_draw'
 		
-		replace sf_rel_sim=round(sf_rel_sim)
-		replace bsb_rel_sim=round(bsb_rel_sim)
-		replace scup_rel_sim=round(scup_rel_sim)
+        * Merge sampled catch onto trips by (g,gid)
+        use `trips_expanded', clear
+		destring wave, replace 
+        merge 1:1 g gid using `catchall', keep(3) nogen
 
-        gen sf_cat  = sf_keep_sim + sf_rel_sim
-        gen bsb_cat = bsb_keep_sim + bsb_rel_sim
-        gen scup_cat = scup_keep_sim + scup_rel_sim
+        drop g gid n_g
+        compress
+		
+		sort date tripid catch_
+		rename sf_catch sf_cat
+		rename bsb_catch bsb_cat
+		rename scup_catch scup_cat
 
-        mvencode sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat,  mv(0) override
 
-        order my my_dom_id_string sim_id id sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat
-
-        compress                     
-        tempfile base
-        save `base', replace
-
-        *----------------------------------------------------
-        * Pull directed trips for draw `i'
-        *----------------------------------------------------
+		keep state draw ///
+                 sf_keep sf_cat sf_rel ///
+                 bsb_keep bsb_rel bsb_cat ///
+                 scup_keep scup_rel scup_cat ///
+                 mode month date day_i  wave ///
+                 tripid catch_draw  day  
+				 
+		gen double date_num = date(date, "DMY")
+		format date_num %td
+		order state mode date tripid catch 
+		compress
 	
-        import excel using "$iterative_input_data_cd\directed_trips_calibration_new_`s'.xlsx", clear firstrow 
-        keep if draw == `i'
-
-        * waves
-        gen wave = 1 if inlist(month,1,2)
-        replace wave=2 if inlist(month,3,4)
-        replace wave=3 if inlist(month,5,6)
-        replace wave=4 if inlist(month,7,8)
-        replace wave=5 if inlist(month,9,10)
-        replace wave=6 if inlist(month,11,12)
-
-        tostring month1,  replace
-        tostring wave, gen(wave1)
-
-        drop if dtrip == 0
-
-        keep day_i date mode month month1 dtrip wave wave1 draw day
-
-        gen domain1 = mode + "_" + date
-        gen domain  = mode + "_" + wave1
-        encode domain1, gen(domain3)
-
-        expand 50
-        bysort domain1 : gen tripid = _n
-        expand 30
-        bysort domain1 tripid: gen catch_draw = _n
-
-        gen my_dom_id_string = "`s'_" + wave1 + "_" + mode + "_SF"
-        levelsof my_dom_id_string, local(domains)
-
-        compress                     
-        tempfile trips
-        save `trips', replace
-        clear                        
-
-        *----------------------------------------------------
-        * Loop over domains inside state/draw
-        *----------------------------------------------------
-		 * Mata objects can pile up — clear every state iteration 
-		 
-		mata: mata clear
-		clear
-		tempfile master
-		save `master', emptyok
+		save "$iterative_input_data_cd\archive\proj_catch_draws\proj_catch_draws_`s'_`i'.dta", replace
 		
-       foreach d of local domains {
-
-            *  (i)  Trips skeleton for this domain
-            use `trips', clear
-
-            keep if my_dom_id_string == "`d'"
-
-            gen merge_id = _n
-            levelsof wave, local(wv)
-            levelsof mode, local(md)
-
-            tempfile trips2
-            save `trips2', replace
-            local n = _N                   
-            clear                           
-
-            *  (ii)  Catch draw rows for the same domain
-            use `base', clear
-            keep if my_dom_id_string == "`d'"
-			           
-			count
-			local n_obs=`r(N)'
-			
-            if `n_obs' == 0 {     
-				set obs `n'
-                foreach v in sf_keep_sim sf_rel_sim sf_cat bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat {
-                    replace `v' = 0
-                }
-                gen merge_id = _n
-                replace my_dom_id_string = "`d'"
-            }
-			
-            else {
-                local expand = ceil(`n' / `n_simulated_draw')
-				di `expand'
-                expand `expand'
-                sample `n', count
-                gen merge_id = _n
-            }
-
-            merge 1:1 merge_id using `trips2', keep(3) nogen
-            drop merge_id                     
-
-
-            keep my_dom_id_string draw ///
-                 sf_keep_sim sf_cat sf_rel_sim ///
-                 bsb_keep_sim bsb_rel_sim bsb_cat ///
-                 scup_keep_sim scup_rel_sim scup_cat ///
-                 mode month date day_i dtrip wave ///
-                 tripid catch_draw   day 
-
-            order draw my_dom_id_string mode date month day wave day_i tripid catch_draw dtrip
-
-            sort date tripid catch_draw
-            compress                         
-
-        // Append to growing master dataset
-        append using `master'
-        save `master', replace
-        clear                            
-        }
-
-        *----------------------------------------------------
-        * combine domains and write output for draw i
-        *----------------------------------------------------
-		use `master', clear
-		compress                             
-
-        save "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.dta", replace
-        clear                               
-    }
-}
-
-
-
-
-local statez "NY"
-foreach s of local statez {
-
-    forvalues i = 1/100 {
-
-		*local s = "RI"
-		*local i=1
-		*----------------------------------------------------
-        * Read simulated catch draws
-        *----------------------------------------------------
-        import excel using "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.xlsx", clear firstrow
-
-        distinct id
-        local n_simulated_draw = r(ndistinct) //number of catch draws simulation per strata
-		di `n_simulated_draw'
-		
-		replace sf_rel_sim=round(sf_rel_sim)
-		replace bsb_rel_sim=round(bsb_rel_sim)
-		replace scup_rel_sim=round(scup_rel_sim)
-
-        gen sf_cat  = sf_keep_sim + sf_rel_sim
-        gen bsb_cat = bsb_keep_sim + bsb_rel_sim
-        gen scup_cat = scup_keep_sim + scup_rel_sim
-
-        mvencode sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat,  mv(0) override
-
-        order my my_dom_id_string sim_id id sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat
-
-        compress                     
-        tempfile base
-        save `base', replace
-
-        *----------------------------------------------------
-        * Pull directed trips for draw `i'
-        *----------------------------------------------------
-	
-        import excel using "$iterative_input_data_cd\directed_trips_calibration_new_`s'.xlsx", clear firstrow
-        keep if draw == `i'
-
-        * waves
-        gen wave = 1 if inlist(month,1,2)
-        replace wave=2 if inlist(month,3,4)
-        replace wave=3 if inlist(month,5,6)
-        replace wave=4 if inlist(month,7,8)
-        replace wave=5 if inlist(month,9,10)
-        replace wave=6 if inlist(month,11,12)
-
-        tostring month1,  replace
-        tostring wave, gen(wave1)
-
-        drop if dtrip == 0
-
-        keep day_i date mode month month1 dtrip wave wave1 draw day
-
-        gen domain1 = mode + "_" + date
-        gen domain  = mode + "_" + wave1
-        encode domain1, gen(domain3)
-
-        expand 50
-        bysort domain1 : gen tripid = _n
-        expand 30
-        bysort domain1 tripid: gen catch_draw = _n
-
-        gen my_dom_id_string = "`s'_" + wave1 + "_" + mode + "_SF"
-        levelsof my_dom_id_string, local(domains)
-
-        compress                     
-        tempfile trips
-        save `trips', replace
-        clear                        
-
-        *----------------------------------------------------
-        * Loop over domains inside state/draw
-        *----------------------------------------------------
-		 * Mata objects can pile up — clear every state iteration 
-		 
-		mata: mata clear
-		clear
-		tempfile master
-		save `master', emptyok
-		
-       foreach d of local domains {
-
-            *  (i)  Trips skeleton for this domain
-            use `trips', clear
-
-            keep if my_dom_id_string == "`d'"
-
-            gen merge_id = _n
-            levelsof wave, local(wv)
-            levelsof mode, local(md)
-
-            tempfile trips2
-            save `trips2', replace
-            local n = _N                   
-            clear                           
-
-            *  (ii)  Catch draw rows for the same domain
-            use `base', clear
-            keep if my_dom_id_string == "`d'"
-			           
-			count
-			local n_obs=`r(N)'
-			
-            if `n_obs' == 0 {     
-				set obs `n'
-                foreach v in sf_keep_sim sf_rel_sim sf_cat bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat {
-                    replace `v' = 0
-                }
-                gen merge_id = _n
-                replace my_dom_id_string = "`d'"
-            }
-			
-            else {
-                local expand = ceil(`n' / `n_simulated_draw')
-				di `expand'
-                expand `expand'
-                sample `n', count
-                gen merge_id = _n
-            }
-
-            merge 1:1 merge_id using `trips2', keep(3) nogen
-            drop merge_id                     
-
-
-            keep my_dom_id_string draw ///
-                 sf_keep_sim sf_cat sf_rel_sim ///
-                 bsb_keep_sim bsb_rel_sim bsb_cat ///
-                 scup_keep_sim scup_rel_sim scup_cat ///
-                 mode month date day_i dtrip wave ///
-                 tripid catch_draw   day 
-
-            order draw my_dom_id_string mode date month day wave day_i tripid catch_draw dtrip
-
-            sort date tripid catch_draw
-            compress                         
-
-        // Append to growing master dataset
-        append using `master'
-        save `master', replace
-        clear                            
-        }
-
-        *----------------------------------------------------
-        * combine domains and write output for draw i
-        *----------------------------------------------------
-		use `master', clear
-		compress                             
-
-        save "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.dta", replace
-        clear                               
-    }
-}
-
-
-
-local statez "NJ"
-foreach s of local statez {
-
-    forvalues i = 1/1 {
-
-		local s = "NJ"
-		local i=1
-		*----------------------------------------------------
-        * Read simulated catch draws
-        *----------------------------------------------------
-        import excel using "E:\Lou_projects\flukeRDM\flukeRDM_iterative_data\archive\proj_catch_draws_xlsdta\proj_catch_draws_`s'_`i'.xlsx", clear firstrow
-
-        distinct id
-        local n_simulated_draw = r(ndistinct) //number of catch draws simulation per strata
-		di `n_simulated_draw'
-		
-		replace sf_rel_sim=round(sf_rel_sim)
-		replace bsb_rel_sim=round(bsb_rel_sim)
-		replace scup_rel_sim=round(scup_rel_sim)
-
-        gen sf_cat  = sf_keep_sim + sf_rel_sim
-        gen bsb_cat = bsb_keep_sim + bsb_rel_sim
-        gen scup_cat = scup_keep_sim + scup_rel_sim
-
-        mvencode sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat,  mv(0) override
-
-        order my my_dom_id_string sim_id id sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat
-
-        compress                     
-        tempfile base
-        save `base', replace
-
-        *----------------------------------------------------
-        * Pull directed trips for draw `i'
-        *----------------------------------------------------
-	
-        import excel using "E:\Lou_projects\flukeRDM\flukeRDM_iterative_data\archive\directed_trips_calibration_new_csvxlsx\directed_trips_calibration_new_`s'.xlsx", clear firstrow
-        keep if draw == `i'
-
-        * waves
-        gen wave = 1 if inlist(month,1,2)
-        replace wave=2 if inlist(month,3,4)
-        replace wave=3 if inlist(month,5,6)
-        replace wave=4 if inlist(month,7,8)
-        replace wave=5 if inlist(month,9,10)
-        replace wave=6 if inlist(month,11,12)
-
-        tostring month1,  replace
-        tostring wave, gen(wave1)
-
-        drop if dtrip == 0
-
-        keep day_i date mode month month1 dtrip wave wave1 draw day
-
-        gen domain1 = mode + "_" + date
-        gen domain  = mode + "_" + wave1
-        encode domain1, gen(domain3)
-
-        expand 50
-        bysort domain1 : gen tripid = _n
-        expand 30
-        bysort domain1 tripid: gen catch_draw = _n
-
-        gen my_dom_id_string = "`s'_" + wave1 + "_" + mode + "_SF"
-        levelsof my_dom_id_string, local(domains)
-
-        compress                     
-        tempfile trips
-        save `trips', replace
-        clear                        
-
-        *----------------------------------------------------
-        * Loop over domains inside state/draw
-        *----------------------------------------------------
-		 * Mata objects can pile up — clear every state iteration 
-		 
-		mata: mata clear
-		clear
-		tempfile master
-		save `master', emptyok
-		
-       foreach d of local domains {
-
-            *  (i)  Trips skeleton for this domain
-            use `trips', clear
-
-            keep if my_dom_id_string == "`d'"
-
-            gen merge_id = _n
-            levelsof wave, local(wv)
-            levelsof mode, local(md)
-
-            tempfile trips2
-            save `trips2', replace
-            local n = _N                   
-            clear                           
-
-            *  (ii)  Catch draw rows for the same domain
-            use `base', clear
-            keep if my_dom_id_string == "`d'"
-			           
-			count
-			local n_obs=`r(N)'
-			
-            if `n_obs' == 0 {     
-				set obs `n'
-                foreach v in sf_keep_sim sf_rel_sim sf_cat bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat {
-                    replace `v' = 0
-                }
-                gen merge_id = _n
-                replace my_dom_id_string = "`d'"
-            }
-			
-            else {
-                local expand = ceil(`n' / `n_simulated_draw')
-				di `expand'
-                expand `expand'
-                sample `n', count
-                gen merge_id = _n
-            }
-
-            merge 1:1 merge_id using `trips2', keep(3) nogen
-            drop merge_id                     
-
-
-            keep my_dom_id_string draw ///
-                 sf_keep_sim sf_cat sf_rel_sim ///
-                 bsb_keep_sim bsb_rel_sim bsb_cat ///
-                 scup_keep_sim scup_rel_sim scup_cat ///
-                 mode month date day_i dtrip wave ///
-                 tripid catch_draw   day 
-
-            order draw my_dom_id_string mode date month day wave day_i tripid catch_draw dtrip
-
-            sort date tripid catch_draw
-            compress                         
-
-        // Append to growing master dataset
-        append using `master'
-        save `master', replace
-        clear                            
-        }
-
-        *----------------------------------------------------
-        * combine domains and write output for draw i
-        *----------------------------------------------------
-		use `master', clear
-		compress                             
-
-        *save "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.dta", replace
-        clear                               
-    }
-}
-		use `master', clear
-
-
-
-local statez "DE"
-foreach s of local statez {
-
-    forvalues i = 1/100 {
-
-		*local s = "RI"
-		*local i=1
-		*----------------------------------------------------
-        * Read simulated catch draws
-        *----------------------------------------------------
-        import excel using "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.xlsx", clear firstrow
-
-        distinct id
-        local n_simulated_draw = r(ndistinct) //number of catch draws simulation per strata
-		di `n_simulated_draw'
-		
-		replace sf_rel_sim=round(sf_rel_sim)
-		replace bsb_rel_sim=round(bsb_rel_sim)
-		replace scup_rel_sim=round(scup_rel_sim)
-
-        gen sf_cat  = sf_keep_sim + sf_rel_sim
-        gen bsb_cat = bsb_keep_sim + bsb_rel_sim
-        gen scup_cat = scup_keep_sim + scup_rel_sim
-
-        mvencode sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat,  mv(0) override
-
-        order my my_dom_id_string sim_id id sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat
-
-        compress                     
-        tempfile base
-        save `base', replace
-
-        *----------------------------------------------------
-        * Pull directed trips for draw `i'
-        *----------------------------------------------------
-	
-        import excel using "$iterative_input_data_cd\directed_trips_calibration_new_`s'.xlsx", clear firstrow
-        keep if draw == `i'
-
-        * waves
-        gen wave = 1 if inlist(month,1,2)
-        replace wave=2 if inlist(month,3,4)
-        replace wave=3 if inlist(month,5,6)
-        replace wave=4 if inlist(month,7,8)
-        replace wave=5 if inlist(month,9,10)
-        replace wave=6 if inlist(month,11,12)
-
-        tostring month1,  replace
-        tostring wave, gen(wave1)
-
-        drop if dtrip == 0
-
-        keep day_i date mode month month1 dtrip wave wave1 draw day
-
-        gen domain1 = mode + "_" + date
-        gen domain  = mode + "_" + wave1
-        encode domain1, gen(domain3)
-
-        expand 50
-        bysort domain1 : gen tripid = _n
-        expand 30
-        bysort domain1 tripid: gen catch_draw = _n
-
-        gen my_dom_id_string = "`s'_" + wave1 + "_" + mode + "_SF"
-        levelsof my_dom_id_string, local(domains)
-
-        compress                     
-        tempfile trips
-        save `trips', replace
-        clear                        
-
-        *----------------------------------------------------
-        * Loop over domains inside state/draw
-        *----------------------------------------------------
-		 * Mata objects can pile up — clear every state iteration 
-		 
-		mata: mata clear
-		clear
-		tempfile master
-		save `master', emptyok
-		
-       foreach d of local domains {
-
-            *  (i)  Trips skeleton for this domain
-            use `trips', clear
-
-            keep if my_dom_id_string == "`d'"
-
-            gen merge_id = _n
-            levelsof wave, local(wv)
-            levelsof mode, local(md)
-
-            tempfile trips2
-            save `trips2', replace
-            local n = _N                   
-            clear                           
-
-            *  (ii)  Catch draw rows for the same domain
-            use `base', clear
-            keep if my_dom_id_string == "`d'"
-			           
-			count
-			local n_obs=`r(N)'
-			
-            if `n_obs' == 0 {     
-				set obs `n'
-                foreach v in sf_keep_sim sf_rel_sim sf_cat bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat {
-                    replace `v' = 0
-                }
-                gen merge_id = _n
-                replace my_dom_id_string = "`d'"
-            }
-			
-            else {
-                local expand = ceil(`n' / `n_simulated_draw')
-				di `expand'
-                expand `expand'
-                sample `n', count
-                gen merge_id = _n
-            }
-
-            merge 1:1 merge_id using `trips2', keep(3) nogen
-            drop merge_id                     
-
-
-            keep my_dom_id_string draw ///
-                 sf_keep_sim sf_cat sf_rel_sim ///
-                 bsb_keep_sim bsb_rel_sim bsb_cat ///
-                 scup_keep_sim scup_rel_sim scup_cat ///
-                 mode month date day_i dtrip wave ///
-                 tripid catch_draw   day 
-
-            order draw my_dom_id_string mode date month day wave day_i tripid catch_draw dtrip
-
-            sort date tripid catch_draw
-            compress                         
-
-        // Append to growing master dataset
-        append using `master'
-        save `master', replace
-        clear                            
-        }
-
-        *----------------------------------------------------
-        * combine domains and write output for draw i
-        *----------------------------------------------------
-		use `master', clear
-		compress                             
-
-        save "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.dta", replace
-        clear                               
-    }
-}
-
-
-local statez "MD"
-foreach s of local statez {
-
-    forvalues i = 1/100 {
-
-		*local s = "RI"
-		*local i=1
-		*----------------------------------------------------
-        * Read simulated catch draws
-        *----------------------------------------------------
-        import excel using "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.xlsx", clear firstrow
-
-        distinct id
-        local n_simulated_draw = r(ndistinct) //number of catch draws simulation per strata
-		di `n_simulated_draw'
-		
-		replace sf_rel_sim=round(sf_rel_sim)
-		replace bsb_rel_sim=round(bsb_rel_sim)
-		replace scup_rel_sim=round(scup_rel_sim)
-
-        gen sf_cat  = sf_keep_sim + sf_rel_sim
-        gen bsb_cat = bsb_keep_sim + bsb_rel_sim
-        gen scup_cat = scup_keep_sim + scup_rel_sim
-
-        mvencode sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat,  mv(0) override
-
-        order my my_dom_id_string sim_id id sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat
-
-        compress                     
-        tempfile base
-        save `base', replace
-
-        *----------------------------------------------------
-        * Pull directed trips for draw `i'
-        *----------------------------------------------------
-	
-        import excel using "$iterative_input_data_cd\directed_trips_calibration_new_`s'.xlsx", clear firstrow
-        keep if draw == `i'
-
-        * waves
-        gen wave = 1 if inlist(month,1,2)
-        replace wave=2 if inlist(month,3,4)
-        replace wave=3 if inlist(month,5,6)
-        replace wave=4 if inlist(month,7,8)
-        replace wave=5 if inlist(month,9,10)
-        replace wave=6 if inlist(month,11,12)
-
-        tostring month1,  replace
-        tostring wave, gen(wave1)
-
-        drop if dtrip == 0
-
-        keep day_i date mode month month1 dtrip wave wave1 draw day
-
-        gen domain1 = mode + "_" + date
-        gen domain  = mode + "_" + wave1
-        encode domain1, gen(domain3)
-
-        expand 50
-        bysort domain1 : gen tripid = _n
-        expand 30
-        bysort domain1 tripid: gen catch_draw = _n
-
-        gen my_dom_id_string = "`s'_" + wave1 + "_" + mode + "_SF"
-        levelsof my_dom_id_string, local(domains)
-
-        compress                     
-        tempfile trips
-        save `trips', replace
-        clear                        
-
-        *----------------------------------------------------
-        * Loop over domains inside state/draw
-        *----------------------------------------------------
-		 * Mata objects can pile up — clear every state iteration 
-		 
-		mata: mata clear
-		clear
-		tempfile master
-		save `master', emptyok
-		
-       foreach d of local domains {
-
-            *  (i)  Trips skeleton for this domain
-            use `trips', clear
-
-            keep if my_dom_id_string == "`d'"
-
-            gen merge_id = _n
-            levelsof wave, local(wv)
-            levelsof mode, local(md)
-
-            tempfile trips2
-            save `trips2', replace
-            local n = _N                   
-            clear                           
-
-            *  (ii)  Catch draw rows for the same domain
-            use `base', clear
-            keep if my_dom_id_string == "`d'"
-			           
-			count
-			local n_obs=`r(N)'
-			
-            if `n_obs' == 0 {     
-				set obs `n'
-                foreach v in sf_keep_sim sf_rel_sim sf_cat bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat {
-                    replace `v' = 0
-                }
-                gen merge_id = _n
-                replace my_dom_id_string = "`d'"
-            }
-			
-            else {
-                local expand = ceil(`n' / `n_simulated_draw')
-				di `expand'
-                expand `expand'
-                sample `n', count
-                gen merge_id = _n
-            }
-
-            merge 1:1 merge_id using `trips2', keep(3) nogen
-            drop merge_id                     
-
-
-            keep my_dom_id_string draw ///
-                 sf_keep_sim sf_cat sf_rel_sim ///
-                 bsb_keep_sim bsb_rel_sim bsb_cat ///
-                 scup_keep_sim scup_rel_sim scup_cat ///
-                 mode month date day_i dtrip wave ///
-                 tripid catch_draw   day 
-
-            order draw my_dom_id_string mode date month day wave day_i tripid catch_draw dtrip
-
-            sort date tripid catch_draw
-            compress                         
-
-        // Append to growing master dataset
-        append using `master'
-        save `master', replace
-        clear                            
-        }
-
-        *----------------------------------------------------
-        * combine domains and write output for draw i
-        *----------------------------------------------------
-		use `master', clear
-		compress                             
-
-        save "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.dta", replace
-        clear                               
-    }
-}
-
-
-
-local statez "VA"
-foreach s of local statez {
-
-    forvalues i = 1/100 {
-
-		*local s = "RI"
-		*local i=1
-		*----------------------------------------------------
-        * Read simulated catch draws
-        *----------------------------------------------------
-        import excel using "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.xlsx", clear firstrow
-
-        distinct id
-        local n_simulated_draw = r(ndistinct) //number of catch draws simulation per strata
-		di `n_simulated_draw'
-		
-		replace sf_rel_sim=round(sf_rel_sim)
-		replace bsb_rel_sim=round(bsb_rel_sim)
-		replace scup_rel_sim=round(scup_rel_sim)
-
-        gen sf_cat  = sf_keep_sim + sf_rel_sim
-        gen bsb_cat = bsb_keep_sim + bsb_rel_sim
-        gen scup_cat = scup_keep_sim + scup_rel_sim
-
-        mvencode sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat,  mv(0) override
-
-        order my my_dom_id_string sim_id id sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat
-
-        compress                     
-        tempfile base
-        save `base', replace
-
-        *----------------------------------------------------
-        * Pull directed trips for draw `i'
-        *----------------------------------------------------
-	
-        import excel using "$iterative_input_data_cd\directed_trips_calibration_new_`s'.xlsx", clear firstrow
-        keep if draw == `i'
-
-        * waves
-        gen wave = 1 if inlist(month,1,2)
-        replace wave=2 if inlist(month,3,4)
-        replace wave=3 if inlist(month,5,6)
-        replace wave=4 if inlist(month,7,8)
-        replace wave=5 if inlist(month,9,10)
-        replace wave=6 if inlist(month,11,12)
-
-        tostring month1,  replace
-        tostring wave, gen(wave1)
-
-        drop if dtrip == 0
-
-        keep day_i date mode month month1 dtrip wave wave1 draw day
-
-        gen domain1 = mode + "_" + date
-        gen domain  = mode + "_" + wave1
-        encode domain1, gen(domain3)
-
-        expand 50
-        bysort domain1 : gen tripid = _n
-        expand 30
-        bysort domain1 tripid: gen catch_draw = _n
-
-        gen my_dom_id_string = "`s'_" + wave1 + "_" + mode + "_SF"
-        levelsof my_dom_id_string, local(domains)
-
-        compress                     
-        tempfile trips
-        save `trips', replace
-        clear                        
-
-        *----------------------------------------------------
-        * Loop over domains inside state/draw
-        *----------------------------------------------------
-		 * Mata objects can pile up — clear every state iteration 
-		 
-		mata: mata clear
-		clear
-		tempfile master
-		save `master', emptyok
-		
-       foreach d of local domains {
-
-            *  (i)  Trips skeleton for this domain
-            use `trips', clear
-
-            keep if my_dom_id_string == "`d'"
-
-            gen merge_id = _n
-            levelsof wave, local(wv)
-            levelsof mode, local(md)
-
-            tempfile trips2
-            save `trips2', replace
-            local n = _N                   
-            clear                           
-
-            *  (ii)  Catch draw rows for the same domain
-            use `base', clear
-            keep if my_dom_id_string == "`d'"
-			           
-			count
-			local n_obs=`r(N)'
-			
-            if `n_obs' == 0 {     
-				set obs `n'
-                foreach v in sf_keep_sim sf_rel_sim sf_cat bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat {
-                    replace `v' = 0
-                }
-                gen merge_id = _n
-                replace my_dom_id_string = "`d'"
-            }
-			
-            else {
-                local expand = ceil(`n' / `n_simulated_draw')
-				di `expand'
-                expand `expand'
-                sample `n', count
-                gen merge_id = _n
-            }
-
-            merge 1:1 merge_id using `trips2', keep(3) nogen
-            drop merge_id                     
-
-
-            keep my_dom_id_string draw ///
-                 sf_keep_sim sf_cat sf_rel_sim ///
-                 bsb_keep_sim bsb_rel_sim bsb_cat ///
-                 scup_keep_sim scup_rel_sim scup_cat ///
-                 mode month date day_i dtrip wave ///
-                 tripid catch_draw   day 
-
-            order draw my_dom_id_string mode date month day wave day_i tripid catch_draw dtrip
-
-            sort date tripid catch_draw
-            compress                         
-
-        // Append to growing master dataset
-        append using `master'
-        save `master', replace
-        clear                            
-        }
-
-        *----------------------------------------------------
-        * combine domains and write output for draw i
-        *----------------------------------------------------
-		use `master', clear
-		compress                             
-
-        save "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.dta", replace
-        clear                               
-    }
-}
-
-
-
-
-local statez "NC"
-foreach s of local statez {
-
-    forvalues i = 1/100 {
-
-		*local s = "RI"
-		*local i=1
-		*----------------------------------------------------
-        * Read simulated catch draws
-        *----------------------------------------------------
-        import excel using "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.xlsx", clear firstrow
-
-        distinct id
-        local n_simulated_draw = r(ndistinct) //number of catch draws simulation per strata
-		di `n_simulated_draw'
-		
-		replace sf_rel_sim=round(sf_rel_sim)
-		replace bsb_rel_sim=round(bsb_rel_sim)
-		replace scup_rel_sim=round(scup_rel_sim)
-
-        gen sf_cat  = sf_keep_sim + sf_rel_sim
-        gen bsb_cat = bsb_keep_sim + bsb_rel_sim
-        gen scup_cat = scup_keep_sim + scup_rel_sim
-
-        mvencode sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat,  mv(0) override
-
-        order my my_dom_id_string sim_id id sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat
-
-        compress                     
-        tempfile base
-        save `base', replace
-
-        *----------------------------------------------------
-        * Pull directed trips for draw `i'
-        *----------------------------------------------------
-	
-        import excel using "$iterative_input_data_cd\directed_trips_calibration_new_`s'.xlsx", clear firstrow
-        keep if draw == `i'
-
-        * waves
-        gen wave = 1 if inlist(month,1,2)
-        replace wave=2 if inlist(month,3,4)
-        replace wave=3 if inlist(month,5,6)
-        replace wave=4 if inlist(month,7,8)
-        replace wave=5 if inlist(month,9,10)
-        replace wave=6 if inlist(month,11,12)
-
-        tostring month1,  replace
-        tostring wave, gen(wave1)
-
-        drop if dtrip == 0
-
-        keep day_i date mode month month1 dtrip wave wave1 draw day
-
-        gen domain1 = mode + "_" + date
-        gen domain  = mode + "_" + wave1
-        encode domain1, gen(domain3)
-
-        expand 50
-        bysort domain1 : gen tripid = _n
-        expand 30
-        bysort domain1 tripid: gen catch_draw = _n
-
-        gen my_dom_id_string = "`s'_" + wave1 + "_" + mode + "_SF"
-        levelsof my_dom_id_string, local(domains)
-
-        compress                     
-        tempfile trips
-        save `trips', replace
-        clear                        
-
-        *----------------------------------------------------
-        * Loop over domains inside state/draw
-        *----------------------------------------------------
-		 * Mata objects can pile up — clear every state iteration 
-		 
-		mata: mata clear
-		clear
-		tempfile master
-		save `master', emptyok
-		
-       foreach d of local domains {
-
-            *  (i)  Trips skeleton for this domain
-            use `trips', clear
-
-            keep if my_dom_id_string == "`d'"
-
-            gen merge_id = _n
-            levelsof wave, local(wv)
-            levelsof mode, local(md)
-
-            tempfile trips2
-            save `trips2', replace
-            local n = _N                   
-            clear                           
-
-            *  (ii)  Catch draw rows for the same domain
-            use `base', clear
-            keep if my_dom_id_string == "`d'"
-			           
-			count
-			local n_obs=`r(N)'
-			
-            if `n_obs' == 0 {     
-				set obs `n'
-                foreach v in sf_keep_sim sf_rel_sim sf_cat bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat {
-                    replace `v' = 0
-                }
-                gen merge_id = _n
-                replace my_dom_id_string = "`d'"
-            }
-			
-            else {
-                local expand = ceil(`n' / `n_simulated_draw')
-				di `expand'
-                expand `expand'
-                sample `n', count
-                gen merge_id = _n
-            }
-
-            merge 1:1 merge_id using `trips2', keep(3) nogen
-            drop merge_id                     
-
-
-            keep my_dom_id_string draw ///
-                 sf_keep_sim sf_cat sf_rel_sim ///
-                 bsb_keep_sim bsb_rel_sim bsb_cat ///
-                 scup_keep_sim scup_rel_sim scup_cat ///
-                 mode month date day_i dtrip wave ///
-                 tripid catch_draw   day 
-
-            order draw my_dom_id_string mode date month day wave day_i tripid catch_draw dtrip
-
-            sort date tripid catch_draw
-            compress                         
-
-        // Append to growing master dataset
-        append using `master'
-        save `master', replace
-        clear                            
-        }
-
-        *----------------------------------------------------
-        * combine domains and write output for draw i
-        *----------------------------------------------------
-		use `master', clear
-		compress                             
-
-        save "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.dta", replace
-        clear                               
-    }
+}		
 }
 

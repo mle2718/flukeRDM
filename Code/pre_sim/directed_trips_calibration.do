@@ -54,7 +54,8 @@ replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
 
-
+* keep only NC north based on county delineation from Tracey 
+drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187)
 
 tempfile basefile
 save `basefile', replace
@@ -312,13 +313,13 @@ replace se=dtrip*pse_impute if se==.
 
 * If SE still missing, set SE=mean, so pse=100% (highly uncertain)
 replace se=dtrip if se==.
-
+/*
 preserve 
 keep my_dom_id_string  missing_SE_imputation
 duplicates drop 
 save "$input_data_cd\directed_trips_imputations_`s'.dta", replace
 restore 
-
+*/
 keep dtrip se state year month2 kod mode
 rename month2 month
 tostring month, gen(month1)
@@ -516,7 +517,7 @@ return list
 
 replace state="`s'" if state==""
 
-do "$input_code_cd/set regulations.do"	
+do "$input_code_cd/set_regulations.do"	
 
 /*
 preserve
@@ -530,7 +531,7 @@ restore
 */
 
 compress
-export delimited using "$iterative_input_data_cd\directed_trips_calibration_`s'.csv",  replace 
+export delimited using "$iterative_input_data_cd\archive\directed_trips_calibration\directed_trips_calibration_`s'.csv",  replace 
 
 
 
@@ -589,7 +590,7 @@ return list
 drop check 
 compress
 
-export delimited using "$iterative_input_data_cd\proj_year_calendar_adjustments_`s'.csv",  replace 
+export delimited using "$iterative_input_data_cd\archive\miscellaneous\proj_year_calendar_adjustments\proj_year_calendar_adjustments_`s'.csv",  replace 
 }
 
 
@@ -738,7 +739,7 @@ rename ul ul_mrip
 keep if dom_id=="1" // keep directed trip estimates for species group of interest 
 drop dom
 
-save "$input_data_cd\directed_trip_calib_mrip.dta", replace 
+save "$iterative_input_data_cd\archive\miscellaneous\directed_trip_calib_mrip.dta", replace 
 
 
 
@@ -880,7 +881,7 @@ rename ul ul_mrip
 keep if dom_id=="1" // keep directed trip estimates for species group of interest 
 drop dom
 
-save "$input_data_cd\directed_trip_calib_mrip_state_total.dta", replace 
+save "$iterative_input_data_cd\archive\miscellaneous\directed_trip_calib_mrip_state_total.dta", replace 
 
 
 ** Estimates by state, mode, and wave 

@@ -9,7 +9,18 @@
 * The two strata that did not converge accounted for little harvest. 
 
 import excel using "E:\Lou_projects\flukeRDM\flukeRDM_iterative_data\archive\miscellaneous\calibrated_model_stats.xlsx", clear firstrow
-drop keep_to_rel* rel_to_keep* p_* prop* n_*
+import excel using "E:\Lou_projects\flukeRDM\flukeRDM_iterative_data\calibrated_model_stats_4_2_26.xlsx", clear firstrow
+import delimited using "E:\Lou_projects\flukeRDM\flukeRDM_iterative_data\archive\miscellaneous\calibrated_model_stats_4_16_26.csv", clear 
+
+*drop keep_to_rel* rel_to_keep* p_* 
+replace pct_diff_catch="0" if pct_diff_catch=="NA"
+replace pct_diff_keep="0" if pct_diff_keep=="NA"
+replace pct_diff_rel="0" if pct_diff_rel=="NA"
+destring pct_diff_catch, replace
+destring pct_diff_keep, replace
+destring pct_diff_rel, replace
+
+
 gen abs_diff_keep=abs(diff_keep)
 gen abs_diff_pct_keep=abs(pct_diff_keep)
 

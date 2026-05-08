@@ -1,7 +1,15 @@
+# ---- packages ----
+required_pkgs <- c(
+  "survey", "copula", "MASS", "fitdistrplus", "readxl",
+  "weights", "wCorr", "patchwork", "Hmisc", "tidyr",
+  "dplyr", "ggplot2", "writexl", "plyr", "conflicted"
+)
 
-# Install required packages if needed
-install.packages(c("survey", "copula", "MASS", "fitdistrplus", "readxl", "weights", "wCorr"))
-install.packages("patchwork")
+missing_pkgs <- required_pkgs[!vapply(required_pkgs, requireNamespace, logical(1), quietly = TRUE)]
+if (length(missing_pkgs) > 0) {
+  stop("Install these packages before running the script: ",
+       paste(missing_pkgs, collapse = ", "))
+}
 
 library(patchwork)
 library(survey)
@@ -17,30 +25,119 @@ library(dplyr)
 library(ggplot2)
 library(writexl)
 library(plyr)
-library(dplyr)
 library(conflicted)
 
-
-conflicts_prefer(here::here)
 conflicts_prefer(dplyr::filter)
 conflicts_prefer(dplyr::select)
 conflicts_prefer(dplyr::mutate)
-conflicts_prefer(dplyr::rename)
-conflicts_prefer(dplyr::summarize)
 conflicts_prefer(dplyr::summarise)
-conflicts_prefer(dplyr::count)
-#s<-"DE"
 
-state_datasets <- list()
-#statez<-c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
-statez<-c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+# ---- controls ----
+n_sim   <- 5000
+n_draws <- 125
+n_reps  <- 200
+
+statez <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
+
+input_file <- "E:/Lou_projects/flukeRDM/flukeRDM_iterative_data/archive/calib_catch_draws/baseline_mrip_catch_processed.xlsx"
+
+full_df <- readxl::read_xlsx(input_file)
+
+# ---- helper functions ----
+
+get_rep_stat <- function(svy_obj) {
+  out <- survey::svymean(svy_obj, return.replicates = TRUE, na.rm = TRUE)
+  list(
+    mean = as.numeric(coef(out)),
+    reps = as.numeric(attr(out, "replicates"))
+  )
+}
+
+get_rep_var <- function(df, varname, rep_design) {
+  rep_wgts <- survey::weights(rep_design, type = "analysis")
+  out <- sapply(seq_len(ncol(rep_wgts)), function(i) {
+    rep_data <- rep_wgts[, i]
+    svy_var <- survey::svydesign(
+      ids = ~psu_id,
+      strata = ~strat_id,
+      weights = ~rep_data,
+      nest = TRUE,
+      data = df
+    )
+    as.numeric(coef(survey::svyvar(stats::as.formula(paste0("~", varname)), svy_var, na.rm = TRUE)))
+  })
+  as.numeric(out)
+}
+
+safe_theta <- function(mu, var, theta_cap = 1000) {
+  mu  <- pmax(as.numeric(mu), 1e-8)
+  var <- pmax(as.numeric(var), 1e-8)
+  theta <- mu^2 / pmax(var - mu, 1e-6)
+  theta <- pmax(theta, 1e-6)
+  theta <- pmin(theta, theta_cap)
+  theta[!is.finite(theta)] <- theta_cap
+  theta
+}
+
+weighted_sample_for_copula <- function(df, value_cols, n_sim, weight_col = "wp_int", jitter_ties = FALSE) {
+  w <- df[[weight_col]]
+  w[is.na(w) | w < 0] <- 0
+  
+  if (sum(w) <= 0) {
+    stop("All sampling weights are zero or missing in this domain.")
+  }
+  
+  idx <- sample.int(
+    n = nrow(df),
+    size = min(n_sim, nrow(df)),
+    replace = TRUE,
+    prob = w
+  )
+  
+  out <- df[idx, , drop = FALSE]
+  
+  if (jitter_ties) {
+    for (v in value_cols) {
+      out[[v]] <- out[[v]] + stats::runif(nrow(out), -1e-8, 1e-8)
+    }
+  }
+  
+  out
+}
+
+cap_with_resample <- function(x, max_x) {
+  x <- round(x)
+  x[x < 0] <- 0
+  
+  if (all(x <= max_x)) return(x)
+  
+  x_cap <- pmin(x, max_x)
+  overflow <- which(x > max_x)
+  excess <- sum(x[overflow] - max_x)
+  
+  while (excess > 0) {
+    candidates <- which(x_cap < max_x)
+    if (length(candidates) == 0) break
+    
+    room <- max_x - x_cap[candidates]
+    probs <- room / sum(room)
+    chosen <- sample(candidates, size = 1, prob = probs)
+    x_cap[chosen] <- x_cap[chosen] + 1
+    excess <- excess - 1
+  }
+  
+  x_cap
+}
+
+n_psu <- function(df) {
+  dplyr::n_distinct(df$psu_id)
+}
 
 
 for(s in statez) {
   
   # Load data
-  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/projected_mrip_catch_processed.xlsx") %>% 
-    filter(state==s)
+  df <- full_df %>% dplyr::filter(state == s)
   
   
   
@@ -54,7 +151,7 @@ for(s in statez) {
   # I used copula model to simulate 1), whereas 2) and 3) are distributed NB
   
   n_sim <- 5000   # number of samples per draw
-  n_draws <- 100  # number of simulated datasets
+  n_draws <- 125  # number of simulated datasets
   
   
   ############ SUMMER FLOUNDER ############
@@ -86,7 +183,7 @@ for(s in statez) {
       
       df <- df_full1 %>% filter(my_dom_id_string == dom)
       
-      
+
       # Define survey design
       svy_design <- svydesign(ids=~psu_id,strata=~strat_id,
                               weights=~wp_int,nest=TRUE,data=df)
@@ -165,7 +262,7 @@ for(s in statez) {
       df$w_int_rounded <- round(df$wp_int)
       df_expanded <- uncount(df, weights = w_int_rounded) 
       df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), n_sim)) 
-      
+
       
       # Create pseudo-observations (rank-based empirical CDFs)
       df_expanded <- df_expanded %>%
@@ -180,16 +277,16 @@ for(s in statez) {
       
       u_mat <- cbind(df_expanded$u_keep, df_expanded$u_rel)
       
-      
+
       
       tau_hat <- cor(u_mat[,1], u_mat[,2], method = "kendall")
-      
+
       # Assess dependence:
       # tau>=0.3: use Gumbel copula
       # tau<=-.3: normal copula, which allows for negative dependence. 
       # -.3>=tau<=.3: frank copula, for moderate, neutral dependence
       
-      
+
       if (tau_hat >= 0.3) {
         cop <- gumbelCopula(dim = 2)
         cop_name <- "Gumbel"
@@ -210,7 +307,7 @@ for(s in statez) {
       i <- 1
       while (i <= n_draws) {
         
-        sim_u <- rCopula(n_sim, copula_fit@copula)
+       sim_u <- rCopula(n_sim, copula_fit@copula)
         
         # Sample mu_keep and mu_rel with uncertainty
         sampled_mu_keep <-  rnorm(1, mu_keep, sqrt(var_keep))
@@ -233,13 +330,12 @@ for(s in statez) {
         # Convert uniform to NB using quantiles
         sim_rel  <- qnbinom(sim_u[,2], size = sampled_theta_rel, mu = sampled_mu_rel)
         
-        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
- 
+        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
           total_excess_keep <- sum(excess_keep)
-
+          
           # Set max values to max_keep
           sim_keep[sim_keep > max_keep] <- max_keep
           
@@ -310,7 +406,7 @@ for(s in statez) {
   rm(list = setdiff(ls(), keep))
   
   
-  
+
   
   ################
   
@@ -389,8 +485,8 @@ for(s in statez) {
         sim_rel <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
         
-        if (!any(is.na(sim_rel)) && !any(is.infinite(sim_rel))) {
-
+        if (!any(is.na(sim_rel))) {
+          
           ####### REDISTRIBUTE RELEASE ########
           excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
           total_excess_rel <- sum(excess_rel)
@@ -518,7 +614,7 @@ for(s in statez) {
         
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
-        if (!any(is.na(sim_keep)) && !any(is.infinite(sim_keep))) {
+        if (!any(is.na(sim_keep))) {
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -729,7 +825,7 @@ for(s in statez) {
         sim_rel <- qnbinom(runif(n_sim), size = sampled_theta_rel, mu = sampled_mu_rel)
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta_keep, mu = sampled_mu_keep)
         
-         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
+        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -792,7 +888,7 @@ for(s in statez) {
       group_by(my_dom_id_string, sim_id) %>%
       mutate(id = row_number()) %>%
       ungroup()
-    
+
   }
   
   # List the objects you want to keep
@@ -828,8 +924,7 @@ for(s in statez) {
   
   
   ############ BLACK SEA BASS ############  
-  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/projected_mrip_catch_processed.xlsx") %>% 
-    filter(state==s)
+  df <- full_df %>% dplyr::filter(state == s)
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0
   df_full1 <- df %>% filter(bsb_keep_and_rel==1 )
@@ -854,7 +949,7 @@ for(s in statez) {
     
     for (dom in unique(df_full1$my_dom_id_string)) {
       df <- df_full1 %>% filter(my_dom_id_string == dom)
-      
+
       # Define survey design
       svy_design <- svydesign(ids=~psu_id,strata=~strat_id,
                               weights=~wp_int,nest=TRUE,data=df)
@@ -993,7 +1088,7 @@ for(s in statez) {
         # Convert uniform to NB using quantiles
         sim_rel  <- qnbinom(sim_u[,2], size = sampled_theta_rel, mu = sampled_mu_rel)
         
-         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
+        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -1064,7 +1159,7 @@ for(s in statez) {
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
-  
+
   ################
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)==0
@@ -1142,7 +1237,7 @@ for(s in statez) {
         sim_rel <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
         
-        if (!any(is.na(sim_rel)) && !any(is.infinite(sim_rel))) {
+        if (!any(is.na(sim_rel))) {
           
           ####### REDISTRIBUTE RELEASE ########
           excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
@@ -1271,7 +1366,7 @@ for(s in statez) {
         
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
-        if (!any(is.na(sim_keep)) && !any(is.infinite(sim_keep))) {
+        if (!any(is.na(sim_keep))) {
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -1483,7 +1578,7 @@ for(s in statez) {
         sim_rel <- qnbinom(runif(n_sim), size = sampled_theta_rel, mu = sampled_mu_rel)
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta_keep, mu = sampled_mu_keep)
         
-         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
+        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -1542,11 +1637,11 @@ for(s in statez) {
     }
     
     final_result5 <- bind_rows(all_results5) %>% 
-      group_by(my_dom_id_string, sim_id) %>%
+    group_by(my_dom_id_string, sim_id) %>%
       mutate(id = row_number()) %>%
       ungroup()
     
-  }
+    }
   
   # List the objects you want to keep
   keep <- c("final_result1", "final_result2","final_result3", "final_result4","final_result5", "df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s",  "combined_results_SF")
@@ -1580,8 +1675,7 @@ for(s in statez) {
   
   
   ############ SCUP ############  
-  df <- read_xlsx("C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025/projected_mrip_catch_processed.xlsx") %>% 
-    filter(state==s)
+  df <- full_df %>% dplyr::filter(state == s)
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0
   df_full1 <- df %>% filter(scup_keep_and_rel==1 )
@@ -1685,9 +1779,9 @@ for(s in statez) {
       df$w_int_rounded <- round(df$wp_int)
       df_expanded <- uncount(df, weights = w_int_rounded) 
       df_expanded <- df_expanded %>% sample_n(min(nrow(df_expanded), n_sim)) 
+    
       
-      
-      # Create pseudo-observations (rank-based empirical CDFs)
+            # Create pseudo-observations (rank-based empirical CDFs)
       df_expanded <- df_expanded %>%
         mutate(
           rank_keep = rank(scup_keep, ties.method = "average"),
@@ -1726,7 +1820,7 @@ for(s in statez) {
       sim_datasets <- list()
       i <- 1
       while (i <= n_draws) {
-        
+
         sim_u <- rCopula(n_sim, copula_fit@copula)
         
         # Sample mu_keep and mu_rel with uncertainty
@@ -1751,7 +1845,7 @@ for(s in statez) {
         # Convert uniform to NB using quantiles
         sim_rel  <- qnbinom(sim_u[,2], size = sampled_theta_rel, mu = sampled_mu_rel)
         
-         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
+        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -1901,7 +1995,7 @@ for(s in statez) {
         sim_rel <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
         
-        if (!any(is.na(sim_rel)) && !any(is.infinite(sim_rel))) {
+        if (!any(is.na(sim_rel))) {
           
           ####### REDISTRIBUTE RELEASE ########
           excess_rel <- sim_rel[sim_rel > max_rel] - max_rel
@@ -2030,7 +2124,7 @@ for(s in statez) {
         
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta, mu = sampled_mu)
         
-        if (!any(is.na(sim_keep)) && !any(is.infinite(sim_keep))) {
+        if (!any(is.na(sim_keep))) {
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -2083,7 +2177,7 @@ for(s in statez) {
   # Remove everything else
   rm(list = setdiff(ls(), keep))
   
-  
+
   ### MEAN(DISCARDS-PER-TRIP)==0, MEAN(HARVEST-PER-TRIP)==0
   if (nrow(df_full4) > 0) {
     
@@ -2126,10 +2220,10 @@ for(s in statez) {
   # List the objects you want to keep
   keep <- c("final_result1", "final_result2","final_result3", "final_result4","df_full1", "df_full2", "df_full3", "df_full4", "df_full5", "n_sim", "n_draws", "s", "combined_results_SF", "combined_results_BSB")
   
-  
+
   # Remove everything else
   rm(list = setdiff(ls(), keep))
-  
+
   
   
   ### MEAN(DISCARDS-PER-TRIP)>0, MEAN(HARVEST-PER-TRIP)>0 BUT positive values of harvest/discards never occur simultaneously
@@ -2243,7 +2337,7 @@ for(s in statez) {
         sim_rel <- qnbinom(runif(n_sim), size = sampled_theta_rel, mu = sampled_mu_rel)
         sim_keep <- qnbinom(runif(n_sim), size = sampled_theta_keep, mu = sampled_mu_keep)
         
-         if (!any(is.na(sim_keep)) && !any(is.na(sim_rel)) && !any(is.infinite(sim_keep)) && !any(is.infinite(sim_rel))){
+        if (!any(is.na(sim_keep)) && !any(is.na(sim_rel))) {
           
           ###### REDISTRIBUTE KEEP ########
           excess_keep <- sim_keep[sim_keep > max_keep] - max_keep
@@ -2286,7 +2380,7 @@ for(s in statez) {
           i <- i + 1  # Only increment if no NaNs
         }
         
-        
+
       }
       
       # Combine all simulations
@@ -2303,7 +2397,7 @@ for(s in statez) {
     }
     
     final_result5 <- bind_rows(all_results5) %>%
-      group_by(my_dom_id_string, sim_id) %>%
+    group_by(my_dom_id_string, sim_id) %>%
       mutate(id = row_number()) %>%
       ungroup()    
   }
@@ -2356,7 +2450,7 @@ for(s in statez) {
     safe_name <- gsub("[^A-Za-z0-9_]", "_", name)
     
     # Write to Excel
-    write_xlsx(split_datasets[[name]], paste0("E:/Lou's projects/flukeRDM/flukeRDM_iterative_data/proj_catch_draws_", s, "_", safe_name, ".xlsx"))
+    write_xlsx(split_datasets[[name]], paste0("E:/Lou_projects/flukeRDM/flukeRDM_iterative_data/archive/calib_catch_draws/calib_catch_draws_", s, "_", safe_name, ".xlsx"))
   }
   
   rm(catch_draws, combined_results_BSB, combined_results_SF, combined_results_SCUP, split_datasets)

@@ -65,6 +65,10 @@ replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
 
+* keep only NC north based on county delineation from Tracey 
+drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187)
+
+
 gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
 replace mode1="pr" if inlist(mode_fx, "7")
 replace mode1="fh" if inlist(mode_fx, "4", "5")
@@ -555,8 +559,8 @@ keep wp_int my_dom_id_string meanbsb_cat-id_code year yr2 st  state common_dom s
 mvencode se*, mv(0) override
 mvencode missing*, mv(0) override
 
-export excel "$input_data_cd\baseline_mrip_catch_processed.xlsx", firstrow(variables) replace
-import excel using "$input_data_cd\baseline_mrip_catch_processed.xlsx", clear first
+export excel "$iterative_input_data_cd\archive\calib_catch_draws\baseline_mrip_catch_processed.xlsx", firstrow(variables) replace
+import excel using "$iterative_input_data_cd\archive\calib_catch_draws\baseline_mrip_catch_processed.xlsx", clear first
 
 
 ************** Part B  **************
@@ -606,6 +610,10 @@ replace state="NJ" if st==34
 replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
+
+* keep only NC north based on county delineation from Tracey 
+drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187)
+
 
 gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
 replace mode1="pr" if inlist(mode_fx, "7")
@@ -762,7 +770,7 @@ rename my_dom_id_string2 mode
 drop  my_dom_id_string3 
 order my_dom_id_string state mode
 
-save "$input_data_cd\catch_total_calib_mrip.dta", replace 
+save "$iterative_input_data_cd\archive\miscellaneous\catch_total_calib_mrip.dta", replace 
 
 
 
@@ -812,6 +820,9 @@ replace state="NJ" if st==34
 replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
+
+* keep only NC north based on county delineation from Tracey 
+drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187)
 
 gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
 replace mode1="pr" if inlist(mode_fx, "7")
@@ -968,7 +979,7 @@ rename my_dom_id_string1 state
 drop  my_dom_id_string2 
 order my_dom_id_string state 
 
-save "$input_data_cd\catch_total_calib_mrip_state_total.dta", replace 
+save "$iterative_input_data_cd\archive\miscellaneous\catch_total_calib_mrip_state_total.dta", replace 
 
 
 
@@ -1019,6 +1030,9 @@ replace state="NJ" if st==34
 replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
+
+* keep only NC north based on county delineation from Tracey 
+drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187)
 
 gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
 replace mode1="pr" if inlist(mode_fx, "7")
@@ -1177,4 +1191,4 @@ rename my_dom_id_string3 wave
 drop  my_dom_id_string4 
 order my_dom_id_string state mode wave
 
-save "$input_data_cd\catch_total_calib_mrip_state_mode_wave.dta", replace 
+save "$iterative_input_data_cd\archive\miscellaneous\catch_total_calib_mrip_state_mode_wave.dta", replace 

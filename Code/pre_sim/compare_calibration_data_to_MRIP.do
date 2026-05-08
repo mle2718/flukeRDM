@@ -13,7 +13,7 @@ local statez "MA RI CT NY NJ DE MD VA NC"
 foreach s of local statez{
 forv i=1/$ndraws{
 
-import excel using "$input_data_cd\calib_catch_draws_`s'_`i'.xlsx", clear firstrow
+import excel using "$iterative_input_data_cd\archive\calib_catch_draws\calib_catch_draws_`s'_`i'.xlsx", clear firstrow
 gen sf_cat_sim  = sf_keep_sim + sf_rel_sim
 gen bsb_cat_sim = bsb_keep_sim + bsb_rel_sim
 gen scup_cat_sim = scup_keep_sim + scup_rel_sim
@@ -25,11 +25,11 @@ save `master', replace
 }
 }
 use `master', clear
-save "$input_data_cd\simulated_means_copula.dta", replace 
+save "$iterative_input_data_cd\archive\calib_catch_draws\simulated_means_copula.dta", replace 
 
 
 
-u "$input_data_cd\simulated_means_copula.dta", clear 
+u "$iterative_input_data_cd\archive\calib_catch_draws\simulated_means_copula.dta", clear 
 ds draw my_dom_id, not
 local vars `r(varlist)'
 foreach v of local vars{
@@ -60,7 +60,7 @@ tempfile sim
 save `sim', replace
 
 *Pull in the MRIP means/SEs dataset
-import excel using "$input_data_cd\baseline_mrip_catch_processed.xlsx", clear first 
+import excel using "$iterative_input_data_cd\archive\calib_catch_draws\baseline_mrip_catch_processed.xlsx", clear first 
 keep my_dom_id_string-missing_sesf_rel
 drop missing*
 duplicates drop
@@ -186,39 +186,31 @@ save `master', emptyok
 local statez "MA RI CT NY NJ DE MD VA NC"
 
 foreach s of local statez{
-forv i=1/$ndraws{
-
+	
 *local i=1
 *local s="RI"
 
-use "$iterative_input_data_cd\calib_catch_draws_`s'_`i'.dta", clear 
-
+import delimited using  "$iterative_input_data_cd\archive\directed_trips_calibration\directed_trips_calibration_`s'.csv", clear 
 drop if dtrip==0
 
-collapse (mean) sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat, by(my_dom_id_string)
-split my_dom_id_string, parse(_)
-rename my_dom_id_string1 state
-rename my_dom_id_string2 wave
-rename my_dom_id_string3 mode
-drop my_dom_id_string4
+gen wave=1 if inlist(month, 1,2)
+replace wave=2 if inlist(month, 3, 4)
+replace wave=3 if inlist(month, 5,6)
+replace wave=4 if inlist(month, 7,8)
+replace wave=5 if inlist(month, 9,10)
+replace wave=6 if inlist(month, 11,12)
+collapse (sum) dtrip, by(mode wave state draw)	
 
-tempfile catch
-save `catch', replace 
+tempfile trips
+save `trips', replace
 
-import delimited using  "$iterative_input_data_cd\directed_trips_calibration_`s'.csv", clear 
-drop if dtrip==0
+forv i=1/$ndraws{
 
-keep if draw==`i'
-gen wave="1" if inlist(month, 1,2)
-replace wave="2" if inlist(month, 3, 4)
-replace wave="3" if inlist(month, 5,6)
-replace wave="4" if inlist(month, 7,8)
-replace wave="5" if inlist(month, 9,10)
-replace wave="6" if inlist(month, 11,12)
-collapse (sum) dtrip, by(mode wave state)
+use "$iterative_input_data_cd\archive\calib_catch_draws\calib_catch_draws_`s'_`i'.dta", clear 
 
-merge 1:1 mode wave state using `catch'
-drop _merge
+collapse (mean) sf_keep_sim sf_cat sf_rel_sim bsb_keep_sim bsb_rel_sim bsb_cat scup_keep_sim scup_rel_sim scup_cat, by(mode state wave)
+gen draw = `i'
+merge 1:1 mode wave state draw using `trips', keep(3) nogen
 
 rename sf_cat sf_cat_sim
 rename bsb_cat bsb_cat_sim
@@ -230,7 +222,6 @@ foreach v of local vars{
 	
 }
 
-gen draw=`i'
 
 append using `master'
 save `master', replace
@@ -238,11 +229,11 @@ save `master', replace
 }
 use `master', clear
 
-save "$input_data_cd\simulated_catch_totals3.dta", replace 
+save "$iterative_input_data_cd\archive\calib_catch_draws\simulated_catch_totals3.dta", replace 
 
 
 *B3 compare means @ state, mode, wave level
-u "$input_data_cd\simulated_catch_totals3.dta", clear 
+u "$iterative_input_data_cd\archive\calib_catch_draws\simulated_catch_totals3.dta", clear 
 rename dtrip tot_dtrip_sim
 
 ds draw mode state wave, not
@@ -254,8 +245,7 @@ foreach v of local vars{
 tostring draw, gen(draw2)
 gen domain=state+"_"+mode+"_"+draw2
 encode domain, gen(domain2)
-encode wave, gen(wave2)
-xtset domain2 wave2
+xtset domain2 wave
 tsfill, full
 
 decode domain2, gen(domain3)
@@ -267,9 +257,7 @@ replace draw2=domain33
 drop draw draw2  domain domain2 domain3 domain31 domain32
 destring domain33, replace
 rename domain33 draw
-drop wave
-decode wave2, gen(wave)
-drop wave2
+
 
 order mode state wave draw
 ds draw mode state wave, not
@@ -299,11 +287,12 @@ rename new1 species
 rename new2 disp
 drop new3
 drop new
+tostring wave, replace 
 tempfile sim
 save `sim', replace
 
 
-import excel using "$input_data_cd\baseline_mrip_catch_processed.xlsx", clear first 
+import excel using "$iterative_input_data_cd\archive\calib_catch_draws\baseline_mrip_catch_processed.xlsx", clear first 
 keep my_dom_id_string-missing_sesf_rel
 drop missing*
 duplicates drop
@@ -408,13 +397,13 @@ graph export "$figure_cd/mean_catch_MRIP_simulated_MD.png", as(png) replace
 grc1leg  bsb_keep_VA_new sf_keep_VA_new scup_keep_VA_new  bsb_rel_VA_new sf_rel_VA_new  scup_rel_VA_new  , cols(3)	 title("Mean catch-per-trip, MRIP vs. simulated estimates VA", size(small))
 graph export "$figure_cd/mean_catch_MRIP_simulated_VA.png", as(png) replace
 
-grc1leg  bsb_keep_NC_new    bsb_rel_NC scup_keep_NC_new , cols(3) title("Mean catch-per-trip, MRIP vs. simulated estimates NC", size(small))
+grc1leg  bsb_keep_NC_new    bsb_rel_NC scup_keep_NC_new  , cols(3) title("Mean catch-per-trip, MRIP vs. simulated estimates NC", size(small))
 graph export "$figure_cd/mean_catch_MRIP_simulated_NC.png", as(png) replace
 
 
 
 *B3 compare catch totals @ state, mode, wave level
-u "$input_data_cd\simulated_catch_totals3.dta", replace 
+u "$iterative_input_data_cd\archive\calib_catch_draws\simulated_catch_totals3.dta", replace 
 rename dtrip tot_dtrip_sim
 
 ds draw mode state wave, not
@@ -443,6 +432,7 @@ rename new1 species
 rename new2 disp
 drop new3
 drop new
+tostring wave, replace
 replace disp="dtrip" if species=="dtrip"
 replace species="NA" if disp=="dtrip"
 
@@ -458,7 +448,7 @@ drop if disp=="dtrip"
 tempfile sim
 save `sim', replace
 
-u  "$input_data_cd\catch_total_calib_mrip_state_mode_wave.dta", clear 
+u  "$iterative_input_data_cd\archive\miscellaneous\catch_total_calib_mrip_state_mode_wave.dta", clear 
 reshape long total se ll ul , i(mode state wave) j(new) string
 rename tot mrip_total 
 rename ll mrip_ll
@@ -478,7 +468,7 @@ tempfile catch
 save `catch', replace 
 
 
-u  "$input_data_cd\directed_trip_calib_mrip_state_wave_total.dta", clear 
+u  "$iterative_input_data_cd\archive\miscellaneous\directed_trip_calib_mrip_state_wave_total.dta", clear 
 rename se_mrip se_dtrip_mrip
 rename ll ll_dtrip_mrip
 rename ul ul_dtrip_mrip
@@ -596,7 +586,7 @@ graph export "$figure_cd/catch_total_wave_MRIP_simulated_NC.png", as(png) replac
 
 
 *B3 compare catch totals @ state and mode
-u "$input_data_cd\simulated_catch_totals3.dta", replace 
+u "$iterative_input_data_cd\archive\calib_catch_draws\simulated_catch_totals3.dta", replace 
 rename dtrip tot_dtrip_sim
 
 ds draw mode state wave, not
@@ -643,7 +633,7 @@ drop if disp=="dtrip"
 tempfile sim
 save `sim', replace
 
-u  "$input_data_cd\catch_total_calib_mrip.dta", clear  
+u  "$iterative_input_data_cd\archive\miscellaneous\catch_total_calib_mrip.dta", clear  
 reshape long total se ll ul , i(mode state) j(new) string
 rename tot mrip_total 
 rename ll mrip_ll
@@ -664,7 +654,7 @@ tempfile catch
 save `catch', replace 
 
 
-u  "$input_data_cd\directed_trip_calib_mrip.dta", clear  
+u  "$iterative_input_data_cd\archive\miscellaneous\directed_trip_calib_mrip.dta", clear  
 rename se_mrip se_dtrip_mrip
 rename ll ll_dtrip_mrip
 rename ul ul_dtrip_mrip
@@ -789,7 +779,7 @@ graph export "$figure_cd/catch_total_state_MRIP_simulated_NC.png", as(png) repla
 ** FINAL STEP
 
 * Once the simulated totals approximate MRIP, save the data to be used in the R code simulation
-u "$input_data_cd\simulated_catch_totals3.dta", replace 
+u "$iterative_input_data_cd\archive\calib_catch_draws\simulated_catch_totals3.dta", replace 
 rename dtrip tot_dtrip_sim
 
 ds draw mode state wave, not
@@ -802,7 +792,7 @@ collapse (sum) tot_sf_keep_sim tot_sf_cat_sim tot_sf_rel_sim ///
 						  tot_bsb_keep_sim tot_bsb_rel_sim tot_bsb_cat_sim ///
 						  tot_scup_keep_sim tot_scup_rel_sim tot_scup_cat_sim tot_dtrip_sim , by(state mode draw)
 						  
-save "$output_data_cd\simulated_catch_totals.dta", replace 
+save "$iterative_input_data_cd\archive\calib_catch_draws\simulated_catch_totals.dta", replace 
 					  
 
 
@@ -817,10 +807,13 @@ local statez "MA RI CT NY NJ DE MD VA NC"
 
 foreach s of local statez {
 	forvalues i = 1/$ndraws {
-       u "$input_data_cd\calib_catch_draws_`s'_`i'.dta", clear
-	   drop my_dom_id_string day month wave day_i sf_keep_sim sf_rel_sim bsb_keep_sim bsb_rel_sim scup_keep_sim scup_rel_sim dtrip
+       
+	   u "$iterative_input_data_cd\archive\calib_catch_draws\calib_catch_draws_`s'_`i'.dta", clear
+	   drop day month wave day_i sf_keep_sim sf_rel_sim bsb_keep_sim bsb_rel_sim scup_keep_sim scup_rel_sim state
+	   order draw mode date date_num tripid catch_draw sf bsb scup cost age tot 
 	   compress
-	   save  "$input_data_cd\calib_catch_draws_`s'_`i'.dta", replace
+	   
+	   save  "$iterative_input_data_cd\archive\calib_catch_draws\calib_catch_draws_`s'_`i'.dta", replace
 		}
 }	
 

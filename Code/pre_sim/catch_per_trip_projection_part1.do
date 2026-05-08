@@ -50,7 +50,7 @@ replace var_id=strat_id if strmatch(var_id,"")
 keep if inlist(st, 25, 44, 9,  36 , 34, 10, 24, 51, 37)
 
 
-keep if $projection_year
+keep if $projection_catch_per_trip_years
  
 gen st2 = string(st,"%02.0f")
 
@@ -63,6 +63,9 @@ replace state="NJ" if st==34
 replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
+
+* keep only NC north based on county delineation from Tracey 
+drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187)
 
 gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
 replace mode1="pr" if inlist(mode_fx, "7")
@@ -556,5 +559,5 @@ mvencode se*, mv(0) override
 mvencode missing*, mv(0) override
 mvencode sf_keep_and_rel_ind bsb_keep_and_rel_ind scup_keep_and_rel_ind, mv(0) override
 
-export excel "$input_data_cd\projected_mrip_catch_processed.xlsx", firstrow(variables) replace
-import excel using "$input_data_cd\projected_mrip_catch_processed.xlsx", clear first 
+export excel "$iterative_input_data_cd\archive\proj_catch_draws\projected_mrip_catch_processed.xlsx", firstrow(variables) replace
+*import excel using  "$iterative_input_data_cd\archive\calib_catch_draws\projected_mrip_catch_processed.xlsx", clear first 
