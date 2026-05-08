@@ -98,7 +98,7 @@ replace mode1="pr" if inlist(mode_fx,  "7")
 replace total_exp = total_exp*$inflation_expansion
 
 *New approach computes trip cost distribution based on directed trips for sf, bsb, or scup
-gen common_dom="1" if inlist(prim1_common, "SUMMER FLOUNDER", "BLACK SEA BASS", "SCUP")
+gen common_dom="1" if inlist(prim1_common, "SUMMER FLOUNDER", "BLACK SEA BASS", "SCUP") | inlist(prim2_common, "SUMMER FLOUNDER", "BLACK SEA BASS", "SCUP")
 replace common_dom="2" if common_dom==""
 
 *keep if common_dom=="1"
@@ -151,6 +151,18 @@ encode domain, gen(dom2)
 *keep if domain=="CT_pr"
 svy: mean total_exp, over(dom2)
 gen cost=total_exp
+
+
+preserve
+keep if common_dom=="1"
+keep cost state mode1  
+bysort state mode1: egen max_cost=max(cost)
+keep state mode1 max
+rename mode1 mode
+duplicates drop 
+tempfile max_cost
+save `max_cost', replace 
+restore
 
 * Observed cap (e.g., 99th percentile) for positive costs
 /*
@@ -301,8 +313,12 @@ format cost %9.2f
 order state mode common_dom tripid cost
 keep if common_dom=="1"
 
-*compare simulated versus observed
+*when cost_sim>max(observed cost), set cost_sim=cost_sim>max(observed cost), by state-mode 
+merge m:1 state mode using `max_cost'
+replace cost=max if cost_sim>max
+drop max common _merge 
 /*
+*compare simulated versus observed
 collapse (mean) cost_sim=cost (sd) sd_cost=cost, by(state mode common_dom)
 merge 1:1 state mode common_dom using `observed'
 gen se_sim=sqrt(sd)
