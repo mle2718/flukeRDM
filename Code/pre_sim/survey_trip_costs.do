@@ -97,6 +97,7 @@ replace mode1="pr" if inlist(mode_fx,  "7")
 *Adjust for inflation
 replace total_exp = total_exp*$inflation_expansion
 
+*New approach computes trip cost distribution based on directed trips for sf, bsb, or scup
 gen common_dom="1" if inlist(prim1_common, "SUMMER FLOUNDER", "BLACK SEA BASS", "SCUP")
 replace common_dom="2" if common_dom==""
 
