@@ -6,7 +6,7 @@
 set seed $seed
 
 *Enter a directory with the expenditure survey data 
-u "$input_data_cd\gulf_atl_2022.dta", clear
+u "$misc_data_cd\gulf_atl_2022.dta", clear
 renvarlab *, lower
 
 
@@ -56,8 +56,8 @@ egen total_exp=rowtotal(afuelexp arentexp ptransexp lodgexp grocexp restexp bait
 
 svyset psu_id [pweight= sample_wt], strata(var_id) singleunit(certainty)
 
-merge m:1 prim1 using "$input_data_cd\prim1.dta", keep(1 3) nogen 
-merge m:1 prim2 using "$input_data_cd\prim2.dta", keep(1 3) nogen 
+merge m:1 prim1 using "$misc_data_cd\prim1.dta", keep(1 3) nogen 
+merge m:1 prim2 using "$misc_data_cd\prim2.dta", keep(1 3) nogen 
 
 
 *Sabrina's definition of for-hire mode include both headboat and charter boats
@@ -329,6 +329,6 @@ gen pct_dif=((cost_sim-cost)/cost)*100
 su pct_dif
 */
 
-save "$input_data_cd\trip_costs.dta", replace 
+save "$misc_data_cd\trip_costs.dta", replace 
 
 

@@ -16,7 +16,7 @@
 * a) calibration year catch-at-length
 
 * CT VAS
-cd "$input_data_cd\length_data"
+cd "$misc_data_cd"
 import excel "2024 CT VAS SFL SCUP BSB.xlsx", clear first 
 renvarlab, lower
 gen species="sf" if catch_common_name== "FLOUNDER, SUMMER"
@@ -276,7 +276,7 @@ save `als_rec', replace
 
 
 * MRIP data 
-cd $input_data_cd
+cd $misc_data_cd
 
 dsconcat $b2list
 sort year strat_id psu_id id_code
@@ -335,6 +335,8 @@ replace region="CST" if inlist(species, "scup")
 drop if  length_cm==. | length_in==.
 
 replace length_cm = round(length_cm)
+replace length_in = round(length_in)
+
 collapse (sum) nfish, by(species region length_cm)
 sort species region length nfish
 order species region length nfish
@@ -344,6 +346,8 @@ tabstat nfish, stat(sum) by(spec_reg)
 
 egen sumfish=sum(nfish), by(species region)
 gen prop_b2=nfish/sumfish
+
+rename length length 
 
 tempfile prop_b2
 save `prop_b2', replace 
@@ -382,10 +386,6 @@ replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
 
-* keep only NC north based on county delineation from Tracey 
-drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187)
-
-
 drop region
 gen region="NO" if inlist(state, "MA", "RI", "CT", "NY") 
 replace region="NJ" if inlist(state, "NJ") 
@@ -397,6 +397,10 @@ gen common_dom="ZZ"
 replace common_dom="SF" if strmatch(common, "summerflounder") 
 replace common_dom="BS" if strmatch(common, "blackseabass") 
 replace common_dom="SC" if strmatch(common, "scup") 
+
+* keep only NC north based on county delineation from Tracey 
+replace common_dom="ZZ"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
+
 
 /*
 *Example of illegal harvest 
@@ -438,6 +442,7 @@ restore
 
 /* this might speed things up if I re-classify all length=0 for the species I don't care about */
 replace l_cm_bin=0 if !inlist(common, "summerflounder", "blackseabass", "scup")
+replace l_in_bin=0 if !inlist(common, "summerflounder", "blackseabass", "scup")
 
 sort year2  w2 strat_id psu_id id_code common_dom
 svyset psu_id [pweight= wp_size], strata(strat_id) singleunit(certainty)
@@ -468,19 +473,18 @@ drop *ZZ
 ds l, not
 renvarlab `r(varlist)', prefix(i)
 	
-reshape long i, i(l_cm) j(new) string
+reshape long i, i(l_) j(new) string
 split new, parse(_)
 rename new1 region
 rename new2 species
 drop new
 rename i nfish
-rename l_cm length_cm
 replace species="sf" if species=="SF"
 replace species="bsb" if species=="BS"
 replace species="scup" if species=="SC"
 order region species l n
 sort region species l n
-drop if length_cm==0
+drop if l_cm_bin==0
 
 preserve
 keep if species=="scup"
@@ -493,6 +497,7 @@ restore
 drop if species=="scup"
 append using `scup'
 
+rename l_ length 
 egen sumfish=sum(nfish), by(species region)
 gen prop_ab1=nfish/sumfish
 
@@ -509,7 +514,7 @@ tempfile props
 save `props', replace 
 
 *Pull estimates of total harvest and discards from MRIP by region  
-u "$iterative_input_data_cd\archive\calib_catch_draws\simulated_catch_totals.dta", replace 
+u "$misc_data_cd\simulated_catch_totals.dta", replace 
 
 collapse (sum) tot_sf_keep_sim tot_sf_rel_sim tot_bsb_keep_sim tot_bsb_rel_sim tot_scup_keep_sim tot_scup_rel_sim, by(state draw)
 rename tot_sf_keep_sim harvest_sf
@@ -551,8 +556,8 @@ replace prop_b2=0 if prop_b2==.
 replace harvest=harvest*prop_ab1
 replace discards=discards*prop_b2
 gen catch=harvest+discards
-collapse catch, by(region species length_cm draw)
-sort region species length_cm
+collapse catch, by(region species length draw)
+sort region species length
 tostring draw, gen(draw2)
 
 gen domain=region+"_"+species +"_"+draw2
@@ -571,60 +576,102 @@ preserve
 rename length fitted_length
 keep fitted_length observed_prob catch species region domain draw
 duplicates drop
-export delimited using "$input_data_cd/baseline_observed_catch_at_length.csv", replace 
+export delimited using "$misc_data_cd/baseline_observed_catch_at_length.csv", replace 
 tempfile observed_prob
 save `observed_prob', replace
 restore
 
-*bysort domain: egen min_catch=min(catch) if catch!=0
-*gen sim_catch=catch/min_catch
 
-gen sim_catch=5000*observed_prob
-sort draw species region length
-replace sim_catch=round(sim_catch)
 
+* new code using MOM to avoid non-convergence 
 tempfile new
 save `new', replace
 global fitted_sizes
 
-levelsof domain , local(regs)
-foreach r of local regs{
-u `new', clear
+levelsof domain, local(regs)
 
-keep if domain=="`r'"
-keep length sim_catch
-su length if sim_catch!=0 & sim_catch!=.
-local minL=`r(min)'
-local maxL=`r(max)'
+foreach r of local regs {
+    use `new', clear
+    keep if domain=="`r'"
+    di "`r'"
 
-expand sim_catch
-drop if sim_catch==0
-gammafit length
-local alpha=e(alpha)
-local beta=e(beta)
+    keep length catch
+    drop if missing(length) | missing(catch)
+    drop if catch<=0
+	replace catch=round(catch)
+	su catch
+	local tot_n_fish=`r(sum)'
+	
+    * Gamma needs strictly positive support
+    drop if length<=0
 
-gen gammafit=rgamma(`alpha', `beta')
-*replace gammafit=round(gammafit, .5)
-replace gammafit=round(gammafit)
+    * observed range (weighted or unweighted; here unweighted over remaining bins)
+    quietly summarize length
+    local minL = r(min)
+    local maxL = r(max)
 
-gen nfish=1
+    * --------
+    * (A) Estimate gamma parameters robustly (MOM with freq weights)
+    * --------
+    quietly summarize length [fw=catch], meanonly
+    local mu = r(mean)
+    local Nw = r(sum_w)
 
-*restrict catch to within range of observed values
-keep if gammafit>=`minL' & gammafit<=`maxL'
+    * Weighted variance: Var = E[x^2] - (E[x])^2 using the same freq weights
+    gen double length2 = length^2
+    quietly summarize length2 [fw=catch], meanonly
+    local ex2 = r(mean)
+    local v   = `ex2' - (`mu'^2)
 
-collapse (sum) nfish, by(gammafit)
-egen sumnfish=sum(nfish)
-gen fitted_prob=nfish/sumnfish
-gen domain="`r'"
-drop nfish sumnfish
+    * Guard: if variance is 0 or numerically tiny, make it a near-degenerate gamma
+    if (`v'<=1e-10 | missing(`v') | missing(`mu') | `mu'<=0) {
+        * Put essentially all mass at mu by using huge alpha
+        local alpha = 1e6
+        local beta  = `mu'/`alpha'
+    }
+    else {
+        local alpha = (`mu'^2)/`v'
+        local beta  = `v'/`mu'
+    }
 
-tempfile fitted_sizes`r'
-save `fitted_sizes`r'', replace
-global fitted_sizes "$fitted_sizes "`fitted_sizes`r''" " 
+    * --------
+    * (B) Simulate a truncated gamma sample via rejection sampling
+    * --------
+    local ndraw = `tot_n_fish'   // sample size for the simulated distribution
+    clear
+    set obs `ndraw'
+
+    * draw
+    gen double gammafit = rgamma(`alpha', `beta')
+    replace gammafit = round(gammafit)
+
+    * truncate to observed range
+    keep if gammafit>=`minL' & gammafit<=`maxL'
+
+    * If rejection killed everything, try again with more draws (once)
+    if _N==0 {
+        clear
+        set obs `=5*`ndraw''
+        gen double gammafit = rgamma(`alpha', `beta')
+        replace gammafit = round(gammafit)
+        keep if gammafit>=`minL' & gammafit<=`maxL'
+        if _N==0 continue
+    }
+
+    gen nfish = 1
+    collapse (sum) nfish, by(gammafit)
+    egen sumnfish = total(nfish)
+    gen double fitted_prob = nfish/sumnfish
+    gen domain = "`r'"
+
+    tempfile fitted_sizes_`=_N'   
+    save `fitted_sizes_`=_N'', replace
+    global fitted_sizes "$fitted_sizes `fitted_sizes_`=_N''"
 }
+
 clear
 dsconcat $fitted_sizes
-rename gammafit fitted_length		   
+rename gammafit fitted_length
 
 merge 1:1 fitted_length domain using `observed_prob'
 sort domain fitted_length 
@@ -634,9 +681,10 @@ split domain, parse(_)
 replace species=domain2
 replace region=domain1
 drop domain1 domain2
+drop draw
 rename domain3 draw
-*drop if _merge==2
-*drop _merge 
+destring draw, replace 
+
 
 egen sum_nfish_catch=sum(catch), by(species region draw)
 replace observed_prob = catch/sum_nfish_catch
@@ -649,10 +697,13 @@ gen nfish_catch_from_raw=observed_prob*sum_nfish_catch
 
 drop _merge
 
+save "$misc_data_cd/baseline_catch_at_length_region.dta", replace 
 
-* Graphs of the fitted observed/fitted probabilities
-/*
-levelsof domain if draw=="1" & region=="NO", local(domz)
+
+
+/* Graphs of the fitted observed/fitted probabilities
+
+levelsof domain if draw==1 & region=="NO", local(domz)
 foreach d of local domz{
 	
 levelsof species if domain=="`d'", local(spec)  
@@ -680,14 +731,14 @@ grc1leg `graphnames'
 graph export "$figure_cd/catch_at_length_calib.png", as(png) replace
 */
 
-save "$input_data_cd/baseline_catch_at_length.dta", replace 
 
 
-u "$input_data_cd/baseline_catch_at_length.dta", clear 
 
 
 * figures for Rachel 2/10/26
 /*
+u "$misc_data_cd/baseline_catch_at_length.dta", clear 
+
 preserve
 
 keep if species=="bsb"
@@ -842,5 +893,7 @@ append using `bsb'
 destring draw, replace
 drop region
 order state species draw length
-export delimited using "$input_data_cd/baseline_catch_at_length.csv", replace 
+sort state species draw length
+
+export delimited using "$misc_data_cd/baseline_catch_at_length_state.csv", replace 
 

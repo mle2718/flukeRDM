@@ -189,8 +189,7 @@ cap_with_resample <- function(x, max_x) {
   if (all(x <= max_x)) return(x)
   
   x_cap <- pmin(x, max_x)
-  overflow <- which(x > max_x)
-  excess <- sum(x[overflow] - max_x)
+  excess <- sum(x - x_cap)
   
   while (excess > 0) {
     candidates <- which(x_cap < max_x)
@@ -198,7 +197,15 @@ cap_with_resample <- function(x, max_x) {
     
     room <- max_x - x_cap[candidates]
     probs <- room / sum(room)
-    chosen <- sample(candidates, size = 1, prob = probs)
+    
+    chosen_pos <- sample.int(
+      n = length(candidates),
+      size = 1,
+      replace = TRUE,
+      prob = probs
+    )
+    
+    chosen <- candidates[chosen_pos]
     x_cap[chosen] <- x_cap[chosen] + 1
     excess <- excess - 1
   }

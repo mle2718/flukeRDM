@@ -82,7 +82,7 @@ global fed_holidays_y2 "inlist(day_y2, td(01jan2026), td(19jan2026), td(16feb202
 global leap_yr_days "td(29feb2024)" 
 
 * Number of model iterations
-global ndraws 125
+global ndraws 5
 
 * set years of which to pull the NEFSC trawl survey data
 global NEFSC_svy_yrs "inlist(year,2024, 2023, 2022)"
@@ -100,6 +100,16 @@ global iterative_input_data_cd "${iterative_data_path}"
 global figure_cd  "${input_data_cd}\figures"
 
 
+global project_path "C:\Users\andrew.carr-harris\Desktop\Git\flukeRDM" /* Lou's project path */
+global input_code_cd "${project_path}\Code\pre_sim"
+global data_path "E:\Lou_projects\flukeRDM\2028_mgt_cycle" /* Lou's path for iterative data that is too large to upload to GitHub*/ 
+global misc_data_cd "${data_path}\miscellaneous"
+global calib_catch_data_cd "${data_path}\calib_catch_draws"
+global proj_catch_data_cd "${data_path}\proj_catch_draws"
+global figure_cd  "${data_path}\figures"
+
+
+
 global seed 03211990
 
 **************************************************Model calibration ************************************************** 
@@ -112,12 +122,13 @@ do "$input_code_cd\directed_trips_calibration.do"
 		// This file calls "set_regulations.do". You must enter the SQ regulations in the calibration and projection year. 
 		// THIS NEEDS TO BE ADJUSTED EVERY YEAR. 
 
-
 * 3) Create distirbutions of costs per trip across strata
 do "$input_code_cd\survey_trip_costs.do"
 
+* 4) Estimate and simulate distirbution of angler utility coefficients 
+do "$input_code_cd\estimate_angler_preferences.do"
 
-* 4) Estimate catch-per-trip at the month and mode level
+* 5) Estimate catch-per-trip at the month and mode level
 		// a) compute mean catch-per-trip and standard error, imputing standard errors from historcial data when they are missing. 
 		do "$input_code_cd\catch_per_trip_calibration_part1.do"
 
@@ -128,19 +139,19 @@ do "$input_code_cd\survey_trip_costs.do"
 		do "$input_code_cd\calibration_catch_per_trip_part2.do"
 
 
-// 5) compare calibration output to MRIP, and retain total simulated harvest and discards to apply to the baseline catch-at-length distribution
+// 6) compare calibration output to MRIP, and retain total simulated harvest and discards to apply to the baseline catch-at-length distribution
 do "$input_code_cd\compare_calibration_data_to_MRIP.do" 
 
 
-// 6) Generate baseline-year catch-at-length, using the simulated harvest/discard totals from step 5
+// 7) Generate baseline-year catch-at-length, using the simulated harvest/discard totals from step 6
 do "$input_code_cd\calibration_catch_at_length.do"
 
 
-// 7) Generate projection-year catch-at-length, incorporating the stock assessment data
+// 8) Generate projection-year catch-at-length, incorporating the stock assessment data
 		do "$input_code_cd\projected_catch_at_length.do"
 
 		
-// 8)  Estimate projected catch-per-trips at the month and mode level
+// 9)  Estimate projected catch-per-trips at the month and mode level
 		 *use MRIP catch data from the last THREE full years. 
 		 
 		//a) compute mean catch-per-trip and standard error, imputing standard errors from historcial data when they are missing. 
@@ -156,7 +167,7 @@ do "$input_code_cd\calibration_catch_at_length.do"
 		do "$input_code_cd\compare_projection_data_to_MRIP.do"
 		
 
-// 9) Run the projection loop in R
+// 10) Run the projection loop in R
 
 
 
