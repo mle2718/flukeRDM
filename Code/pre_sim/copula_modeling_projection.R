@@ -40,11 +40,11 @@ n_reps  <- 200
 
 statez <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
 
-input_file <- "E:/Lou_projects/flukeRDM/flukeRDM_iterative_data/archive/proj_catch_draws/projected_mrip_catch_processed.xlsx"
+input_file <- "E:/Lou_projects/flukeRDM/2028_mgt_cycle/miscellaneous/projected_mrip_catch_processed.xlsx"
 
 full_df <- readxl::read_xlsx(input_file)
 
-output_dir <- "E:/Lou_projects/flukeRDM/flukeRDM_iterative_data/archive/proj_catch_draws"
+output_dir <- "E:/Lou_projects/flukeRDM/2028_mgt_cycle/proj_catch_draws"
 
 # ---- helper functions ----
 

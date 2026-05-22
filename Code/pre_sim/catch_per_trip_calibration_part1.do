@@ -270,6 +270,7 @@ foreach s of local stratz{
 	keep if strata_id==`s'
 	
 	levelsof state, local(st) clean
+	levelsof common_dom, local(common_dom2) clean
 	levelsof mode, local(md) clean
 	levelsof wave, local(wave1) clean
 	levelsof shoulder_wave, local(wave2) clean
@@ -277,7 +278,7 @@ foreach s of local stratz{
 	levelsof my_dom_id_string, local(my_dom_id_string) clean
 
 	u `basefile', clear 
-	keep if state=="`st'" & mode1=="`md'" & inlist(wv2, "`wave1'", "`wave2'")
+	keep if state=="`st'" & mode1=="`md'" & inlist(wv2, "`wave1'", "`wave2'") & common_dom=="`common_dom2'"
 	drop my_dom_id_string my_dom_id
 	gen my_dom_id_string="`my_dom_id_string'"
 	encode my_dom_id_string, gen(my_dom_id)
@@ -365,6 +366,7 @@ foreach s of local stratz{
 	keep if strata_id==`s'
 	
 	levelsof state, local(st) clean
+	levelsof common_dom, local(common_dom2) clean
 	levelsof mode, local(md) clean
 	levelsof wave, local(wave1) clean
 	levelsof shoulder_wave1, local(wave2) clean
@@ -373,7 +375,7 @@ foreach s of local stratz{
 	levelsof my_dom_id_string, local(my_dom_id_string) clean
 
 	u `basefile', clear 
-	keep if state=="`st'" & mode1=="`md'" & inlist(wv2, "`wave1'", "`wave2'", "`wave3'")
+	keep if state=="`st'" & mode1=="`md'" & inlist(wv2, "`wave1'", "`wave2'", "`wave3'") & common_dom=="`common_dom2'"
 	drop my_dom_id_string my_dom_id
 	gen my_dom_id_string="`my_dom_id_string'"
 	encode my_dom_id_string, gen(my_dom_id)
@@ -424,6 +426,11 @@ merge 1:1 varname my_dom_id_string using `base_results'
 
 replace se=mean*pse_impute if se==. & _merge==3
 
+keep if strmatch(my_dom_id, "*SF*")==1
+
+
+* If after the two rounds there is still a missing standard error for strata with positive mean catch, set se = mean (high ucertainty)
+replace se=mean if mean>0 & !missing(mean) & se==.
 
 * Stop code if non-value mean harvest/discards/catch-per trip are missing standard errors
 * Check condition across the dataset
@@ -435,7 +442,6 @@ if r(N) > 0 {
     exit 1
 }
 
-keep if strmatch(my_dom_id, "*SF*")==1
 gen missing_se=1 if _merge==3
 drop _merge
 sort my_dom_id_string var
