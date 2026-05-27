@@ -93,14 +93,6 @@ global inflation_expansion=1.31
 
 * Adjust project paths based on user
 global project_path "C:\Users\andrew.carr-harris\Desktop\Git\flukeRDM" /* Lou's project path */
-global iterative_data_path "E:\Lou_projects\flukeRDM\flukeRDM_iterative_data" /* Lou's path for iterative data that is too large to upload to GitHub*/ 
-global input_data_cd "C:\Users\andrew.carr-harris\Desktop\MRIP_data_2025" /* Lou's local data path */
-global input_code_cd "${project_path}\Code\pre_sim"
-global iterative_input_data_cd "${iterative_data_path}"
-global figure_cd  "${input_data_cd}\figures"
-
-
-global project_path "C:\Users\andrew.carr-harris\Desktop\Git\flukeRDM" /* Lou's project path */
 global input_code_cd "${project_path}\Code\pre_sim"
 global data_path "E:\Lou_projects\flukeRDM\2028_mgt_cycle" /* Lou's path for iterative data that is too large to upload to GitHub*/ 
 global misc_data_cd "${data_path}\miscellaneous"

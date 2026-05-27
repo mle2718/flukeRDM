@@ -18,8 +18,14 @@ tempfile cal
 save `cal', replace 
 
 *******************************************************
-* B1) Population numbers-at-age: create pop_draw
+* B1) Population numbers-at-age: calibration year
+* Notes: 
+	*summer flounder and scup NAA data include age0-age7
+	*black sea bass NAA data include age1-age8
+	*terminal year estimates are in 1,000s of fish for all species
 *******************************************************
+
+
 import delimited using "$misc_data_cd/J1_2024Summer_Flounder.csv", clear
 gen species = "sf"
 gen region  = "CST"
@@ -104,7 +110,11 @@ save `pop_naa_calibration', replace
 
 
 *******************************************************
-* B1.2) Population numbers-at-age: projection
+* B3) Population numbers-at-age: projection
+* Notes: 
+	*summer flounder and scup NAA data include age0-age7
+	*black sea bass NAA data include age1-age8
+	*projections are in 1,000's of fish for bsb only
 *******************************************************
 import delimited using "$misc_data_cd/J1_2026Summer_Flounder.csv", clear
 gen species = "sf"
@@ -166,7 +176,7 @@ replace pop_naa = pop_naa
 
 
 *******************************************************
-* B2.2) Expand population regions
+* B4) Expand population regions
 *******************************************************
 expand 2 if species == "bsb" & region == "SO"
 bysort draw species region age: gen n = _n 
@@ -192,24 +202,23 @@ tempfile pop_naa_projection
 save `pop_naa_projection', replace
 
 
-*C3
-*C) Create age-length keys from NEFSC trawl survey data
-	*1) Pull in NEFSC trawl survey data
-	*2) Smooth counts across age classes over the range of observed catch-at-lengths for a given state-species using a LOWESS bandwidth=0.3
-	*3) Compute the proportion of fish of age a that are length l
-	*4) Expand to the number of draws used in the simulation 
-	*5) Merge the age-length keys to the population numbers-at-age, compute population numbers-at-length
 
-*C1) 
+
+*******************************************************
+*C) Create age-length keys from NEFSC trawl survey data
+*******************************************************
+
+*******************************************************
+*C1)  Pull in NEFSC trawl survey data
+*******************************************************
+
 import delimited using "$misc_data_cd/NEFSC trawl survey data.csv", clear
 tab stratum
 gen str5 stratum2 = string(stratum, "%05.0f")
 gen str2 stratum_group = substr(stratum2, 1, 2)   // first 2 characters
 gen str3 stratum_number = substr(stratum2, 3, 3)   // last 3 characters
 
-
-/*
-Stratum group code: 
+/*Stratum group code: 
 01 = Trawl, offshore north of Hatteras; 
 02 = BIOM; 
 03 = Trawl, inshore north of Hatteras; 
@@ -219,8 +228,7 @@ Stratum group code:
 07 = Trawl, inshore south of Hatteras; 
 08 = Trawl, Offshore south of Hatteras; 
 09 = MA DMF; 
-99 = Offshore deepwater (outside the stratified area)
-*/
+99 = Offshore deepwater (outside the stratified area) */
 
 keep if inlist(stratum_group, "01", "03", "09")
 
@@ -228,12 +236,12 @@ tostring cruise, gen(cruise2)
 gen year=substr(cruise2, 1, 4)
 destring year, replace
 
-/*
-svspp codes:
-summer flounder =103
-bsb =141
-scup =143
-*/
+
+/* svspp codes:
+		summer flounder =103
+		bsb =141
+		scup =143 */
+
 
 gen species="sf" if svspp==103 
 replace species="bsb" if svspp==141 
@@ -267,7 +275,9 @@ replace region="CST" if species=="scup"
 sort species region age length 
 
 
-*C2)  
+*******************************************************
+*C2)  Smooth counts across age classes using a LOWESS bandwidth=0.3
+*******************************************************
 gen domain=region+"_"+species
 levelsof domain, local(domz)
 
@@ -311,7 +321,10 @@ drop domain1 domain2
 egen smoothed_nfish=rowtotal(s0-s8)
 drop s0-s8
 
-*C3) generate smoothed and unsmoother proprtions at age
+
+*******************************************************
+*C3)  generate smoothed and unsmoothed proprtions at age
+*******************************************************
 egen sum_smooth=sum(smoothed_nfish), by(age species region)	
 gen prop_smoothed = smoothed_nfish / sum_smooth
 
@@ -320,7 +333,9 @@ gen prop_raw=nfish/sum_raw
 drop sum*		
 
 
-* C4) Expand age-length keys to population draws
+*******************************************************
+*C4) Expand age-length keys to # draws
+*******************************************************
 expand $ndraws
 bysort species domain age length: gen draw=_n
 
@@ -328,7 +343,9 @@ tempfile age_length
 save `age_length', replace
 
 
-* C5) Merge ALK to NAA and compute NaL - calibration year
+*******************************************************
+*D1) merge age-length key to population NAA and compute NaL - calibration year
+*******************************************************
 u  `age_length', clear
 
 merge m:1 species region age draw using `pop_naa_calibration', keep(match) nogen
@@ -345,7 +362,9 @@ collapse (sum) nal_smooth nal_raw, by(draw species region length)
 tempfile nal
 save `nal', replace
 
-* C5.2) Merge ALK to NAA and compute NaL - projection year
+*******************************************************
+*D2) merge age-length key to population NAA and compute NaL - calibration year
+*******************************************************
 u  `age_length', clear
 
 merge m:1 species region age draw using `pop_naa_projection', keep(match) nogen
@@ -363,7 +382,9 @@ tempfile nal_proj
 save `nal_proj', replace
 
 
-*Merge catch data to population data and compute selectivity
+*******************************************************
+*E1) Merge catch data to population data and compute selectivity
+*******************************************************
 use `cal', clear
 merge m:1 species region draw length using `nal'
 
@@ -415,7 +436,9 @@ gen sel_scaled = frac_caught_smooth / max_frac_caught_smooth
 tempfile selectivity
 save `selectivity', replace
 
-* Merge to projected NaL
+*******************************************************
+*E2) Merge selectivity to projected NaL and compute projected CaL
+*******************************************************
 use `nal_proj', clear
 renvarlab nal*, postfix(_proj)
 merge 1:1 length species region draw using `selectivity'
@@ -436,15 +459,6 @@ drop sum*
 tostring draw, gen(draw2)
 replace domain=region+"_"+species +"_"+draw2
 
-	/*
-twoway ///
-    (line observed_prob_base length if region=="NJ" & species=="bsb" & draw==1, sort lcolor(navy) lpattern(solid))  ///
-	(line observed_prob_proj length if region=="NJ" & species=="bsb" & draw==1, sort lcolor(maroon) lpattern(solid)  ///
-    xtitle("Length (cm)", size(small)) ///
-    ytitle("") ///
-	ylabel(#5, labsize(small)) xlabel(#10, labsize(small)))
-	*/
-	
 preserve 
 rename length fitted_length
 keep fitted_length observed_prob*  species region domain draw
@@ -454,6 +468,9 @@ save `observed_prob', replace
 restore
 
 
+*******************************************************
+*F1) generate gamma-fitted projected catch at length distribtion  
+*******************************************************
 * new code using MOM to avoid non-convergence 
 tempfile new
 save `new', replace
@@ -482,9 +499,7 @@ foreach r of local regs {
     local minL = r(min)
     local maxL = r(max)
 
-    * --------
-    * (A) Estimate gamma parameters robustly (MOM with freq weights)
-    * --------
+    * Estimate gamma parameters robustly (MOM with freq weights)
     quietly summarize length [fw=catch], meanonly
     local mu = r(mean)
     local Nw = r(sum_w)
@@ -506,9 +521,7 @@ foreach r of local regs {
         local beta  = `v'/`mu'
     }
 
-    * --------
-    * (B) Simulate a truncated gamma sample via rejection sampling
-    * --------
+    *Simulate a truncated gamma sample via rejection sampling
     local ndraw = `tot_n_fish'   // sample size for the simulated distribution
     clear
     set obs `ndraw'
@@ -598,8 +611,9 @@ twoway (scatter fitted_prob_base length if domain=="`d'" ,   connect(direct) cmi
 grc1leg `graphnames', rows(2)
 */
 
-
-* Expand regional data by state and export for simulation
+*******************************************************
+*F2) Expand regional data by state and export for simulation
+*******************************************************
 keep length fitted_prob_proj species region draw
 drop if fitted==0
 rename fitted_prob_proj fitted_prob
