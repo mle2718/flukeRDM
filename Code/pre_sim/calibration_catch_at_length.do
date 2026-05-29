@@ -571,7 +571,6 @@ gen observed_prob = catch/sumcatch
 drop sumcatch 
 
 * estimate gamma parameters for each catch-at-length distribution
-* note: I restrict the range of fitted values to within the min/max length of observed catch
 preserve 
 rename length fitted_length
 keep fitted_length observed_prob catch species region domain draw
@@ -605,10 +604,6 @@ foreach r of local regs {
     * Gamma needs strictly positive support
     drop if length<=0
 
-    * observed range (weighted or unweighted; here unweighted over remaining bins)
-    quietly summarize length
-    local minL = r(min)
-    local maxL = r(max)
 
     * --------
     * (A) Estimate gamma parameters robustly (MOM with freq weights)
@@ -645,8 +640,6 @@ foreach r of local regs {
     gen double gammafit = rgamma(`alpha', `beta')
     replace gammafit = round(gammafit)
 
-    * truncate to observed range
-    keep if gammafit>=`minL' & gammafit<=`maxL'
 
     * If rejection killed everything, try again with more draws (once)
     if _N==0 {
@@ -654,7 +647,6 @@ foreach r of local regs {
         set obs `=5*`ndraw''
         gen double gammafit = rgamma(`alpha', `beta')
         replace gammafit = round(gammafit)
-        keep if gammafit>=`minL' & gammafit<=`maxL'
         if _N==0 continue
     }
 
@@ -681,22 +673,36 @@ split domain, parse(_)
 replace species=domain2
 replace region=domain1
 drop domain1 domain2
+replace domain=region+"_"+species+"_"+domain3
+
 drop draw
 rename domain3 draw
 destring draw, replace 
 
+rename fitted_length length 
+* truncate the fitted distribution to the observed range
+*replace domain=species+"_"+season
+
+levelsof domain, local(doms)
+foreach d of local doms{
+quietly summarize length if observed_prob!=0 & !missing(observed_prob) & domain=="`d'"
+return list
+local minL = `r(min)'
+local maxL = `r(max)'
+drop if (length<`minL' | length>`maxL' ) & domain=="`d'"
+}
+
+egen sum_fitted_prob=sum(fitted_prob), by(domain)
+replace fitted_prob=fitted_prob/sum_fitted_prob
+sort species region draw length
+
 
 egen sum_nfish_catch=sum(catch), by(species region draw)
-replace observed_prob = catch/sum_nfish_catch
-
-rename fitted_l length
-encode domain, gen(domain2)
-
 gen nfish_catch_from_fitted=fitted_prob*sum_nfish_catch
 gen nfish_catch_from_raw=observed_prob*sum_nfish_catch
 
 drop _merge
-
+drop sum*
 save "$misc_data_cd/baseline_catch_at_length_region.dta", replace 
 
 
@@ -894,6 +900,6 @@ destring draw, replace
 drop region
 order state species draw length
 sort state species draw length
-
+compress
 export delimited using "$misc_data_cd/baseline_catch_at_length_state.csv", replace 
 
