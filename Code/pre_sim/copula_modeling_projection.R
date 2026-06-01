@@ -40,11 +40,11 @@ n_reps  <- 200
 
 statez <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
 
-input_file <- "E:/Lou_projects/flukeRDM/flukeRDM_iterative_data/archive/proj_catch_draws/projected_mrip_catch_processed.xlsx"
+input_file <- "E:/Lou_projects/flukeRDM/2028_mgt_cycle/miscellaneous/projected_mrip_catch_processed.xlsx"
 
 full_df <- readxl::read_xlsx(input_file)
 
-output_dir <- "E:/Lou_projects/flukeRDM/flukeRDM_iterative_data/archive/proj_catch_draws"
+output_dir <- "E:/Lou_projects/flukeRDM/2028_mgt_cycle/proj_catch_draws"
 
 # ---- helper functions ----
 
@@ -189,8 +189,7 @@ cap_with_resample <- function(x, max_x) {
   if (all(x <= max_x)) return(x)
   
   x_cap <- pmin(x, max_x)
-  overflow <- which(x > max_x)
-  excess <- sum(x[overflow] - max_x)
+  excess <- sum(x - x_cap)
   
   while (excess > 0) {
     candidates <- which(x_cap < max_x)
@@ -198,7 +197,15 @@ cap_with_resample <- function(x, max_x) {
     
     room <- max_x - x_cap[candidates]
     probs <- room / sum(room)
-    chosen <- sample(candidates, size = 1, prob = probs)
+    
+    chosen_pos <- sample.int(
+      n = length(candidates),
+      size = 1,
+      replace = TRUE,
+      prob = probs
+    )
+    
+    chosen <- candidates[chosen_pos]
     x_cap[chosen] <- x_cap[chosen] + 1
     excess <- excess - 1
   }

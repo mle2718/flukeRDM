@@ -10,7 +10,7 @@
 */
 		
 
-cd $input_data_cd
+cd $misc_data_cd
 
 clear
 
@@ -54,18 +54,13 @@ replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
 
-* keep only NC north based on county delineation from Tracey 
-drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187)
-
 tempfile basefile
 save `basefile', replace
 
 levelsof state, local(sts) clean
 foreach s of local sts{
-
 u `basefile', clear
 
-*local s "MA"
 keep if inlist(state,"`s'")
 
 // classify trips into dom_id=1 (DOMAIN OF INTEREST) and dom_id=2 ('OTHER' DOMAIN)
@@ -78,6 +73,10 @@ replace dom_id="1" if strmatch(prim1_common, "blackseabass")
 
 replace dom_id="1" if strmatch(common, "scup") 
 replace dom_id="1" if strmatch(prim1_common, "scup") 
+
+* keep only NC north based on county delineation from Tracey 
+replace dom_id="2"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
+
 
 tostring wave, gen(w2)
 tostring year, gen(year2)
@@ -313,13 +312,16 @@ replace se=dtrip*pse_impute if se==.
 
 * If SE still missing, set SE=mean, so pse=100% (highly uncertain)
 replace se=dtrip if se==.
+
 /*
+*Code to retain imputation strata 
 preserve 
 keep my_dom_id_string  missing_SE_imputation
 duplicates drop 
 save "$input_data_cd\directed_trips_imputations_`s'.dta", replace
 restore 
 */
+
 keep dtrip se state year month2 kod mode
 rename month2 month
 tostring month, gen(month1)
@@ -531,7 +533,7 @@ restore
 */
 
 compress
-export delimited using "$iterative_input_data_cd\archive\directed_trips_calibration\directed_trips_calibration_`s'.csv",  replace 
+export delimited using "$misc_data_cd\directed_trips_calibration_`s'.csv",  replace 
 
 
 
@@ -590,7 +592,7 @@ return list
 drop check 
 compress
 
-export delimited using "$iterative_input_data_cd\archive\miscellaneous\proj_year_calendar_adjustments\proj_year_calendar_adjustments_`s'.csv",  replace 
+export delimited using "$misc_data_cd\proj_year_calendar_adjustments_`s'.csv",  replace 
 }
 
 
@@ -602,7 +604,7 @@ export delimited using "$iterative_input_data_cd\archive\miscellaneous\proj_year
 * Compute totals estimates to compare with calibration output
 
 ** Estimates by state and mode
-cd $input_data_cd
+cd $misc_data_cd
 
 clear
 
@@ -658,6 +660,9 @@ replace dom_id="1" if strmatch(prim1_common, "blackseabass")
 
 replace dom_id="1" if strmatch(common, "scup") 
 replace dom_id="1" if strmatch(prim1_common, "scup") 
+
+* keep only NC north based on county delineation from Tracey 
+replace dom_id="2"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
 
 tostring wave, gen(w2)
 tostring year, gen(year2)
@@ -739,14 +744,10 @@ rename ul ul_mrip
 keep if dom_id=="1" // keep directed trip estimates for species group of interest 
 drop dom
 
-save "$iterative_input_data_cd\archive\miscellaneous\directed_trip_calib_mrip.dta", replace 
-
-
+save "$misc_data_cd\mrip_dtrip_calib_state_mode.dta", replace 
 
 
 ** Estimates by state 
-cd $input_data_cd
-
 clear
 
 * Pull in MRIP data
@@ -790,7 +791,6 @@ replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
 
-
 // classify trips into dom_id=1 (DOMAIN OF INTEREST) and dom_id=2 ('OTHER' DOMAIN)
 gen str1 dom_id="2"
 replace dom_id="1" if strmatch(common, "summerflounder") 
@@ -801,6 +801,10 @@ replace dom_id="1" if strmatch(prim1_common, "blackseabass")
 
 replace dom_id="1" if strmatch(common, "scup") 
 replace dom_id="1" if strmatch(prim1_common, "scup") 
+
+* keep only NC north based on county delineation from Tracey 
+replace dom_id="2"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
+
 
 tostring wave, gen(w2)
 tostring year, gen(year2)
@@ -881,12 +885,10 @@ rename ul ul_mrip
 keep if dom_id=="1" // keep directed trip estimates for species group of interest 
 drop dom
 
-save "$iterative_input_data_cd\archive\miscellaneous\directed_trip_calib_mrip_state_total.dta", replace 
+save "$misc_data_cd\mrip_dtrip_calib_state.dta", replace 
 
 
 ** Estimates by state, mode, and wave 
-cd $input_data_cd
-
 clear
 
 * Pull in MRIP data
@@ -930,7 +932,6 @@ replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
 
-
 // classify trips into dom_id=1 (DOMAIN OF INTEREST) and dom_id=2 ('OTHER' DOMAIN)
 gen str1 dom_id="2"
 replace dom_id="1" if strmatch(common, "summerflounder") 
@@ -941,6 +942,9 @@ replace dom_id="1" if strmatch(prim1_common, "blackseabass")
 
 replace dom_id="1" if strmatch(common, "scup") 
 replace dom_id="1" if strmatch(prim1_common, "scup") 
+
+* keep only NC north based on county delineation from Tracey 
+replace dom_id="2"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
 
 tostring wave, gen(w2)
 tostring year, gen(year2)
@@ -1024,13 +1028,11 @@ rename ul ul_mrip
 keep if dom_id=="1" // keep directed trip estimates for species group of interest 
 drop dom
 
-save "$input_data_cd\directed_trip_calib_mrip_state_wave_total.dta", replace 
+save "$misc_data_cd\mrip_dtrip_calib_state_mode_wave.dta", replace 
 
 
 
 ** Estimates by state and month
-cd $input_data_cd
-
 clear
 
 * Pull in MRIP data
@@ -1085,6 +1087,10 @@ replace dom_id="1" if strmatch(prim1_common, "blackseabass")
 
 replace dom_id="1" if strmatch(common, "scup") 
 replace dom_id="1" if strmatch(prim1_common, "scup") 
+
+* keep only NC north based on county delineation from Tracey 
+replace dom_id="2"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
+
 
 tostring wave, gen(w2)
 tostring year, gen(year2)
@@ -1167,4 +1173,4 @@ rename ul ul_mrip
 keep if dom_id=="1" // keep directed trip estimates for species group of interest 
 drop dom
 destring month, replace 
-save "$input_data_cd\directed_trip_calib_mrip_state_month_total.dta", replace 
+save "$misc_data_cd\mrip_dtrip_calib_state_month.dta", replace 

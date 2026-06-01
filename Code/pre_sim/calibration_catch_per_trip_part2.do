@@ -23,7 +23,7 @@ global dems
 local wvs 1 2 3 4 5 6
 foreach w of local wvs{
 	
-u  "$input_data_cd\fes_person_final_2023`w'.dta", clear 
+u  "$misc_data_cd\fes_person_final_2023`w'.dta", clear 
 
 gen state="MA" if st==25
 replace state="MD" if st==24
@@ -69,7 +69,7 @@ egen p9995 = pctile(total_trips_12), p(99.95) // drop total_trips_12 above the 9
 drop if total_trips_12>p9995
 
 keep age total_trips_12 wave state
-save "$input_data_cd\angler_dems.dta", replace 
+save "$misc_data_cd\angler_dems.dta", replace 
 
 ********************************
 
@@ -100,18 +100,18 @@ if `r(N)'>0{
 }
 */
 
-
 ************** Generate catch draw files ******************
  
 * faster version 
 local regions "MA RI CT NY NJ DE MD VA NC"
+
 set more off
 set rmsg off
 	
 foreach s of local regions {
 	
 	*local s "DE"
-    import delimited using "$iterative_input_data_cd\archive\directed_trips_calibration\directed_trips_calibration_`s'.csv", clear
+    import delimited using "$misc_data_cd\directed_trips_calibration_`s'.csv", clear
 
     gen double date_num = date(date, "DMY")
 	drop month month1
@@ -126,24 +126,18 @@ foreach s of local regions {
 
     drop if dtrip==0
 
-    *gen str2 state = substr(region,1,2)
-
 	drop  dtrip *_bag *_min *_y2
 	
 	tempfile base
     save `base', replace
 
-    *-----------------------------------------
-    * 2) Loop draws
-    *-----------------------------------------
-    *local i 1
 	forvalues i=1/$ndraws {
-		*local i 1
+*		local i 1
         use `base', clear
         keep if draw==`i'
 
         * Expand to 50 trips x 30 catch draws within each (mode,date)
-        egen long dom = group(mode date)   // replaces encode(domain1)
+        egen long dom = group(mode date)   
         expand 50
         bysort mode date: gen int tripid = _n
         expand 30
@@ -200,21 +194,18 @@ foreach s of local regions {
 		merge m:1 date wave tripid using `wave_id', keep(3) nogen  
 		
 		
-        *-------------------------------
-        * Costs: resample ONCE per draw
-        *-------------------------------
+        * Costs: resample once per draw
         preserve
-            use "$input_data_cd\trip_costs.dta", clear
-            keep if state == substr("`s'",1,2)   // or use trips' state; see note below
+            use "$misc_data_cd\trip_costs.dta", clear
+            keep if state == substr("`s'",1,2)  
         restore
-        * Better: use state/waters from the trips file (more robust):
+
         local st = state[1]
 
         preserve
-            use "$input_data_cd\trip_costs.dta", clear
-			rename mode1 mode
+            use "$misc_data_cd\trip_costs.dta", clear
             keep if state=="`st'"
-            keep state mode cost  // whatever your cost var is called
+            keep state mode cost 
             tempfile costspool
             save `costspool', replace
         restore
@@ -224,7 +215,7 @@ foreach s of local regions {
             tempfile costs50
             save `costs50', emptyok replace
 			
-            foreach md in fh pr sh{   // use your actual 3 modes
+            foreach md in fh pr sh{   
                 use `costspool', clear
                 keep if mode=="`md'"
 				
@@ -245,12 +236,67 @@ foreach s of local regions {
 
         merge m:1 mode mode_id using `costs50', keep(3) nogen
 
-		
-        *--------------------------------
-        * Dems: resample ONCE per draw
-        *--------------------------------
+        * Preference params: sample once per tripid
+			* constant across 30 catch_draws
         preserve
-            use "$input_data_cd\angler_dems.dta", clear
+            * unique trip-level skeleton from current simulated trips
+            keep state draw mode date tripid
+            duplicates drop
+
+            * tripid repeats across mode/date, so create a unique merge id
+            egen long pref_trip_id = group(mode date tripid)
+
+            count
+            local n_pref_needed = r(N)
+
+            tempfile pref_keys
+            save `pref_keys', replace
+        restore
+
+        preserve
+            use "$misc_data_cd\preference_params.dta", clear
+
+            * keep only current model draw
+            keep if draw == `i'
+
+
+            quietly count
+            if r(N)==0 {
+                di as error "No preference parameters found for draw `i'"
+                exit 459
+            }
+
+            local mult = ceil(`n_pref_needed'/r(N))
+            expand `mult'
+
+            sample `n_pref_needed', count
+
+            gen long pref_trip_id = _n
+
+            * avoid conflict with master draw variable
+            rename draw pref_draw
+
+            tempfile pref_sample
+            save `pref_sample', replace
+        restore
+
+        preserve
+            use `pref_keys', clear
+            merge 1:1 pref_trip_id using `pref_sample', keep(3) nogen
+            tempfile pref_trip_params
+            save `pref_trip_params', replace
+        restore
+
+        * merge preference params back to all 30 catch_draw rows per trip
+        egen long pref_trip_id = group(mode date tripid)
+        merge m:1 pref_trip_id using `pref_trip_params', keep(3) nogen
+        drop pref_trip_id
+		drop pref_draw
+		
+		
+        * Demographics: resample once per draw
+        preserve
+            use "$misc_data_cd\angler_dems.dta", clear
             keep if state=="`st'"
             tempfile demspool
             save `demspool', replace
@@ -287,7 +333,7 @@ foreach s of local regions {
 
 
         preserve
-            import excel using "$iterative_input_data_cd\archive\calib_catch_draws\calib_catch_draws_`s'_`i'.xlsx", clear firstrow
+            import excel using "$calib_catch_data_cd\calib_catch_draws_`s'_`i'.xlsx", clear firstrow
             split my_dom_id_string, parse(_)
             rename my_dom_id_string1 state
             rename my_dom_id_string2 wave
@@ -298,10 +344,8 @@ foreach s of local regions {
             save `excelpool', replace
         restore
 
-        *---------------------------------------
-        * BIG SPEEDUP:
+
         * sample catch outcomes by (mode,wave)
-        *---------------------------------------
         egen long g = group(mode wave)
         bysort g: gen long gid = _n
         bysort g: gen long n_g = _N
@@ -335,7 +379,7 @@ foreach s of local regions {
 			expand `mult'
 			sample `n_needed', count
 			
-            * If you need more control: ensure enough rows before sampling
+            * ensure enough rows before sampling
             quietly count
             if (r(N) < `n_needed') {
                 di as error "Not enough catch rows for st=`st' draw=`i' mode=`md' wave=`wv' need=`n_needed' have=" r(N)
@@ -380,22 +424,18 @@ foreach s of local regions {
                  sf_keep_sim sf_cat sf_rel_sim ///
                  bsb_keep_sim bsb_rel_sim bsb_cat ///
                  scup_keep_sim scup_rel_sim scup_cat ///
-                 mode month date day_i  wave ///
-                 tripid catch_draw age total_trips_12 day cost dtrip
+                 mode month date  wave ///
+                 tripid catch_draw age total_trips_12 cost beta*
 				 
-		gen double date_num = date(date, "DMY")
-		format date_num %td
 		order state mode date tripid catch 
 		compress
 	
-		save "$iterative_input_data_cd\archive\calib_catch_draws\calib_catch_draws_`s'_`i'.dta", replace
+		save "$calib_catch_data_cd\calib_catch_draws_`s'_`i'.dta", replace
 		
 }		
 }
 
-			
-*u "$iterative_input_data_cd\calib_catch_draws_CTALL1.dta", clear
-
+	
 			
 			
 

@@ -7,46 +7,15 @@
 
 	
 ********************************
-
-
-/* Check to make sure the copula model did not produce NAs
-local statez "MA RI CT NY NJ DE MD VA NC"
-foreach s of local statez{
-	
-forv i=1/100{
-
-import excel using "$iterative_input_data_cd\proj_catch_draws_`s'_`i'.xlsx", clear firstrow
-gen sf_cat=sf_keep_sim+sf_rel_sim
-gen bsb_cat=bsb_keep_sim+bsb_rel_sim
-gen scup_cat=scup_keep_sim+scup_rel_sim
-*di "`s'"
-*di `i'
-qui{
-	 count if sf_keep_sim==. | sf_rel_sim==. | bsb_keep_sim==. | bsb_rel_sim==. | scup_keep_sim==. | scup_rel_sim==. | sf_cat==. | bsb_cat ==. | scup_cat==. 
-}
-
-if `r(N)'>0{
-	di `r(N)'
-	levelsof my_dom if  sf_keep_sim==. | sf_rel_sim==. | bsb_keep_sim==. | bsb_rel_sim==. | scup_keep_sim==. | scup_rel_sim==. | sf_cat==. | bsb_cat ==. | scup_cat==. 
-	
-}
-}
-}
-
-*/
-
-
-
  
 * faster version 
 local regions "MA RI CT NY NJ DE MD VA NC"
 set more off
-*set rmsg off
 
 foreach s of local regions {
 	
 	*local s "DE"
-    import delimited using "$iterative_input_data_cd\archive\directed_trips_calibration\directed_trips_calibration_`s'.csv", clear
+    import delimited using "$misc_data_cd\directed_trips_calibration_`s'.csv", clear
 
     gen double date_num = date(date, "DMY")
 	drop month month1
@@ -61,23 +30,19 @@ foreach s of local regions {
 
     drop if dtrip==0
 
-    *gen str2 state = substr(region,1,2)
-
 	drop  dtrip *_bag *_min *_y2
 	
 	tempfile base
     save `base', replace
 
-    *-----------------------------------------
-    * 2) Loop draws
-    *-----------------------------------------
+    * Loop draws
 	forvalues i=1/$ndraws {
 		*local i 1
         use `base', clear
         keep if draw==`i'
 
         * Expand to 50 trips x 30 catch draws within each (mode,date)
-        egen long dom = group(mode date)   // replaces encode(domain1)
+        egen long dom = group(mode date)  
         expand 50
         bysort mode date: gen int tripid = _n
         expand 30
@@ -135,7 +100,7 @@ foreach s of local regions {
 		
 		
         preserve
-            import excel using "$iterative_input_data_cd\archive\proj_catch_draws\proj_catch_draws_`s'_`i'.xlsx", clear firstrow
+            import excel using "$proj_catch_data_cd\proj_catch_draws_`s'_`i'.xlsx", clear firstrow
             split my_dom_id_string, parse(_)
             *rename my_dom_id_string1 state
             rename my_dom_id_string2 wave
@@ -146,10 +111,8 @@ foreach s of local regions {
             save `excelpool', replace
         restore
 
-        *---------------------------------------
-        * BIG SPEEDUP:
+
         * sample catch outcomes by (mode,wave)
-        *---------------------------------------
         egen long g = group(mode wave)
         bysort g: gen long gid = _n
         bysort g: gen long n_g = _N
@@ -183,7 +146,7 @@ foreach s of local regions {
 			expand `mult'
 			sample `n_needed', count
 			
-            * If you need more control: ensure enough rows before sampling
+            * ensure enough rows before sampling
             quietly count
             if (r(N) < `n_needed') {
                 di as error "Not enough catch rows for st=`st' draw=`i' mode=`md' wave=`wv' need=`n_needed' have=" r(N)
@@ -237,7 +200,7 @@ foreach s of local regions {
 		order state mode date tripid catch 
 		compress
 	
-		save "$iterative_input_data_cd\archive\proj_catch_draws\proj_catch_draws_`s'_`i'.dta", replace
+		save "$proj_catch_data_cd\proj_catch_draws_`s'_`i'.dta", replace
 		
 }		
 }
