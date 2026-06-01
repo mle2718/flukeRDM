@@ -1,20 +1,19 @@
 
-* This file generates catch-at-length distributions for each species for the calibration year. 
+
+************************************************************************************************************************************************
+* This file generates calibration-year catch-at-length distributions for each species
 
 * The general strategy is:
-			* 1) pull release length data and compute proportion released-at-length
-			* 2) multiply (1) by an estimate of total discards to get numbers released-at-length
-			* 3) pull harvest length data and compute proportion harvest-at-length
-			* 4) multiply (3) by an estimate of total harvest to get numbers released-at-length 
-			* 5) sum (2) and (5) across length categories to get catch-at-length 
-			* 6) fit observed catch-at-length to gamma distirbution, use estimated paramters to simulate fitted distribution 
+			* 1) pull release length data from various sources and compute proportion released-at-length
+					* CT/NJ/RI volunteer angler survey, American Littoral Society tag and recapture data, MRIP b2
+			* 2) pull harvest length data and compute proportion harvest-at-length
+			* 3) multiply (1) and (2) by an estimate of total discards and harvest to get numbers released- and harvested-at-length, 
+			*     sum across length categories to get catch-at-length 
+			* 4) generate gamma-fitted projected catch-at-length distribtion  
 			
-			* 1) use the catch-at-length distribution from a) and projected N_l to compute recreational selectivity-at-length (q_l=catch_l/N_l) in calibation year 
-			* 2) Multiply q_l by next year's projection of N_l to compute projected N_l over 100 draws from the projected numbers-at-length distribution
-			
+*************************************************************************************************************************************************
 
-* a) calibration year catch-at-length
-
+* 1) 			
 * CT VAS
 cd "$misc_data_cd"
 import excel "2024 CT VAS SFL SCUP BSB.xlsx", clear first 
@@ -28,13 +27,12 @@ gen nfish=1
 rename length length_inches
 gen length_cm=length_inches*2.54
 gen year=year(tripdate)
-*tab year 
 gen state="CT"
 gen source="CT_VAS"
 rename tripdate date 
 format date %td
 
-keep year length* state source species nfish /*date*/
+keep year length* state source species nfish 
 
 tempfile ct_vas
 save `ct_vas', replace
@@ -127,8 +125,6 @@ replace state="DE" if placetagged3=="DE" & state==""
 replace state="MD" if placetagged3=="MD" & state==""
 replace state="VA" if placetagged3=="VA" & state==""
 replace state="NC" if placetagged3=="NC" & state==""
-
-*browse if state==""
 
 drop if strmatch(placetagged, "* SC")==1
 replace state= "NJ" if strmatch(placetagged, "* NJ")==1
@@ -300,7 +296,7 @@ replace state="VA" if st==51
 replace state="NC" if st==37
 
 * keep only NC north based on county delineation from Tracey 
-drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187)
+drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187) // okay to drop here because we are not estimating SE's
 
 keep if $calibration_year
 
@@ -318,8 +314,7 @@ keep length* state species year nfish source
 tempfile mrip
 save `mrip', replace 
 
-
-* Append all the discard data together
+* Append all the discard length data together, aggregate to regions
 u `mrip', clear
 append using `als_rec'
 append using `als_tag'
@@ -353,7 +348,7 @@ tempfile prop_b2
 save `prop_b2', replace 
 
 
-
+* 2) 
 * Pull harvest lengths from MRIP 
 clear
 mata: mata clear
@@ -426,6 +421,7 @@ return list
 su nfish 
 return list
 */
+
 tostring wave, gen(w2)
 tostring year, gen(year2)
 
@@ -439,7 +435,6 @@ tempfile domains
 save `domains', replace 
 restore
 
-
 /* this might speed things up if I re-classify all length=0 for the species I don't care about */
 replace l_cm_bin=0 if !inlist(common, "summerflounder", "blackseabass", "scup")
 replace l_in_bin=0 if !inlist(common, "summerflounder", "blackseabass", "scup")
@@ -449,7 +444,7 @@ svyset psu_id [pweight= wp_size], strata(strat_id) singleunit(certainty)
 
 svy: tab l_cm_bin my_dom_id_string, count
 
-/*save some stuff:matrix of proportions, row names, column names, estimate of total population size*/
+	/*save some stuff:matrix of proportions, row names, column names, estimate of total population size*/
 	mat eP=e(Prop)
 	mat eR=e(Row)'
 	mat eC=e(Col)
@@ -459,12 +454,13 @@ svy: tab l_cm_bin my_dom_id_string, count
 	mat colnames eP=`mycolnames'
 	
 	clear
-/*read the eP into a dataset and convert proportion of population into numbers*/
+	/*read the eP into a dataset and convert proportion of population into numbers*/
 	svmat eP, names(col)
 	foreach var of varlist *{
 		replace `var'=`var'*`PopN'
 	}
-	/*read in the "row" */
+	
+/*read in the "row" */
 svmat eR
 order eR
 rename eR l_cm_bin
@@ -513,7 +509,8 @@ bysort region species l: gen draw=_n
 tempfile props
 save `props', replace 
 
-*Pull estimates of total harvest and discards from MRIP by region  
+*3) 
+*Pull estimates of total harvest and discards from MRIP by region, multiply by proportions-at-length, sum across length categories  
 u "$misc_data_cd\simulated_catch_totals.dta", replace 
 
 collapse (sum) tot_sf_keep_sim tot_sf_rel_sim tot_bsb_keep_sim tot_bsb_rel_sim tot_scup_keep_sim tot_scup_rel_sim, by(state draw)
@@ -570,7 +567,8 @@ sort draw region species length
 gen observed_prob = catch/sumcatch
 drop sumcatch 
 
-* estimate gamma parameters for each catch-at-length distribution
+*4) 
+* generate gamma-fitted projected catch-at-length distribtion  
 preserve 
 rename length fitted_length
 keep fitted_length observed_prob catch species region domain draw
@@ -579,7 +577,6 @@ export delimited using "$misc_data_cd/baseline_observed_catch_at_length.csv", re
 tempfile observed_prob
 save `observed_prob', replace
 restore
-
 
 
 * new code using MOM to avoid non-convergence 
@@ -604,10 +601,7 @@ foreach r of local regs {
     * Gamma needs strictly positive support
     drop if length<=0
 
-
-    * --------
-    * (A) Estimate gamma parameters robustly (MOM with freq weights)
-    * --------
+    * Estimate gamma parameters robustly (MOM with freq weights)
     quietly summarize length [fw=catch], meanonly
     local mu = r(mean)
     local Nw = r(sum_w)
@@ -629,9 +623,7 @@ foreach r of local regs {
         local beta  = `v'/`mu'
     }
 
-    * --------
-    * (B) Simulate a truncated gamma sample via rejection sampling
-    * --------
+    * Simulate a truncated gamma sample via rejection sampling
     local ndraw = `tot_n_fish'   // sample size for the simulated distribution
     clear
     set obs `ndraw'
@@ -680,9 +672,8 @@ rename domain3 draw
 destring draw, replace 
 
 rename fitted_length length 
-* truncate the fitted distribution to the observed range
-*replace domain=species+"_"+season
 
+* truncate the fitted distribution to the observed range
 levelsof domain, local(doms)
 foreach d of local doms{
 quietly summarize length if observed_prob!=0 & !missing(observed_prob) & domain=="`d'"
@@ -696,7 +687,6 @@ egen sum_fitted_prob=sum(fitted_prob), by(domain)
 replace fitted_prob=fitted_prob/sum_fitted_prob
 sort species region draw length
 
-
 egen sum_nfish_catch=sum(catch), by(species region draw)
 gen nfish_catch_from_fitted=fitted_prob*sum_nfish_catch
 gen nfish_catch_from_raw=observed_prob*sum_nfish_catch
@@ -704,125 +694,6 @@ gen nfish_catch_from_raw=observed_prob*sum_nfish_catch
 drop _merge
 drop sum*
 save "$misc_data_cd/baseline_catch_at_length_region.dta", replace 
-
-
-
-/* Graphs of the fitted observed/fitted probabilities
-
-levelsof domain if draw==1 & region=="NO", local(domz)
-foreach d of local domz{
-	
-levelsof species if domain=="`d'", local(spec)  
-
-su length if species==`spec' & fitted_prob!=0
-local min_fitted=`r(min)'
-su observed_prob if species==`spec' & observed_prob!=0
-local min_obs=`r(min)'
-local min=min(`min_fitted',`min_obs')
-
-su length if species==`spec' & fitted_prob!=0
-local max_fitted=`r(max)'
-su observed_prob if species==`spec' & observed_prob!=0
-local max_obs=`r(max)'
-local max=max(`max_fitted',`max_obs')
-
-twoway (scatter observed_prob length if domain=="`d'" & length>=`min' & length<=`max',   cmissing(no) connect(direct) lcol(gray) lwidth(med)  lpat(solid) msymbol(o) mcol(gray) $graphoptions) ///
-		    (scatter fitted_prob length if  domain=="`d'"   & length>=`min' & length<=`max', cmissing(no) connect(direct) lcol(black)   lwidth(med)  lpat(solid) msymbol(i)   ///
-			xtitle("Length (cm)", yoffset(-2)) ytitle("Prob")    ylab(, angle(horizontal) labsize(vsmall)) ///
-			legend(lab(1 "raw data") lab(2 "fitted (gamma) data") cols() yoffset(-2) region(color(none)))   title("`d'", size(small))  name(dom`d', replace))
- local graphnames `graphnames' dom`d'
-}
-
-grc1leg `graphnames'
-graph export "$figure_cd/catch_at_length_calib.png", as(png) replace
-*/
-
-
-
-
-
-* figures for Rachel 2/10/26
-/*
-u "$misc_data_cd/baseline_catch_at_length.dta", clear 
-
-preserve
-
-keep if species=="bsb"
-tempfile base
-save `base', replace 
-
-clear
-tempfile master
-save `master', emptyok
-
-local regions "NO NJ SO"
-foreach r of local regions{
-	u `base', clear
-	keep if region=="`r'"
-	
-gen domain3=region+"_"+draw
-encode domain3, gen(domain4)
-xtset domain4 length
-tsfill, full
-mvencode fitted observed, mv(0) override
-decode domain4, gen(domain5)
-split domain5, parse(_)
-replace region=domain51
-replace draw=domain52
-replace species="bsb"
-drop domain3 domain4 domain5 domain51 domain52 domain2
-sort species region draw length 
-collapse (median) fitted observed, by(region length)
-append using `master'
-
-save `master', replace
-clear                            
-}
-
-use `master', clear
-
-twoway ///
-    line fitted_prob length if region=="NO", sort lcolor(navy) lpattern(solid) || ///
-	line observed length if region=="NO", sort lcolor(navy) lpattern(dash)   ///
-    xtitle("Length (cm)") ///
-    ytitle("Probability-at-length") ///
-	ylabel(#10, labsize(small)) xlabel(#15, labsize(small)) ///
-    legend(order(1 "Fitted (gamma)" 2 "Observed" ) ring(0) bplacement(neast) cols(1) ) ///
-    title("North (MA-NY) 2024 recreational black sea bass catch-at-length", size(medium) yoffset(2)) ///
-    xline(39.37 40.64 41.91, lcolor(gs10) lpattern(solid)) ///
-    note("Vertical lines: 15.5 inch (39.37 cm), 16 inch (40.64 cm), and 16.5 inch (41.91 cm)" "Values reflect median across 125 draws of total catch", yoffset(-2))
-	
-	graph export "$figure_cd/catch_at_length_2024_NO.png", as(png) replace
-
-twoway ///
-    line fitted_prob length if region=="NJ", sort lcolor(navy) lpattern(solid) || ///
-	line observed length if region=="NJ", sort lcolor(navy) lpattern(dash) ///
-    xtitle("Length (cm)") ///
-    ytitle("Probability-at-length") ///
-	ylabel(#10, labsize(small)) xlabel(#15, labsize(small)) ///
-    legend(order(1 "Fitted (gamma)" 2 "Observed" ) ring(0) bplacement(neast) cols(1) ) ///
-    title("NJ 2024 recreational black sea bass catch-at-length", size(medium)) ///
-    xline(39.37 40.64 41.91, lcolor(gs10) lpattern(solid)) ///
-    note("Vertical lines: 15.5 inch (39.37 cm), 16 inch (40.64 cm), and 16.5 inch (41.91 cm)" "Values reflect median across 125 draws of total catch", yoffset(-2))
-	
-	graph export "$figure_cd/catch_at_length_2024_NJ.png", as(png) replace
-
-twoway ///
-    line fitted_prob length if region=="SO", sort lcolor(navy) lpattern(solid) || ///
-	line observed length if region=="SO", sort lcolor(navy) lpattern(dash) ///
-    xtitle("Length (cm)") ///
-    ytitle("Probability-at-length") ///
-	ylabel(#10, labsize(small)) xlabel(#15, labsize(small)) ///
-    legend(order(1 "Fitted (gamma)" 2 "Observed" ) ring(0) bplacement(neast) cols(1) ) ///
-    title("South (DE-NC) 2024 recreational black sea bass catch-at-length", size(medium)) ///
-    xline(39.37 40.64 41.91, lcolor(gs10) lpattern(solid)) ///
-    note("Vertical lines: 15.5 inch (39.37 cm), 16 inch (40.64 cm), and 16.5 inch (41.91 cm)" "Values reflect median across 125 draws of total catch", yoffset(-2))
-	graph export "$figure_cd/catch_at_length_2024_SO.png", as(png) replace
-restore 
-*/
-
-
-
 
 
 * Prepare the data for export to simulation

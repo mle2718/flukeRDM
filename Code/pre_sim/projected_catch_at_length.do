@@ -1,4 +1,5 @@
 
+************************************************************************************************************************************************
 *This script computes projected recreational catch-at-length distributions for summer flounder, black sea bass, and scup by combining:
 	* baseline regional recreational catch-at-length;
 	* calibration-year and projection-year population numbers-at-age;
@@ -10,6 +11,8 @@
 * These should be interpreted as region-specific availability indices for
 * deriving projected catch-at-length shapes, not as additive regional abundance.
 
+************************************************************************************************************************************************
+
 set seed 12345
 
 *******************************************************
@@ -17,7 +20,6 @@ set seed 12345
 *    - Keep each simulation draw separate
 *    - Catch is defined by species, region, draw, and length
 *******************************************************
-
 use "$misc_data_cd/baseline_catch_at_length_region.dta", clear  
 keep if draw<= $ndraws
 sort draw region species length
@@ -29,11 +31,10 @@ save `cal', replace
 
 *******************************************************
 * 2. Read calibration-year and projection-year population NAA
-*    - Convert units to individual fish where needed
+*    - Convert units to # fish where needed
 *    - Expand stock-level NAA to recreational reporting regions
 *    - Important: expanded regional NAA are not additive across regions
 *******************************************************
-
 * Population numbers-at-age: calibration year
 * Notes: 
 	*summer flounder and scup NAA data include age0-age7
@@ -118,12 +119,12 @@ rename region2 region
 tempfile pop_naa_calibration
 save `pop_naa_calibration', replace
 
+
 * Population numbers-at-age: projection
 * Notes: 
 	*summer flounder and scup NAA data include age0-age7
 	*black sea bass NAA data include age1-age8
 	*projections are in 1,000's of fish for bsb only
-
 import delimited using "$misc_data_cd/J1_2026Summer_Flounder.csv", clear
 gen species = "sf"
 gen region  = "CST"
@@ -214,7 +215,6 @@ save `pop_naa_projection', replace
 *    - Smooth counts over length within each age class using LOWESS
 *    - Convert smoothed counts to proportions-at-length within age
 *******************************************************
-
 import delimited using "$misc_data_cd/NEFSC trawl survey data.csv", clear
 tab stratum
 gen str5 stratum2 = string(stratum, "%05.0f")
@@ -318,7 +318,6 @@ drop domain1 domain2
 egen smoothed_nfish=rowtotal(s0-s8)
 drop s0-s8
 
-
 *  generate smoothed and unsmoothed proprtions at age
 egen sum_smooth=sum(smoothed_nfish), by(age species region)	
 gen prop_smoothed = smoothed_nfish / sum_smooth
@@ -342,7 +341,6 @@ save `age_length', replace
 *    - Multiply NAA by ALK proportions
 *    - Sum across ages to obtain NAL by species, region, draw, and length
 *******************************************************
-
 u  `age_length', clear
 
 merge m:1 species region age draw using `pop_naa_calibration', keep(match) nogen
@@ -382,7 +380,6 @@ save `nal_proj', replace
 *    - Compute catch / NAL by length
 *    - Pool catch outside the modeled population length range into the nearest tail length
 *******************************************************
-
 use `cal', clear
 merge 1:1 species region draw length using `nal'
 
@@ -409,7 +406,6 @@ foreach v of local vars{
 	egen mean_`v'=mean(`v'), by(species region draw)
 	replace `v'= mean_`v'
 	drop mean_`v'
-	
 }
 
 replace length=max_length_pop if catch>0 & nal_smooth==0 & length>max_length_pop
@@ -434,7 +430,6 @@ save `selectivity', replace
 *    - Compute projected catch-at-length as projected NAL times baseline catch fraction
 *    - Convert projected catch-at-length to a probability distribution
 *******************************************************
-
 use `nal_proj', clear
 renvarlab nal*, postfix(_proj)
 merge 1:1 length species region draw using `selectivity'
@@ -471,8 +466,7 @@ restore
 *    - Truncate fitted distribution to observed baseline support
 *    - Normalize fitted probabilities within domain
 *******************************************************
-
-* generate gamma-fitted projected catch at length distribtion  
+* generate gamma-fitted projected catch-at-length distribtion  
 * use MOM to avoid non-convergence 
 tempfile new
 save `new', replace
@@ -650,7 +644,7 @@ grc1leg `graphnames', rows(3)
 *******************************************************
 * 8. Expand region-level distributions to state-level simulation inputs
 *    - Scup: coastwide distribution copied to all states
-*    - Summer flounder and black sea bass: region distributions copied to states within region
+*    - Summer flounder and black sea bass: regional distributions copied to states within region
 *******************************************************
 
 keep length fitted_prob_proj species region draw
