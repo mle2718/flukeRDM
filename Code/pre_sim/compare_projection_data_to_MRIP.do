@@ -18,32 +18,32 @@ forv i=1/$ndraws{
 
 *local i=1
 *local s="RI"
-use "$iterative_input_data_cd\archive\proj_catch_draws\proj_catch_draws_`s'_`i'.dta", clear 
 
-collapse (mean) sf_keep sf_cat sf_rel bsb_keep bsb_rel bsb_cat scup_keep scup_rel scup_cat, by(state wave mode)
+	use "$proj_catch_data_cd\proj_catch_draws_`s'_`i'.dta", clear 
 
-local vars sf_keep sf_cat sf_rel bsb_keep bsb_rel bsb_cat scup_keep scup_rel scup_cat
-foreach v of local vars{
+	collapse (mean) sf_keep sf_cat sf_rel bsb_keep bsb_rel bsb_cat scup_keep scup_rel scup_cat, by(state wave mode)
+
+	local vars sf_keep sf_cat sf_rel bsb_keep bsb_rel bsb_cat scup_keep scup_rel scup_cat
+	foreach v of local vars{
 	rename `v' `v'_sim
-}
+	}
 
+	tempfile catch
+	save `catch', replace 
 
-tempfile catch
-save `catch', replace 
+	gen draw=`i'
 
-gen draw=`i'
-
-append using `master'
-save `master', replace
+	append using `master'
+	save `master', replace
 }
 }
 use `master', clear
 
-save "$iterative_input_data_cd\archive\proj_catch_draws\simulated_projected_catch_means3.dta", replace 
+save "$misc_data_cd\simulated_projected_catch_means3.dta", replace 
 
 
 * Step 2) 
-u "$iterative_input_data_cd\archive\proj_catch_draws\simulated_projected_catch_means3.dta", clear 
+u "$misc_data_cd\simulated_projected_catch_means3.dta", clear 
 
 ds draw mode state wave, not
 local vars `r(varlist)'
@@ -98,8 +98,7 @@ drop new
 tempfile sim
 save `sim', replace
 
-
-import excel using "$iterative_input_data_cd\archive\proj_catch_draws\projected_mrip_catch_processed.xlsx", clear first 
+import excel using "$misc_data_cd\projected_mrip_catch_processed.xlsx", clear first 
 keep my_dom_id_string-missing_sesf_rel
 drop missing*
 duplicates drop
@@ -214,27 +213,14 @@ graph export "$figure_cd/mean_proj_catch_MRIP_simulated_NC.png", as(png) replace
 clear
 mata: mata clear
 
-local statez "MA RI"
-
-foreach s of local statez {
-	forvalues i = 11/$ndraws{
-		use "$iterative_input_data_cd\archive\proj_catch_draws\proj_catch_draws_`s'_`i'.dta", clear 
-	    drop  day month wave day_i sf_keep sf_rel bsb_keep bsb_rel scup_keep scup_rel draw
-	    compress
-		save  "$iterative_input_data_cd\archive\proj_catch_draws\proj_catch_draws_`s'_`i'.dta", replace 
-		}
-}	
-	
-
-local statez "CT NY NJ DE MD VA NC"
+local statez "MA RI CT NY NJ DE MD VA NC"
 
 foreach s of local statez {
 	forvalues i = 1/$ndraws{
-		use "$iterative_input_data_cd\archive\proj_catch_draws\proj_catch_draws_`s'_`i'.dta", clear 
+		use "$proj_catch_data_cd\proj_catch_draws_`s'_`i'.dta", clear 
 	    drop  day month wave day_i sf_keep sf_rel bsb_keep bsb_rel scup_keep scup_rel draw
 	    compress
-		save  "$iterative_input_data_cd\archive\proj_catch_draws\proj_catch_draws_`s'_`i'.dta", replace 
+		save  "$proj_catch_data_cd\proj_catch_draws_`s'_`i'.dta", replace 
 		}
 }	
-		
 	

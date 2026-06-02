@@ -19,7 +19,7 @@
 
 * Pull in MRIP data
 
-cd $input_data_cd
+cd $misc_data_cd
 
 clear
 mata: mata clear
@@ -65,10 +65,6 @@ replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
 
-* keep only NC north based on county delineation from Tracey 
-drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187)
-
-
 gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
 replace mode1="pr" if inlist(mode_fx, "7")
 replace mode1="fh" if inlist(mode_fx, "4", "5")
@@ -90,6 +86,8 @@ replace common_dom="SF" if inlist(common, "scup")
 replace common_dom="SF"  if inlist(prim1_common, "summerflounder") 
 replace common_dom="SF"  if inlist(prim1_common, "blackseabass") 
 replace common_dom="SF"  if inlist(prim1_common, "scup") 
+
+replace common_dom="ZZ"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
 
 tostring wave, gen(wv2)
 tostring year, gen(yr2)
@@ -162,7 +160,7 @@ foreach v of local vars{
 }
 */
 
-keep if common_dom=="SF"
+*keep if common_dom=="SF"
 drop if wp_int==0
 encode my_dom_id_string, gen(my_dom_id)
 
@@ -250,6 +248,7 @@ split my, parse(_)
 rename my_dom_id_string1 state
 rename my_dom_id_string2 wave
 rename my_dom_id_string3 mode
+rename my_dom_id_string4 common_dom
 
 gen shoulder_wave="2" if wave=="1"
 replace shoulder_wave="1" if wave=="2"
@@ -271,6 +270,7 @@ foreach s of local stratz{
 	keep if strata_id==`s'
 	
 	levelsof state, local(st) clean
+	levelsof common_dom, local(common_dom2) clean
 	levelsof mode, local(md) clean
 	levelsof wave, local(wave1) clean
 	levelsof shoulder_wave, local(wave2) clean
@@ -278,7 +278,7 @@ foreach s of local stratz{
 	levelsof my_dom_id_string, local(my_dom_id_string) clean
 
 	u `basefile', clear 
-	keep if state=="`st'" & mode1=="`md'" & inlist(wv2, "`wave1'", "`wave2'")
+	keep if state=="`st'" & mode1=="`md'" & inlist(wv2, "`wave1'", "`wave2'") & common_dom=="`common_dom2'"
 	drop my_dom_id_string my_dom_id
 	gen my_dom_id_string="`my_dom_id_string'"
 	encode my_dom_id_string, gen(my_dom_id)
@@ -366,6 +366,7 @@ foreach s of local stratz{
 	keep if strata_id==`s'
 	
 	levelsof state, local(st) clean
+	levelsof common_dom, local(common_dom2) clean
 	levelsof mode, local(md) clean
 	levelsof wave, local(wave1) clean
 	levelsof shoulder_wave1, local(wave2) clean
@@ -374,7 +375,7 @@ foreach s of local stratz{
 	levelsof my_dom_id_string, local(my_dom_id_string) clean
 
 	u `basefile', clear 
-	keep if state=="`st'" & mode1=="`md'" & inlist(wv2, "`wave1'", "`wave2'", "`wave3'")
+	keep if state=="`st'" & mode1=="`md'" & inlist(wv2, "`wave1'", "`wave2'", "`wave3'") & common_dom=="`common_dom2'"
 	drop my_dom_id_string my_dom_id
 	gen my_dom_id_string="`my_dom_id_string'"
 	encode my_dom_id_string, gen(my_dom_id)
@@ -425,6 +426,11 @@ merge 1:1 varname my_dom_id_string using `base_results'
 
 replace se=mean*pse_impute if se==. & _merge==3
 
+keep if strmatch(my_dom_id, "*SF*")==1
+
+
+* If after the two rounds there is still a missing standard error for strata with positive mean catch, set se = mean (high ucertainty)
+replace se=mean if mean>0 & !missing(mean) & se==.
 
 * Stop code if non-value mean harvest/discards/catch-per trip are missing standard errors
 * Check condition across the dataset
@@ -464,6 +470,7 @@ gen scup_no_catch=1 if meanscup_rel==0 & meanscup_keep==0
 mvencode sf_only_keep sf_only_rel sf_keep_and_rel sf_no_catch bsb_only_keep bsb_only_rel bsb_keep_and_rel bsb_no_catch scup_only_keep scup_only_rel scup_keep_and_rel scup_no_catch, mv(0) override
 
 merge 1:m my_dom_id_string using `basefile'
+keep if strmatch(my_dom_id_string, "*SF*")==1
 
 *condition for when keep and release are both positive for a stratum, but they never occur on the same trip
 *Will model these distributions as independent
@@ -559,16 +566,13 @@ keep wp_int my_dom_id_string meanbsb_cat-id_code year yr2 st  state common_dom s
 mvencode se*, mv(0) override
 mvencode missing*, mv(0) override
 
-export excel "$iterative_input_data_cd\archive\calib_catch_draws\baseline_mrip_catch_processed.xlsx", firstrow(variables) replace
-import excel using "$iterative_input_data_cd\archive\calib_catch_draws\baseline_mrip_catch_processed.xlsx", clear first
+export excel "$misc_data_cd\baseline_mrip_catch_processed.xlsx", firstrow(variables) replace
 
 
 ************** Part B  **************
 * Compute MRIP estimates for comparison with simulated estimates 
 
 * Estimates by state and mode
-cd $input_data_cd
-
 clear
 mata: mata clear
 
@@ -611,10 +615,6 @@ replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
 
-* keep only NC north based on county delineation from Tracey 
-drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187)
-
-
 gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
 replace mode1="pr" if inlist(mode_fx, "7")
 replace mode1="fh" if inlist(mode_fx, "4", "5")
@@ -624,8 +624,8 @@ replace prim1_common=subinstr(lower(prim1_common)," ","",.)
 replace prim2_common=subinstr(lower(prim1_common)," ","",.)
 
 /* we need to retain 1 observation for each strat_id, psu_id, and id_code.  */
-/* A.  Trip (Targeted or Caught) (fluke, sea bass, or scup) then it should be marked in the domain "_ATLCO"
-   B.  Trip did not (Target or Caught) (fluke, sea bass, or scup) then it is marked in the the domain "ZZZZZ"
+/* A.  Trip (Targeted or Caught) (fluke, sea bass, or scup) then it should be marked in the domain "SF"
+   B.  Trip did not (Target or Caught) (fluke, sea bass, or scup) then it is marked in the the domain "ZZ"
 */
 
 gen common_dom="ZZ"
@@ -636,6 +636,9 @@ replace common_dom="SF" if inlist(common, "scup")
 replace common_dom="SF"  if inlist(prim1_common, "summerflounder") 
 replace common_dom="SF"  if inlist(prim1_common, "blackseabass") 
 replace common_dom="SF"  if inlist(prim1_common, "scup") 
+
+* keep only NC north based on county delineation from Tracey 
+replace common_dom="ZZ"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
 
 tostring wave, gen(wv2)
 tostring year, gen(yr2)
@@ -697,14 +700,6 @@ keep if count_obs1==1
 order strat_id psu_id id_code no_dup my_dom_id_string count_obs1 common
 svyset psu_id [pweight= wp_int], strata(strat_id) singleunit(certainty)
 
-/*
-local vars sf_catch sf_keep sf_rel bsb_catch bsb_keep bsb_rel  scup_catch scup_keep scup_rel
-foreach v of local vars{
-	replace `v'=round(`v')
-}
-*/
-
-keep if common_dom=="SF"
 drop if wp_int==0
 encode my_dom_id_string, gen(my_dom_id)
 
@@ -715,7 +710,7 @@ tempfile domains
 save `domains', replace 
 restore
 
-gen my_dom_id_string2=state+"_"+mode1
+gen my_dom_id_string2=state+"_"+mode1+"_"+common_dom
 encode my_dom_id_string2, gen(my_dom_id2)
 
 * Create a postfile to collect results
@@ -767,18 +762,16 @@ renvarlab `r(varlist)', postfix(_mrip)
 split my_dom, parse(_)
 rename my_dom_id_string1 state
 rename my_dom_id_string2 mode
-drop  my_dom_id_string3 
+rename my_dom_id_string3 common_dom
+keep if common_dom=="SF"
+drop common_dom
 order my_dom_id_string state mode
 
-save "$iterative_input_data_cd\archive\miscellaneous\catch_total_calib_mrip.dta", replace 
+save "$misc_data_cd\mrip_catch_calib_state_mode.dta", replace 
 
 
 
-
-* Compute estimates by state
-* Pull in MRIP data
-cd $input_data_cd
-
+* Estimates by state
 clear
 mata: mata clear
 
@@ -821,9 +814,6 @@ replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
 
-* keep only NC north based on county delineation from Tracey 
-drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187)
-
 gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
 replace mode1="pr" if inlist(mode_fx, "7")
 replace mode1="fh" if inlist(mode_fx, "4", "5")
@@ -833,8 +823,8 @@ replace prim1_common=subinstr(lower(prim1_common)," ","",.)
 replace prim2_common=subinstr(lower(prim1_common)," ","",.)
 
 /* we need to retain 1 observation for each strat_id, psu_id, and id_code.  */
-/* A.  Trip (Targeted or Caught) (fluke, sea bass, or scup) then it should be marked in the domain "_ATLCO"
-   B.  Trip did not (Target or Caught) (fluke, sea bass, or scup) then it is marked in the the domain "ZZZZZ"
+/* A.  Trip (Targeted or Caught) (fluke, sea bass, or scup) then it should be marked in the domain "SF"
+   B.  Trip did not (Target or Caught) (fluke, sea bass, or scup) then it is marked in the the domain "ZZ"
 */
 
 gen common_dom="ZZ"
@@ -845,6 +835,9 @@ replace common_dom="SF" if inlist(common, "scup")
 replace common_dom="SF"  if inlist(prim1_common, "summerflounder") 
 replace common_dom="SF"  if inlist(prim1_common, "blackseabass") 
 replace common_dom="SF"  if inlist(prim1_common, "scup") 
+
+* keep only NC north based on county delineation from Tracey 
+replace common_dom="ZZ"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
 
 tostring wave, gen(wv2)
 tostring year, gen(yr2)
@@ -907,14 +900,6 @@ order strat_id psu_id id_code no_dup my_dom_id_string count_obs1 common
 
 svyset psu_id [pweight= wp_int], strata(strat_id) singleunit(certainty)
 
-/*
-local vars sf_catch sf_keep sf_rel bsb_catch bsb_keep bsb_rel  scup_catch scup_keep scup_rel
-foreach v of local vars{
-	replace `v'=round(`v')
-}
-*/
-
-keep if common_dom=="SF"
 drop if wp_int==0
 encode my_dom_id_string, gen(my_dom_id)
 
@@ -925,7 +910,7 @@ tempfile domains
 save `domains', replace 
 restore
 
-gen my_dom_id_string2=state
+gen my_dom_id_string2=state+"_"+common_dom
 encode my_dom_id_string2, gen(my_dom_id2)
 
 * Create a postfile to collect results
@@ -976,18 +961,15 @@ renvarlab `r(varlist)', postfix(_mrip)
 
 split my_dom, parse(_)
 rename my_dom_id_string1 state
-drop  my_dom_id_string2 
+rename my_dom_id_string2 common_dom
+keep if common=="SF"
+drop  common 
 order my_dom_id_string state 
 
-save "$iterative_input_data_cd\archive\miscellaneous\catch_total_calib_mrip_state_total.dta", replace 
+save "$misc_data_cd\mrip_catch_calib_state.dta", replace 
 
 
-
-
-* Compute estimates by state, mode, wave
-* Pull in MRIP data
-cd $input_data_cd
-
+* Estimates by state, mode, wave
 clear
 mata: mata clear
 
@@ -1031,9 +1013,6 @@ replace state="DE" if st==10
 replace state="VA" if st==51
 replace state="NC" if st==37
 
-* keep only NC north based on county delineation from Tracey 
-drop if state=="NC" & !inlist(15, 29, 41, 53, 55, 139, 143, 177, 187)
-
 gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
 replace mode1="pr" if inlist(mode_fx, "7")
 replace mode1="fh" if inlist(mode_fx, "4", "5")
@@ -1043,8 +1022,8 @@ replace prim1_common=subinstr(lower(prim1_common)," ","",.)
 replace prim2_common=subinstr(lower(prim1_common)," ","",.)
 
 /* we need to retain 1 observation for each strat_id, psu_id, and id_code.  */
-/* A.  Trip (Targeted or Caught) (fluke, sea bass, or scup) then it should be marked in the domain "_ATLCO"
-   B.  Trip did not (Target or Caught) (fluke, sea bass, or scup) then it is marked in the the domain "ZZZZZ"
+/* A.  Trip (Targeted or Caught) (fluke, sea bass, or scup) then it should be marked in the domain "SF"
+   B.  Trip did not (Target or Caught) (fluke, sea bass, or scup) then it is marked in the the domain "ZZ"
 */
 
 gen common_dom="ZZ"
@@ -1055,6 +1034,9 @@ replace common_dom="SF" if inlist(common, "scup")
 replace common_dom="SF"  if inlist(prim1_common, "summerflounder") 
 replace common_dom="SF"  if inlist(prim1_common, "blackseabass") 
 replace common_dom="SF"  if inlist(prim1_common, "scup") 
+
+* keep only NC north based on county delineation from Tracey 
+replace common_dom="ZZ"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
 
 tostring year, gen(yr2)
 
@@ -1116,14 +1098,6 @@ order strat_id psu_id id_code no_dup my_dom_id_string count_obs1 common
 
 svyset psu_id [pweight= wp_int], strata(strat_id) singleunit(certainty)
 
-/*
-local vars sf_catch sf_keep sf_rel bsb_catch bsb_keep bsb_rel  scup_catch scup_keep scup_rel
-foreach v of local vars{
-	replace `v'=round(`v')
-}
-*/
-
-keep if common_dom=="SF"
 drop if wp_int==0
 encode my_dom_id_string, gen(my_dom_id)
 
@@ -1134,7 +1108,7 @@ tempfile domains
 save `domains', replace 
 restore
 
-gen my_dom_id_string2=state+"_"+mode1+"_"+w2
+gen my_dom_id_string2=state+"_"+mode1+"_"+w2+"_"+common_dom
 encode my_dom_id_string2, gen(my_dom_id2)
 
 * Create a postfile to collect results
@@ -1187,8 +1161,9 @@ split my_dom, parse(_)
 rename my_dom_id_string1 state
 rename my_dom_id_string2 mode
 rename my_dom_id_string3 wave
-
-drop  my_dom_id_string4 
+rename my_dom_id_string4 common_dom
+keep if common=="SF"
+drop  common 
 order my_dom_id_string state mode wave
 
-save "$iterative_input_data_cd\archive\miscellaneous\catch_total_calib_mrip_state_mode_wave.dta", replace 
+save "$misc_data_cd\mrip_catch_calib_state_mode_wave.dta", replace 
