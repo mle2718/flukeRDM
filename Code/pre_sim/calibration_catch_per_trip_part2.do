@@ -333,9 +333,9 @@ foreach s of local regions {
 
 
         preserve
-            import excel using "$calib_catch_data_cd\calib_catch_draws_`s'_`i'.xlsx", clear firstrow
+            u  using "$calib_catch_data_cd\calib_catch_draws_raw_`s'_`i'.dta", clear firstrow
             split my_dom_id_string, parse(_)
-            rename my_dom_id_string1 state
+            *rename my_dom_id_string1 state
             rename my_dom_id_string2 wave
             rename my_dom_id_string3 mode
             drop my_dom_id_string4 

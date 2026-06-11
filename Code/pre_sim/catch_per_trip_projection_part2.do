@@ -100,7 +100,7 @@ foreach s of local regions {
 		
 		
         preserve
-            import excel using "$proj_catch_data_cd\proj_catch_draws_`s'_`i'.xlsx", clear firstrow
+            u "$proj_catch_data_cd\proj_catch_draws_raw_`s'_`i'.dta", clear 
             split my_dom_id_string, parse(_)
             *rename my_dom_id_string1 state
             rename my_dom_id_string2 wave
