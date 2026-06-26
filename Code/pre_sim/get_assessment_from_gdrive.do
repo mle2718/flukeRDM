@@ -7,7 +7,7 @@
 local google_folder "D:/Shared drives/NMFS NEC READ SSB/socialsci/RecreationalDST/2028_management_cycle_data/flukeRDM/input_data"
 
 /* will need to adjust this to match actual file names*/
-local filestubs  "Scup_historical_NAA Scup_projected_NAA BSB_projected_NAA BSB_historical_NAA SF_projected_NAA SF_historical_NAA"
+local filestubs  "fit_NAA_NORTH fit_NAA_SOUTH fit_proj_NAA_NORTH fit_proj_NAA_SOUTH J1_2024Scup J1_2026Scup J1_2024Summer_Flounder J1_2026Summer_Flounder"
 
 foreach s of local filestubs {
     clear
