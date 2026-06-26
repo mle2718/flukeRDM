@@ -92,14 +92,25 @@ global NEFSC_svy_yrs "inlist(year,2024, 2023, 2022)"
 global inflation_expansion=1.31 
 
 * Adjust project paths based on user
-global project_path "C:\Users\andrew.carr-harris\Desktop\Git\flukeRDM" /* Lou's project path */
-global input_code_cd "${project_path}\Code\pre_sim"
-global data_path "E:\Lou_projects\flukeRDM\2028_mgt_cycle" /* Lou's path for iterative data that is too large to upload to GitHub*/ 
-global misc_data_cd "${data_path}\miscellaneous"
-global calib_catch_data_cd "${data_path}\calib_catch_draws"
-global proj_catch_data_cd "${data_path}\proj_catch_draws"
-global figure_cd  "${data_path}\figures"
+global input_code_cd "${here}/Code/pre_sim" 
+global misc_data_cd "${sfdatadir}/miscellaneous" 
+global calib_catch_data_cd "${sfdatadir}\calib_catch_draws"
+global proj_catch_data_cd "${sfdatadir}\proj_catch_draws"
+global figure_cd  "${sfdatadir}\figures"
 
+global log_dir "${input_code_cd}/logs" 
+
+/* make directories if necessary */
+capture mkdir $misc_data_cd
+capture mkdir $calib_catch_draws_cd
+capture mkdir $proj_catch_data_cd
+capture mkdir $figure_cd
+capture mkdir $log_dir
+
+/* start log */
+cap log close
+log using "${log_dir}\sf_model_wrapper_log_$S_DATE.smcl", replace
+														   
 
 
 global seed 03211990
