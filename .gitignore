@@ -5,3 +5,5 @@ recDST/documentation.md
 .RData
 rdmtool.Rproj
 /.secrets
+*.smcl
+
