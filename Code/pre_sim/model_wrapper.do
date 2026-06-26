@@ -103,6 +103,13 @@ global NEFSC_svy_yrs "inlist(year,2024, 2023, 2022)"
 	// https://www.bls.gov/data/inflation_calculator.htm, January 2022 - January 202X 
 global inflation_expansion=1.31 
 
+/* find the root of the project 
+prior to running the wrapper, you must change to $groundfishRDMdir so here picks up the project
+*/
+
+here, nogit 
+do "${here}/Code/helpers/user_setup_stata.do"
+
 * Adjust project paths based on user
 global input_code_cd "${here}/Code/pre_sim" 
 global misc_data_cd "${sfdatadir}/miscellaneous" 
