@@ -1,6 +1,11 @@
 
 
 /**** SFSBSB RDM code wrapper ****/
+/* This uses the user written command here to set directories*/
+/* It is not as good as R's version. Before running this code, you must change directories into project directory 
+One easy way to do this is to add a line to your profile do that store that directory in the 
+global flukeRDMdir "path to this project"
+and then cd "$flukeRDMdir" right before running this code
 
 **Data availability**
 
@@ -27,10 +32,17 @@
 	// "smb://net/mrfss/products/mrip_estim/Public_data_cal2018"
 	// Windows, just mount \\net.nefsc.noaa.gov\mrfss to A:\
 
-* Dependencies
-	// ssc install xsvmat 
-    // ssc install gammafit 
 
+	
+* Dependencies
+* ssc install xsvmat 
+* ssc install gammafit 
+* ssc install grc1leg
+* ssc install rscript
+	*/
+	
+	
+set varabbrev on
 
 
 **Adjust globals**
@@ -82,7 +94,7 @@ global fed_holidays_y2 "inlist(day_y2, td(01jan2026), td(19jan2026), td(16feb202
 global leap_yr_days "td(29feb2024)" 
 
 * Number of model iterations
-global ndraws 5
+global ndraws 100
 
 * set years of which to pull the NEFSC trawl survey data
 global NEFSC_svy_yrs "inlist(year,2024, 2023, 2022)"
@@ -115,45 +127,150 @@ log using "${log_dir}\sf_model_wrapper_log_$S_DATE.smcl", replace
 
 global seed 03211990
 
+
+**********************************************************************
+************************ EXECUTION CONTROL ***************************
+**********************************************************************
+
+// Control which modules to run (set to 0 to skip)
+loc pull_assessment = 1		 		// Pull Assessment data
+loc processMRIP = 1		 			// deal with casing MRIP data
+loc assemblemriplists = 1		 	// deal with casing MRIP data
+
+loc estimate_dtrips = 1				// Estimate Directed Trips 
+loc costs_per_trip = 1  			// Create Distributions of costs per trip (run 1x)
+loc draw_angler_preferences = 1		// Create draw of angler preference parameters (run 1x)
+loc catch_per_trip1 = 1				// Part 1 of catch per trip
+loc copula_in_R = 1					// Copula model in R
+loc catch_per_trip2 = 1				// Part 2 of catch per trip
+loc compare_calibration_MRIP = 1	// compare calibration output to MRIP
+loc prep_cpt_for_dashboard= 1		// prep data for dashboard
+loc Rpush_to_gdrive =1 				// Push to google drive in R
+loc angler_demogs	=1				// add additonal angler demographics
+loc generate_baseline=1				// Generate baseline-year catch-at-length
+loc catch_at_length_project=1		// Generate projection-year catch-at-length
+loc catch_per_trip_project=1        // Generate projection-year catch-per trip
+
+
+
+// Prototyping
+local proto = 1
+
+if `proto' {
+	global ndraws 3
+}
+
 **************************************************Model calibration ************************************************** 
-* 1) Pull the MRIP data
-do "$input_code_cd\MRIP_data_wrapper.do"
 
+// 0) Pull Assessment data from google.
 
-* 2) Estimate directed trips during calibration period
-do "$input_code_cd\directed_trips_calibration.do"
+/* This code requires you to mount your google drive to D on your computer */
+if `pull_assessment' {
+	di "Pulling Assessment data from google"
+	do "$input_code_cd\get_assessment_from_gdrive.do"
+	}
+
+	
+
+// 1) Pull the MRIP data
+
+if `processMRIP' {
+	di "Processing MRIP data"
+	do "$input_code_cd\MRIP_column_cases.do"
+	di "MRIP data processed"
+}
+
+if `assemblemriplists' {
+	di "Assembling Lists of MRIP files"
+	do "$input_code_cd\MRIP_lists.do"
+	di "Lists of MRIP files assembled"
+}
+
+	
+// 2) Estimate directed trips during calibration period
 		// This file calls "set_regulations.do". You must enter the SQ regulations in the calibration and projection year. 
 		// THIS NEEDS TO BE ADJUSTED EVERY YEAR. 
 
-* 3) Create distirbutions of costs per trip across strata
-do "$input_code_cd\survey_trip_costs.do"
+if `estimate_dtrips' {
 
-* 4) Estimate and simulate distirbution of angler utility coefficients 
-do "$input_code_cd\estimate_angler_preferences.do"
+	di "Estimating Directed trips"
+    do "$input_code_cd\directed_trips_calibration.do"
+	di "Directed trips Estimated"
 
+}
+// 3) Create distirbutions of costs per trip across strata
+
+if `costs_per_trip' {
+	di "Creating distributions of cost per trip"
+	do "$input_code_cd\survey_trip_costs.do"
+	di "distributions of cost per trip Done"
+
+}
+
+// 4) Create draw of angler preference parameters - only needs to be run once
+if `draw_angler_preferences' {
+	di "Creating draws of angler preference parameters"
+	do "$input_code_cd\estimate_angler_preferences.do"
+	di "Draws of angler preference parameters Done"
+
+}
 * 5) Estimate catch-per-trip at the month and mode level
 		// a) compute mean catch-per-trip and standard error, imputing standard errors from historcial data when they are missing. 
-		do "$input_code_cd\catch_per_trip_calibration_part1.do"
+
+if `catch_per_trip1' {
+	di "Estimate catch-per-trip at the month and mode level"
+	do "$input_code_cd\catch_per_trip_calibration_part1.do"
+	di "catch-per-trip at the month and mode level Done"
+
+}
 
 		// b) use copula model (in R) to simulate harvest and discards per-trip
-		* run "copula_modeling_calibration.R"
-		
-		// c) generate estimates of simulated total harvest based on random draws of catch-per-trip and directed trips
-		do "$input_code_cd\calibration_catch_per_trip_part2.do"
+if `copula_in_R' {
 
+    	di "Estimating copula in R. This takes a while and will look like it's hung"
+
+		rscript using "$input_code_cd\copula_modeling_calibration.R"
+	  	di "Copula in R estimated"
+}
+
+		// c) generate estimates of simulated total harvest based on random draws of catch-per-trip and directed trips
+
+if `catch_per_trip2' {
+    	di "Generating estimates of simulated total harvest based on random draws"
+		do "$input_code_cd\calibration_catch_per_trip_part2.do"
+    	di "Estimates of simulated total harvest Done"
+
+}				  
 
 // 6) compare calibration output to MRIP, and retain total simulated harvest and discards to apply to the baseline catch-at-length distribution
-do "$input_code_cd\compare_calibration_data_to_MRIP.do" 
+
+if `compare_calibration_MRIP' {
+    	di "Comparing calibration output to MRIP"
+		do "$input_code_cd\compare_calibration_data_to_MRIP.do" 
+      	di "Comparison of calibration output to MRIP done"
+}
 
 
 // 7) Generate baseline-year catch-at-length, using the simulated harvest/discard totals from step 6
-do "$input_code_cd\calibration_catch_at_length.do"
 
+if `generate_baseline'{
+    	di "Generating baseline catch-at-length" 
+		do "$input_code_cd\calibration_catch_at_length.do"
+    	di "Baseline catch-at-length generated " 
+
+		}
 
 // 8) Generate projection-year catch-at-length, incorporating the stock assessment data
+if `catch_at_length_project'{
+		di "Generating projection year catch-at-length" 
 		do "$input_code_cd\projected_catch_at_length.do"
+		di "Projection year catch-at-length generated " 
 
-		
+}
+	
+	
+if `catch_per_trip_project'{
+
 // 9)  Estimate projected catch-per-trips at the month and mode level
 		 *use MRIP catch data from the last THREE full years. 
 		 
@@ -161,14 +278,14 @@ do "$input_code_cd\calibration_catch_at_length.do"
 		 do "$input_code_cd\catch_per_trip_projection_part1.do"
 
 		//b) use copula model (in R) to simulate harvest and discards per-trip
-		* run "copula_modeling_projection.R"
+		rscript using "$input_code_cd\copula_modeling_projection.R"
 		
 		//c) generate estimates of simulated total harvest based on random draws of catch-per-trip and directed trips
 		do "$input_code_cd\catch_per_trip_projection_part2.do"
 		
 		//d) compare estimates of mean projected catch to MRIP data to ensure consistency and remove extraneous columns from projected catch draw data
 		do "$input_code_cd\compare_projection_data_to_MRIP.do"
-		
+}
 
 // 10) Run the projection loop in R
 
