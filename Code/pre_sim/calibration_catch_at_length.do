@@ -15,8 +15,8 @@
 
 * 1) 			
 * CT VAS
-cd "$misc_data_cd"
-import excel "2024 CT VAS SFL SCUP BSB.xlsx", clear first 
+cd 
+import excel "$misc_data_cd/2024 CT VAS SFL SCUP BSB.xlsx", clear first 
 renvarlab, lower
 gen species="sf" if catch_common_name== "FLOUNDER, SUMMER"
 replace species="scup" if catch_common_name== "SCUP"
@@ -38,11 +38,11 @@ tempfile ct_vas
 save `ct_vas', replace
 
 * NJ VAS
-import excel "NJ-VAS BSB.xlsx", clear first 
+import excel "$misc_data_cd/NJ-VAS BSB.xlsx", clear first 
 tempfile njbsb
 save `njbsb', replace
 
-import excel "NJ-VAS SF.xlsx", clear first 
+import excel "$misc_data_cd/NJ-VAS SF.xlsx", clear first 
 append using `njbsb'
 renvarlab, lower
 tab species
@@ -60,7 +60,7 @@ tempfile nj_vas
 save `nj_vas', replace
 
 * RI VAS
-import excel "sfl_scu_bsb_24_25_RI_release.xlsx", clear first 
+imimport excel "$misc_data_cd/sfl_scu_bsb_24_25_RI_release.xlsx", clear first 
 renvarlab, lower
 tab common
 gen species="sf" if common== "FLOUNDER, SUMMER"
@@ -79,17 +79,17 @@ tempfile ri_vas
 save `ri_vas', replace
 
 * ALS tag
-import excel using "FLK_ALS_TAG_DATA_2025.xlsx", clear first 
+import excel "$misc_data_cd/FLK_ALS_TAG_DATA_2025.xlsx", clear first 
 keep Date Place Species Length zonedescription
 tempfile als_fluke_tag
 save `als_fluke_tag', replace 
 
-import excel using "BSB_ALS_TAG_DATA_2025.xlsx", clear first 
+import excel "$misc_data_cd/BSB_ALS_TAG_DATA_2025.xlsx", clear first 
 keep Date Place Species Length zonedescription
 tempfile als_bsb_tag
 save `als_bsb_tag', replace 
 
-import excel using "SCP_ALS_TAG_DATA_2025.xlsx", clear first 
+import excel "$misc_data_cd/SCP_ALS_TAG_DATA_2025.xlsx", clear first 
 keep Date Place Species Length zonedescription
 append using `als_bsb_tag'
 append using `als_fluke_tag'
@@ -176,12 +176,12 @@ tempfile als_tag
 save `als_tag', replace 
 
 * ALS recapture
-import excel using "FLK_ALS_REC_DATA_2025.xlsx", clear first 
+import excel "$misc_data_cd/FLK_ALS_REC_DATA_2025.xlsx", clear first 
 keep RecaptureDate PlaceRecaptured Species Length zonedesc
 tempfile als_fluke_rec
 save `als_fluke_rec', replace 
 
-import excel using "BSB_ALS_REC_DATA_2025.xlsx", clear first 
+import excel "$misc_data_cd/BSB_ALS_REC_DATA_2025.xlsx", clear first 
 keep RecaptureDate PlaceRecaptured Species Length zonedesc
 append using `als_fluke_rec'
 
@@ -272,8 +272,6 @@ save `als_rec', replace
 
 
 * MRIP data 
-cd $misc_data_cd
-
 dsconcat $b2list
 sort year strat_id psu_id id_code
 drop if strmatch(id_code, "*xx*")==1

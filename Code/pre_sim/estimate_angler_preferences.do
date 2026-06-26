@@ -8,15 +8,15 @@ set maxvar  120000
 
 
 *cd "\\net.nefsc.noaa.gov\aharris\2022 fluke survey data\"
-cd "Z:\choice experiment data\2022 fluke survey data"
+global choice_exp_data "Z:\choice experiment data\2022 fluke survey data"
 
-use "surveydata.dta", clear 
+use "${choice_exp_data}/surveydata.dta", clear 
 keep qtid a4
 duplicates drop 
 tempfile boat
 save `boat', replace
 
-use "formattedsurveydata.dta", clear 
+use "${choice_exp_data}/formattedsurveydata.dta", clear 
 merge m:1 qtid using `boat', keep(3) nogen
 
 

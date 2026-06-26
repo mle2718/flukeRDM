@@ -10,7 +10,6 @@
 */
 		
 
-cd $misc_data_cd
 
 clear
 
