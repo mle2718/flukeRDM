@@ -108,9 +108,9 @@ prior to running the wrapper, you must change to $groundfishRDMdir so here picks
 */
 
 here, nogit 
-do "${here}/Code/helpers/user_setup_stata.do"
+do "${here}/Code/helpers/developer_setup_stata.do"
 
-* Adjust project paths based on user
+* Adjust project paths based on developer
 global input_code_cd "${here}/Code/pre_sim" 
 global misc_data_cd "${sfdatadir}/miscellaneous" 
 global calib_catch_data_cd "${sfdatadir}\calib_catch_draws"
