@@ -19,7 +19,6 @@
 
 * Pull in MRIP data
 
-cd $misc_data_cd
 
 clear
 mata: mata clear
