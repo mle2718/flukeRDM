@@ -199,35 +199,53 @@ qui twoway (rcap mrip_ul mrip_ll my_dom_id_mrip if domain=="`d'", color(blue)  )
 			title("`d'", size(medium)) name(`d'_`s'_new, replace) 
 		}
   }
-u `new', clear 
-sort state wave mode 
 
-grc1leg  bsb_keep_MA_new sf_keep_MA_new  scup_keep_MA_new bsb_rel_MA_new sf_rel_MA_new scup_rel_MA_new , cols(3) title("Mean catch-per-trip, MRIP vs. simulated estimates MA", size(small))
-graph export "$figure_cd/mean_catch_MRIP_simulated_MA.png", as(png) replace
+ sort state wave mode 
 
-grc1leg  bsb_keep_RI_new sf_keep_RI_new scup_keep_RI_new  bsb_rel_RI_new sf_rel_RI_new scup_rel_RI_new, cols(3) title("Mean catch-per-trip, MRIP vs. simulated estimates RI", size(small))
-graph export "$figure_cd/mean_catch_MRIP_simulated_RI.png", as(png) replace		
+*------------------------------------------------------------
+* Combine mean catch-per-trip graphs that exist in memory
+*------------------------------------------------------------
+local states MA RI CT NY NJ DE MD VA NC
+local domains bsb_keep sf_keep scup_keep bsb_rel sf_rel scup_rel
 
-grc1leg  bsb_keep_CT_new sf_keep_CT_new scup_keep_CT_new  bsb_rel_CT_new sf_rel_CT_new  scup_rel_CT_new, cols(3)	title("Mean catch-per-trip, MRIP vs. simulated estimates CT", size(small))
-graph export "$figure_cd/mean_catch_MRIP_simulated_CT.png", as(png) replace
+foreach s of local states {
 
-grc1leg  bsb_keep_NY_new sf_keep_NY_new scup_keep_NY_new  bsb_rel_NY_new sf_rel_NY_new  scup_rel_NY_new  , cols(3) title("Mean catch-per-trip, MRIP vs. simulated estimates NY", size(small))
-graph export "$figure_cd/mean_catch_MRIP_simulated_NYA.png", as(png) replace	
+    local graph_list ""
 
-grc1leg  bsb_keep_NJ_new sf_keep_NJ_new scup_keep_NJ_new  bsb_rel_NJ_new sf_rel_NJ_new  scup_rel_NJ_new  , cols(3) title("Mean catch-per-trip, MRIP vs. simulated estimates NJ", size(small))
-graph export "$figure_cd/mean_catch_MRIP_simulated_NJ.png", as(png) replace
+    foreach d of local domains {
 
-grc1leg  bsb_keep_DE_new sf_keep_DE_new scup_keep_DE_new  bsb_rel_DE_new sf_rel_DE_new  scup_rel_DE_new  , cols(3) title("Mean catch-per-trip, MRIP vs. simulated estimates DE", size(small))
-graph export "$figure_cd/mean_catch_MRIP_simulated_DE.png", as(png) replace
+        local graph_name `d'_`s'_new
 
-grc1leg  bsb_keep_MD_new sf_keep_MD_new scup_keep_MD_new  bsb_rel_MD_new sf_rel_MD_new  scup_rel_MD_new  , cols(3) title("Mean catch-per-trip, MRIP vs. simulated estimates MD", size(small))
-graph export "$figure_cd/mean_catch_MRIP_simulated_MD.png", as(png) replace	
+        * Check whether graph exists in memory
+        capture graph describe `graph_name'
 
-grc1leg  bsb_keep_VA_new sf_keep_VA_new scup_keep_VA_new  bsb_rel_VA_new sf_rel_VA_new  scup_rel_VA_new  , cols(3)	 title("Mean catch-per-trip, MRIP vs. simulated estimates VA", size(small))
-graph export "$figure_cd/mean_catch_MRIP_simulated_VA.png", as(png) replace
+        if !_rc {
+            local graph_list `graph_list' `graph_name'
+        }
+        else {
+            display as text ///
+                "Graph `graph_name' does not exist; excluding it from `s' combined graph."
+        }
+    }
 
-grc1leg  bsb_keep_NC_new    bsb_rel_NC scup_keep_NC_new  , cols(3) title("Mean catch-per-trip, MRIP vs. simulated estimates NC", size(small))
-graph export "$figure_cd/mean_catch_MRIP_simulated_NC.png", as(png) replace
+    * Only combine/export when at least one graph exists
+    if `"`graph_list'"' != "" {
+
+        grc1leg `graph_list', ///
+            cols(3) ///
+            title("Mean catch-per-trip, MRIP vs. simulated estimates `s'", ///
+                  size(small)) ///
+            name(mean_catch_`s', replace)
+
+        graph export ///
+            "$figure_cd/mean_catch_MRIP_simulated_`s'.png", ///
+            as(png) replace
+    }
+    else {
+        display as error ///
+            "No mean catch-per-trip graphs exist for state `s'; no combined graph exported."
+    }
+}
 
 
 
@@ -382,37 +400,89 @@ qui twoway (rcap mrip_ul mrip_ll my_dom_id_mrip if domain=="`d'", color(blue)  )
 		}
   }
 
-u `new', clear 
-grc1leg  dtrip_MA  dtrip_RI dtrip_CT dtrip_NY dtrip_NJ dtrip_DE dtrip_MD dtrip_VA dtrip_NC , cols(3)  title("Directed trips, MRIP vs. simulated estimates", size(small))
-graph export "$figure_cd/dtrip_wave_MRIP_simulated_all_states.png", as(png) replace
+*------------------------------------------------------------
+* Combine existing directed-trip graphs across states
+*------------------------------------------------------------
+local states MA RI CT NY NJ DE MD VA NC
+local graph_list ""
 
-grc1leg  bsb_catch_MA sf_catch_MA  scup_catch_MA bsb_harvest_MA sf_harvest_MA   scup_harvest_MA , cols(3) title("Catch totals, MRIP vs. simulated estimates MA", size(small))
-graph export "$figure_cd/catch_total_wave_MRIP_simulated_MA.png", as(png) replace
-	
-grc1leg  bsb_catch_RI sf_catch_RI scup_catch_RI  bsb_harvest_RI sf_harvest_RI scup_harvest_RI    , cols(3)	title("Catch totals, MRIP vs. simulated estimates RI", size(small))
-graph export "$figure_cd/catch_total_wave_MRIP_simulated_RI.png", as(png) replace
-	
-grc1leg  bsb_catch_CT sf_catch_CT scup_catch_CT  bsb_harvest_CT sf_harvest_CT  scup_harvest_CT  , cols(3)	title("Catch totals, MRIP vs. simulated estimates CT", size(small))
-graph export "$figure_cd/catch_total_wave_MRIP_simulated_CT.png", as(png) replace
-	
-grc1leg  bsb_catch_NY sf_catch_NY scup_catch_NY  bsb_harvest_NY sf_harvest_NY  scup_harvest_NY  , cols(3) title("Catch totals, MRIP vs. simulated estimates NY", size(small))
-graph export "$figure_cd/catch_total_wave_MRIP_simulated_NY.png", as(png) replace
-	
-grc1leg  bsb_catch_NJ sf_catch_NJ scup_catch_NJ  bsb_harvest_NJ sf_harvest_NJ  scup_harvest_NJ  , cols(3) title("Catch totals, MRIP vs. simulated estimates NJ", size(small))
-graph export "$figure_cd/catch_total_wave_MRIP_simulated_NJ.png", as(png) replace
-	
-grc1leg  bsb_catch_DE sf_catch_DE scup_catch_DE  bsb_harvest_DE sf_harvest_DE  scup_harvest_DE  , cols(3) title("Catch totals, MRIP vs. simulated estimates DE", size(small))
-graph export "$figure_cd/catch_total_wave_MRIP_simulated_DE.png", as(png) replace
-	
-grc1leg  bsb_catch_MD sf_catch_MD scup_catch_MD  bsb_harvest_MD sf_harvest_MD  scup_harvest_MD  , cols(3) title("Catch totals, MRIP vs. simulated estimates MD", size(small))
-graph export "$figure_cd/catch_total_wave_MRIP_simulated_MD.png", as(png) replace
-	
-grc1leg  bsb_catch_VA sf_catch_VA scup_catch_VA  bsb_harvest_VA sf_harvest_VA  scup_harvest_VA  , cols(3)	title("Catch totals, MRIP vs. simulated estimates VA", size(small))
-graph export "$figure_cd/catch_total_wave_MRIP_simulated_VA.png", as(png) replace
-	
-grc1leg  bsb_catch_NC sf_catch_NC scup_catch_NC  bsb_harvest_NC sf_harvest_NC  scup_harvest_NC  , cols(3) title("Catch totals, MRIP vs. simulated estimates NC", size(small))
-graph export "$figure_cd/catch_total_wave_MRIP_simulated_NC.png", as(png) replace
-	
+foreach s of local states {
+
+    local graph_name dtrip_`s'
+
+    capture graph describe `graph_name'
+
+    if !_rc {
+        local graph_list `graph_list' `graph_name'
+    }
+    else {
+        display as text ///
+            "Graph `graph_name' does not exist; excluding it."
+    }
+}
+
+if `"`graph_list'"' != "" {
+
+    grc1leg `graph_list', ///
+        cols(3) ///
+        title("Directed trips, MRIP vs. simulated estimates", ///
+              size(small)) ///
+        name(dtrip_all_states, replace)
+
+    graph export ///
+        "$figure_cd/dtrip_wave_MRIP_simulated_all_states.png", ///
+        as(png) replace
+}
+else {
+    display as error ///
+        "No directed-trip graphs exist; combined graph was not exported."
+}
+
+
+*------------------------------------------------------------
+* Combine catch-total graphs that exist in memory
+*------------------------------------------------------------
+local states MA RI CT NY NJ DE MD VA NC
+local domains ///
+    bsb_catch sf_catch scup_catch ///
+    bsb_harvest sf_harvest scup_harvest
+
+foreach s of local states {
+
+    local graph_list ""
+
+    foreach d of local domains {
+
+        local graph_name `d'_`s'
+
+        capture graph describe `graph_name'
+
+        if !_rc {
+            local graph_list `graph_list' `graph_name'
+        }
+        else {
+            display as text ///
+                "Graph `graph_name' does not exist; excluding it from `s' combined graph."
+        }
+    }
+
+    if `"`graph_list'"' != "" {
+
+        grc1leg `graph_list', ///
+            cols(3) ///
+            title("Catch totals, MRIP vs. simulated estimates `s'", ///
+                  size(small)) ///
+            name(catch_totals_`s', replace)
+
+        graph export ///
+            "$figure_cd/catch_total_wave_MRIP_simulated_`s'.png", ///
+            as(png) replace
+    }
+    else {
+        display as error ///
+            "No catch-total graphs exist for state `s'; no combined graph exported."
+    }
+}
 
 
 *B3 compare catch totals @ state and mode
@@ -569,36 +639,99 @@ qui twoway (rcap mrip_ul mrip_ll my_dom_id_mrip if domain=="`d'", color(blue)  )
 		}
   }
 
-u `new', clear 
-grc1leg  dtrip_MA  dtrip_RI dtrip_CT dtrip_NY dtrip_NJ dtrip_DE dtrip_MD dtrip_VA dtrip_NC , cols(3)  title("Directed trips, MRIP vs. simulated estimates", size(small))
-graph export "$figure_cd/dtrip_state_MRIP_simulated_all_states.png", as(png) replace
+*------------------------------------------------------------
+* Combine total-by-state graphs that exist in memory
+*------------------------------------------------------------
 
-grc1leg  bsb_catch_MA sf_catch_MA  scup_catch_MA bsb_harvest_MA sf_harvest_MA   scup_harvest_MA , cols(3) title("Catch totals, MRIP vs. simulated estimates MA", size(small))
-graph export "$figure_cd/catch_total_state_MRIP_simulated_MA.png", as(png) replace
-	
-grc1leg  bsb_catch_RI sf_catch_RI scup_catch_RI  bsb_harvest_RI sf_harvest_RI scup_harvest_RI    , cols(3)	title("Catch totals, MRIP vs. simulated estimates RI", size(small))
-graph export "$figure_cd/catch_total_state_MRIP_simulated_RI.png", as(png) replace
-	
-grc1leg  bsb_catch_CT sf_catch_CT scup_catch_CT  bsb_harvest_CT sf_harvest_CT  scup_harvest_CT  , cols(3)	title("Catch totals, MRIP vs. simulated estimates CT", size(small))
-graph export "$figure_cd/catch_total_state_MRIP_simulated_CT.png", as(png) replace
-	
-grc1leg  bsb_catch_NY sf_catch_NY scup_catch_NY  bsb_harvest_NY sf_harvest_NY  scup_harvest_NY  , cols(3) title("Catch totals, MRIP vs. simulated estimates NY", size(small))
-graph export "$figure_cd/catch_total_state_MRIP_simulated_NY.png", as(png) replace
-	
-grc1leg  bsb_catch_NJ sf_catch_NJ scup_catch_NJ  bsb_harvest_NJ sf_harvest_NJ  scup_harvest_NJ  , cols(3) title("Catch totals, MRIP vs. simulated estimates NJ", size(small))
-graph export "$figure_cd/catch_total_state_MRIP_simulated_NJ.png", as(png) replace
-	
-grc1leg  bsb_catch_DE sf_catch_DE scup_catch_DE  bsb_harvest_DE sf_harvest_DE  scup_harvest_DE  , cols(3) title("Catch totals, MRIP vs. simulated estimates DE", size(small))
-graph export "$figure_cd/catch_total_state_MRIP_simulated_DE.png", as(png) replace
-	
-grc1leg  bsb_catch_MD sf_catch_MD scup_catch_MD  bsb_harvest_MD sf_harvest_MD  scup_harvest_MD  , cols(3) title("Catch totals, MRIP vs. simulated estimates MD", size(small))
-graph export "$figure_cd/catch_total_state_MRIP_simulated_MD.png", as(png) replace
-	
-grc1leg  bsb_catch_VA sf_catch_VA scup_catch_VA  bsb_harvest_VA sf_harvest_VA  scup_harvest_VA  , cols(3)	title("Catch totals, MRIP vs. simulated estimates VA", size(small))
-graph export "$figure_cd/catch_total_state_MRIP_simulated_VA.png", as(png) replace
-	
-grc1leg  bsb_catch_NC sf_catch_NC scup_catch_NC  bsb_harvest_NC sf_harvest_NC  scup_harvest_NC  , cols(3) title("Catch totals, MRIP vs. simulated estimates NC", size(small))
-graph export "$figure_cd/catch_total_state_MRIP_simulated_NC.png", as(png) replace
+* These are the states used in the graph-generation loop
+local states MA RI CT NY NJ DE MD VA NC
+
+
+*============================================================
+* 1. Directed-trip graphs across all states
+*============================================================
+local dtrip_graphs ""
+
+foreach s of local states {
+
+    local graph_name dtrip_`s'
+
+    capture graph describe `graph_name'
+
+    if !_rc {
+        local dtrip_graphs `dtrip_graphs' `graph_name'
+    }
+    else {
+        display as text ///
+            "Graph `graph_name' does not exist; excluding it from the combined directed-trip graph."
+    }
+}
+
+if `"`dtrip_graphs'"' != "" {
+
+    grc1leg `dtrip_graphs', ///
+        cols(3) ///
+        title("Directed trips, MRIP vs. simulated estimates", ///
+              size(small)) ///
+        name(dtrip_state_all, replace)
+
+    graph export ///
+        "$figure_cd/dtrip_state_MRIP_simulated_all_states.png", ///
+        as(png) replace
+}
+else {
+    display as error ///
+        "No state-level directed-trip graphs exist; combined graph was not exported."
+}
+
+
+*============================================================
+* 2. Catch-total graphs separately for each state
+*============================================================
+local catch_domains ///
+    bsb_catch ///
+    sf_catch ///
+    scup_catch ///
+    bsb_harvest ///
+    sf_harvest ///
+    scup_harvest
+
+foreach s of local states {
+
+    local catch_graphs ""
+
+    foreach d of local catch_domains {
+
+        local graph_name `d'_`s'
+
+        capture graph describe `graph_name'
+
+        if !_rc {
+            local catch_graphs `catch_graphs' `graph_name'
+        }
+        else {
+            display as text ///
+                "Graph `graph_name' does not exist; excluding it from the `s' catch-total graph."
+        }
+    }
+
+    if `"`catch_graphs'"' != "" {
+
+        grc1leg `catch_graphs', ///
+            cols(3) ///
+            title("Catch totals, MRIP vs. simulated estimates `s'", ///
+                  size(small)) ///
+            name(catch_total_state_`s', replace)
+
+        graph export ///
+            "$figure_cd/catch_total_state_MRIP_simulated_`s'.png", ///
+            as(png) replace
+    }
+    else {
+        display as error ///
+            "No catch-total graphs exist for `s'; no combined graph was exported."
+    }
+}
 	
 
 
@@ -629,7 +762,6 @@ save "$misc_data_cd\simulated_catch_totals.dta", replace
 
 
 * Remove extraneous columns from the catch-per-trip data
-local states 
 mata: mata clear
 clear
 
@@ -638,12 +770,12 @@ local statez "MA RI CT NY NJ DE MD VA NC"
 foreach s of local statez {
 	forvalues i = 1/$ndraws {
        
-	   u "$iterative_input_data_cd\archive\calib_catch_draws\calib_catch_draws_`s'_`i'.dta", clear
-	   drop day month wave day_i sf_keep_sim sf_rel_sim bsb_keep_sim bsb_rel_sim scup_keep_sim scup_rel_sim state
-	   order draw mode date date_num tripid catch_draw sf bsb scup cost age tot 
+	   u "$calib_catch_data_cd\calib_catch_draws_`s'_`i'.dta", clear
+	   drop  month wave  sf_keep_sim sf_rel_sim bsb_keep_sim bsb_rel_sim scup_keep_sim scup_rel_sim state
+	   order draw mode date  tripid catch_draw sf bsb scup cost age tot 
 	   compress
 	   
-	   save  "$iterative_input_data_cd\archive\calib_catch_draws\calib_catch_draws_`s'_`i'.dta", replace
+	   save  "$calib_catch_data_cd\calib_catch_draws_`s'_`i'.dta", replace
 		}
 }	
 
