@@ -1,4 +1,4 @@
-
+/*
 
 clear
 mata: mata clear
@@ -116,26 +116,16 @@ drop check sumoptout nset
 
 
 *Model estimation
-egen rowmiss3=rowmiss(age avidity)
-clogit chosen one if rowmiss3==0 & a1_none==0 & protest!=1 ,  group(identifier) 
-local l0 = e(ll) 
-di `l0'
-
-eststo m3: mixlogit chosen cost age avidity if a1_none==0 & protest!=1, group(identifier) id(qtid) rand(sqrt_SFkept sqrt_SFrelease sqrt_BSBkept sqrt_BSBrelease sqrt_SF_BSB_keep sqrt_scup_catch constant) 
-local ll = e(ll) 
-di `ll'
-
-di 1-`ll'/`l0'
 
 encode trip, gen(option)
 cmset qtid question option
 eststo m0_SFSBSB: cmxtmixlogit chosen cost age avidity if a1_none==0 & protest!=1 , ///
 					random(sqrt_SFkept sqrt_SFrelease sqrt_BSBkept sqrt_BSBrelease sqrt_SF_BSB_keep sqrt_scup_catch constant) noconstant
 					
-estimates save "$input_data_cd\m0_SFSBSB.ster", replace 					
+estimates save "$misc_data_cd\m0_SFSBSB.ster", replace 					
+*/
 
-
-estimates use "$input_data_cd\m0_SFSBSB.ster"
+estimates use "$misc_data_cd\m0_SFSBSB.ster"
 local cnames : colnames e(b)
 display "`cnames'"
 
@@ -189,4 +179,4 @@ mat iid_err=J(`K',1,0)
 clear
 dsconcat $params
 
-save  "$input_data_cd\preference_params.dta", replace
+save  "$misc_data_cd\preference_params.dta", replace
