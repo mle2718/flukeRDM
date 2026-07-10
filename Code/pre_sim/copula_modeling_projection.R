@@ -36,7 +36,7 @@ conflicts_prefer(dplyr::summarise)
 
 # ---- controls ----
 n_sim   <- 5000
-n_draws <- 125
+n_draws <- 3
 n_reps  <- 200
 
 statez <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")

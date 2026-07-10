@@ -333,13 +333,15 @@ foreach s of local regions {
 
 
         preserve
-            u  using "$calib_catch_data_cd\calib_catch_draws_raw_`s'_`i'.dta", clear firstrow
+            u  "$calib_catch_data_cd\calib_catch_draws_raw_`s'_`i'.dta", clear 
             split my_dom_id_string, parse(_)
             *rename my_dom_id_string1 state
             rename my_dom_id_string2 wave
             rename my_dom_id_string3 mode
             drop my_dom_id_string4 
             keep my_dom_id_string state wave mode  sf_* bsb_* scup_*
+			ds my_dom_id_string state wave mode, not
+			renvarlab `r(varlist)', postfix(_sim)
             tempfile excelpool
             save `excelpool', replace
         restore

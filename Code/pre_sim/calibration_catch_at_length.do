@@ -60,7 +60,7 @@ tempfile nj_vas
 save `nj_vas', replace
 
 * RI VAS
-imimport excel "$misc_data_cd/sfl_scu_bsb_24_25_RI_release.xlsx", clear first 
+import excel "$misc_data_cd/sfl_scu_bsb_24_25_RI_release.xlsx", clear first 
 renvarlab, lower
 tab common
 gen species="sf" if common== "FLOUNDER, SUMMER"
