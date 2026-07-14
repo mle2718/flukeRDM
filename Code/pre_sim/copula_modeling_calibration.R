@@ -36,11 +36,10 @@ conflicts_prefer(dplyr::summarise)
 
 # ---- controls ----
 n_sim   <- 5000
-n_draws <- 125
+n_draws <- 3
 n_reps  <- 200
 
 statez <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
-statez <- c("NC")
 
 input_file <- "E:/Lou_projects/flukeRDM/2028_mgt_cycle/miscellaneous/baseline_mrip_catch_processed.xlsx"
 
