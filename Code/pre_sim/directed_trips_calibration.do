@@ -657,7 +657,6 @@ export delimited using "$misc_data_cd\proj_year_calendar_adjustments_`s'.csv",  
 * Compute totals estimates to compare with calibration output
 
 ** Estimates by state and mode
-cd $misc_data_cd
 
 clear
 
