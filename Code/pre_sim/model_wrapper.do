@@ -287,6 +287,8 @@ if `validate_catch_per_trip1' | `validate_catch_per_trip_proj1' | `validate_catc
 
 **************************************************Model calibration ************************************************** 
 
+di "the working directory is "
+pwd
 // 0) Pull Assessment data from google.
 
 /* This code requires you to mount your google drive to D on your computer */
@@ -313,21 +315,21 @@ if `push_NAA_to_gdrive' {
 	
 
 // 1) Pull the MRIP data
-
+pwd
 if `processMRIP' {
 	di "Processing MRIP data"
 	do "$input_code_cd\MRIP_column_cases.do"
 	di "MRIP data processed"
 }
-
+pwd
 if `assemblemriplists' {
 	di "Assembling Lists of MRIP files"
 	do "$input_code_cd\MRIP_lists.do"
 	di "Lists of MRIP files assembled"
 }
-
+pwd
 /* Break code if triplist global is empty. */
-assert `'"${triplist}"'!=""
+assert `"${triplist}"'!=""
 
 	
 // 2) Estimate directed trips during calibration period
@@ -341,7 +343,7 @@ if `estimate_dtrips' {
 	di "Directed trips Estimated"
 
 }
-
+pwd
 // 3) Create distirbutions of costs per trip across strata
 
 if `costs_per_trip' {
@@ -350,7 +352,7 @@ if `costs_per_trip' {
 	di "distributions of cost per trip Done"
 
 }
-
+pwd
 // 4) Create draw of angler preference parameters - only needs to be run once
 if `draw_angler_preferences' {
 	di "Creating draws of angler preference parameters"
@@ -360,7 +362,8 @@ if `draw_angler_preferences' {
 }
 * 5) Estimate catch-per-trip at the month and mode level
 		// a) compute mean catch-per-trip and standard error, imputing standard errors from historcial data when they are missing. 
-
+	di "Working directory is:"
+	pwd
 * === BEGIN REFACTOR VALIDATION HARNESS (catch_per_trip calibration part1) ===
 if `validate_catch_per_trip1' {
 	di "REFVAL cal_part1: running _refactored first, then the original, then comparing"
@@ -386,11 +389,14 @@ if `validate_catch_per_trip1' {
 	do "$input_code_cd\catch_per_trip_calibration_part1_refactored.do"
 	refval_capture , part(cal_part1) side(new) ts(`refval_ts') files(`refval_p1_files') copyfiles(`refval_p1_files')
 
+	di "Working directory is:"
+	pwd
 	set rngstate `refval_rng0'
 	set sortrngstate `refval_sort0'
 	do "$input_code_cd\catch_per_trip_calibration_part1.do"
 	refval_capture , part(cal_part1) side(old) ts(`refval_ts') files(`refval_p1_files') copyfiles(`refval_p1_files')
-
+	di "Working directory is:"
+	pwd
 	refval_compare , part(cal_part1) ts(`refval_ts') verbose(`refval_cf_verbose') ///
 		newlabel(catch_per_trip_calibration_part1_refactored.do) oldlabel(catch_per_trip_calibration_part1.do)
 	local refval_pass = r(pass)
@@ -406,10 +412,15 @@ if `catch_per_trip1' {
 	di "Estimate catch-per-trip at the month and mode level"
 	do "$input_code_cd\catch_per_trip_calibration_part1.do"
 	di "catch-per-trip at the month and mode level Done"
+		di "Working directory is:"
+	pwd
 
 }
 
-		// b) use copula model (in R) to simulate harvest and discards per-trip
+	di "Working directory is:"
+	pwd	
+	
+	// b) use copula model (in R) to simulate harvest and discards per-trip
 if `copula_in_R' {
 
     	di "Estimating copula in R. This takes a while and will look like it's hung"
