@@ -375,7 +375,7 @@ if `copula_in_R' {
 
     	di "Estimating copula in R. This takes a while and will look like it's hung"
 
-		rscript using "$input_code_cd\copula_modeling_calibration.R"
+		rscript using "$input_code_cd\copula_modeling_calibration.R", args($ndraws)
 	  	di "Copula in R estimated"
 }
 
@@ -424,7 +424,7 @@ if `catch_per_trip_project'{
 		 do "$input_code_cd\catch_per_trip_projection_part1.do"
 
 		//b) use copula model (in R) to simulate harvest and discards per-trip
-		rscript using "$input_code_cd\copula_modeling_projection.R"
+		rscript using "$input_code_cd\copula_modeling_projection.R",args($ndraws)
 		
 		//c) generate estimates of simulated total harvest based on random draws of catch-per-trip and directed trips
 		do "$input_code_cd\catch_per_trip_projection_part2.do"
