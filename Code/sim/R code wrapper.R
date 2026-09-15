@@ -27,12 +27,8 @@
 #               predict_rec_catch_final.R. 
 #                 - n_simulations is picked up from Stata's ndraws global
 #               Sources Code/helpers/developer_setup.R - but does not yet take advantage of it
-# Pipeline:     Entry point 2 of 3. NOTHING CALLS THIS SCRIPT. Unlike
-#               GroundfishRDM, whose Stata wrapper invokes its R wrapper as a
-#               final gated step, flukeRDM's model_wrapper.do never calls this
-#               file. The operator must know to run model_wrapper.do first and
-#               then this, by hand, in that order. Downstream, Run_Model.R is
-#               a third independent entry point.
+# Pipeline:     Called by model_wrapper.do in the final step, 
+#               Downstream, Run_Model.R is a second independent entry point.
 # Dev paths:    12 hardcoded absolute paths to a developer's local machine
 #               (C:\ or E:\), at lines 129-130, 211-212, 215-216, 297, 301,
 #               335 and 339; plus 2 more in commented-out lines (150, 170).
