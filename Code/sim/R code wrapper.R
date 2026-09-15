@@ -33,7 +33,7 @@
 #               (C:\ or E:\), at lines 129-130, 211-212, 215-216, 297, 301,
 #               335 and 339; plus 2 more in commented-out lines (150, 170).
 #
-# Configuration mismatches to be aware of (documented, not changed):
+# Configuration mismatches to be aware of:
 #   - n_draws (50) is assigned and never used in this file.
 #   - input_data_cd and iterative_input_data_cd are absolute paths on two
 #     different developers' machines. Several loops below then ignore
