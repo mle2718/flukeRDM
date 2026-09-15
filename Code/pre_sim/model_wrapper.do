@@ -418,7 +418,7 @@ if `catch_per_trip_project_part1'{
 		 do "$input_code_cd\catch_per_trip_projection_part1.do"
 }
 
-if `copula2_in_R'
+if `copula2_in_R'{
 		//b) use copula model (in R) to simulate harvest and discards per-trip
     	di "Estimating copula in R. This takes a while and will look like it's hung"
 
