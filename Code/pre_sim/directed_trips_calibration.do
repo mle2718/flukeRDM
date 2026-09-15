@@ -664,7 +664,6 @@ noisily di "proj_year_calendar_adjustments_`s'.csv saved "
 * Compute totals estimates to compare with calibration output
 
 ** Estimates by state and mode
-cd $misc_data_cd
 
 clear
 

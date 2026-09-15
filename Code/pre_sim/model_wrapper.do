@@ -226,7 +226,7 @@ loc pull_MRIP= 1			 		// Pull MRIP data
 loc processMRIP = 0		 			// deal with casing MRIP data
 loc assemblemriplists = 0		 	// deal with casing MRIP data
 loc estimate_dtrips = 1				// Estimate Directed Trips 
-loc costs_per_trip = 1			// Create Distributions of costs per trip (run 1x)
+loc costs_per_trip = 0			// Create Distributions of costs per trip (run 1x)
 loc draw_angler_preferences = 1		// Create draw of angler preference parameters (run 1x)
 loc catch_per_trip1 = 1				// Part 1 of catch per trip
 loc copula_in_R = 1					// Copula model in R
@@ -257,10 +257,10 @@ loc run_calibration =0 				// Run calibration /sim/R wrapper.R
    pipeline finish in a fraction of the time  
    */
 // Prototyping
-local proto = 0
+local proto = 1
 
 if `proto' {
-	global ndraws 3
+	global ndraws 20
 }
 
 **************************************************Model calibration ************************************************** 
@@ -325,7 +325,7 @@ if `assemblemriplists' {
 }
 
 /* Break code if triplist global is empty. */
-assert "${triplist}"!=""
+assert `"${triplist}"'!=""
 
 	
 // 2) Estimate directed trips during calibration period
