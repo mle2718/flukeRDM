@@ -249,7 +249,7 @@ loc catch_per_trip_project=1       // Generate projection-year catch-per trip
 
 loc prep_NAA_for_dashboard = 1		// Pull Assessment data
 loc push_NAA_to_gdrive =1 			// Convert Assessment data to Rds, reshape to long, and push to googledrive
-loc run_calibration =0 				// Run calibration /sim/R wrapper.R
+loc run_calibration =0 				// Run calibration /sim/R wrapper.R  Will Not run until the hardcoded paths are fixed.
 
 
 /* Prototype mode will overrides
@@ -436,7 +436,7 @@ if `catch_per_trip_project'{
 display "model_wrapper.do: Stata pre-simulation stage complete. NEXT STEP IS MANUAL - run Code/sim/'R code wrapper.R' to perform the R calibration; this wrapper does not call it."
 // 10) Run the calibration routine in R, export files to Google Drive
 
-/* not tested 8/25/2026*/
+/* need to fix hardcoded paths*/
 
 if `run_calibration'{
 		di "Running calibration routine in R"
