@@ -111,7 +111,8 @@ tempfile basefile
 save `basefile', replace
 
 levelsof state, local(sts) clean
-foreach s of local sts{
+quietly foreach s of local sts{
+	noisily di "Running state `s'"
 u `basefile', clear
 
 keep if inlist(state,"`s'")
@@ -128,7 +129,10 @@ replace dom_id="1" if strmatch(common, "scup")
 replace dom_id="1" if strmatch(prim1_common, "scup") 
 
 * keep only NC north based on county delineation from Tracey 
-replace dom_id="2"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
+* replace dom_id="2"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
+
+* all stock_region_calc=="SOUTH" is south of Hatteras
+replace dom_id="2"  if stock_region_calc=="SOUTH"
 
 
 tostring wave, gen(w2)
@@ -140,10 +144,11 @@ gen day1=substr(date, 7, 2)
 drop if inlist(day1,"9x", "xx") 
 destring day1, replace
 
+/* handled in get_mrip_oracle
 gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
 replace mode1="pr" if inlist(mode_fx, "7")
 replace mode1="fh" if inlist(mode_fx, "4", "5")
-
+*/
 
 // Deal with Group Catch: 
 	// This bit of code generates a flag for each year-strat_id psu_id leader. (equal to the lowest of the dom_id)
@@ -490,44 +495,44 @@ forv d = 1/$ndraws{
 
 	tempfile dtrips`d'
 	save `dtrips`d'', replace 
-	
-clear 
-set obs 2
-gen day=$calibration_start_date if _n==1
-replace day=$calibration_end_date if _n==2
-format day %td
-drop if day==$leap_yr_days
-tsset day
-tsfill, full
-gen day_i=_n
+		
+	clear 
+	set obs 2
+	gen day=$calibration_start_date if _n==1
+	replace day=$calibration_end_date if _n==2
+	format day %td
+	drop if day==$leap_yr_days
+	tsset day
+	tsfill, full
+	gen day_i=_n
 
-gen dow = dow(day)  //0=Sunday,...,6=Saturday
+	gen dow = dow(day)  //0=Sunday,...,6=Saturday
 
-gen kod="we" if inlist(dow, 5, 6, 0)
-replace kod="wd" if inlist(dow, 1, 2, 3, 4)
+	gen kod="we" if inlist(dow, 5, 6, 0)
+	replace kod="wd" if inlist(dow, 1, 2, 3, 4)
 
-//add the 12 federal holidays as weekends	
-replace kod="we" if $fed_holidays 
+	//add the 12 federal holidays as weekends	
+	replace kod="we" if $fed_holidays 
 
-gen year=year(day)				
-gen month=month(day)				
-gen month2 = string(month,"%02.0f")
-tostring year, replace
-drop month
-rename month2 month
-gen mode="sh"
-expand 2, gen(dup)
-replace mode="pr" if dup==1
-drop dup
-expand 2 if mode=="pr", gen(dup)
-replace mode="fh" if dup==1
-drop dup
+	gen year=year(day)				
+	gen month=month(day)				
+	gen month2 = string(month,"%02.0f")
+	tostring year, replace
+	drop month
+	rename month2 month
+	gen mode="sh"
+	expand 2, gen(dup)
+	replace mode="pr" if dup==1
+	drop dup
+	expand 2 if mode=="pr", gen(dup)
+	replace mode="fh" if dup==1
+	drop dup
 
-merge m:1  kod month mode using `dtrips`d''
-*gen draw=`d'
-tempfile drawz2`d'
-save `drawz2`d'', replace
-global drawz2 "$drawz2 "`drawz2`d''" " 
+	merge m:1  kod month mode using `dtrips`d''
+	*gen draw=`d'
+	tempfile drawz2`d'
+	save `drawz2`d'', replace
+	global drawz2 "$drawz2 "`drawz2`d''" " 
 
 }
 clear
@@ -602,28 +607,28 @@ global drawz
 levelsof draw, local(drawss)
 foreach d of local drawss{
 
-u `base', clear
+	u `base', clear
 
-keep if draw==`d'
-gen domain_y1=mode+"_"+month_y1+"_"+kod
-gen domain_y2=mode+"_"+month_y2+"_"+kod_y2
+	keep if draw==`d'
+	gen domain_y1=mode+"_"+month_y1+"_"+kod
+	gen domain_y2=mode+"_"+month_y2+"_"+kod_y2
 
-gen dtrip_y2=dtrip if domain_y1==domain_y2 
+	gen dtrip_y2=dtrip if domain_y1==domain_y2 
 
-levelsof domain_y2 if dtrip_y2==., local(domains)
-foreach p of local domains{
-	su dtrip if domain_y1=="`p'"
-	return list
-	replace dtrip_y2=`r(mean)' if domain_y2=="`p'" & dtrip_y2==.
-	
-}
-collapse (sum) dtrip dtrip_y2, by(month mode)
-gen expansion_factor = dtrip_y2/dtrip
-gen draw=`d'
+	levelsof domain_y2 if dtrip_y2==., local(domains)
+		foreach p of local domains{
+			su dtrip if domain_y1=="`p'"
+			return list
+			replace dtrip_y2=`r(mean)' if domain_y2=="`p'" & dtrip_y2==.
+			
+		}
+	collapse (sum) dtrip dtrip_y2, by(month mode)
+	gen expansion_factor = dtrip_y2/dtrip
+	gen draw=`d'
 
-tempfile drawz`d'
-save `drawz`d'', replace
-global drawz "$drawz "`drawz`d''" " 
+	tempfile drawz`d'
+	save `drawz`d'', replace
+	global drawz "$drawz "`drawz`d''" " 
 }
 
 dsconcat $drawz
@@ -646,6 +651,8 @@ drop check
 compress
 
 export delimited using "$misc_data_cd\proj_year_calendar_adjustments_`s'.csv",  replace 
+
+noisily di "proj_year_calendar_adjustments_`s'.csv saved "
 }
 
 
@@ -714,7 +721,10 @@ replace dom_id="1" if strmatch(common, "scup")
 replace dom_id="1" if strmatch(prim1_common, "scup") 
 
 * keep only NC north based on county delineation from Tracey 
-replace dom_id="2"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
+* replace dom_id="2"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
+
+* all stock_region_calc=="SOUTH" is south of Hatteras
+replace dom_id="2"  if stock_region_calc=="SOUTH"
 
 tostring wave, gen(w2)
 tostring year, gen(year2)
@@ -725,10 +735,11 @@ gen day1=substr(date, 7, 2)
 drop if inlist(day1,"9x", "xx") 
 destring day1, replace
 
+/* handled in get_mrip_oracle
 gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
 replace mode1="pr" if inlist(mode_fx, "7")
 replace mode1="fh" if inlist(mode_fx, "4", "5")
-
+*/
 
 // Deal with Group Catch: 
 	// This bit of code generates a flag for each year-strat_id psu_id leader. (equal to the lowest of the dom_id)
@@ -855,7 +866,10 @@ replace dom_id="1" if strmatch(common, "scup")
 replace dom_id="1" if strmatch(prim1_common, "scup") 
 
 * keep only NC north based on county delineation from Tracey 
-replace dom_id="2"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
+* replace dom_id="2"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
+
+* all stock_region_calc=="SOUTH" is south of Hatteras
+replace dom_id="2"  if stock_region_calc=="SOUTH"
 
 
 tostring wave, gen(w2)
@@ -866,11 +880,11 @@ gen month1=substr(date, 5, 2)
 gen day1=substr(date, 7, 2)
 drop if inlist(day1,"9x", "xx") 
 destring day1, replace
-
+/* handled in get_mrip_oracle)
 gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
 replace mode1="pr" if inlist(mode_fx, "7")
 replace mode1="fh" if inlist(mode_fx, "4", "5")
-
+*/
 
 // Deal with Group Catch: 
 	// This bit of code generates a flag for each year-strat_id psu_id leader. (equal to the lowest of the dom_id)
@@ -996,7 +1010,10 @@ replace dom_id="1" if strmatch(common, "scup")
 replace dom_id="1" if strmatch(prim1_common, "scup") 
 
 * keep only NC north based on county delineation from Tracey 
-replace dom_id="2"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
+* replace dom_id="2"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
+
+* all stock_region_calc=="SOUTH" is south of Hatteras
+replace dom_id="2"  if stock_region_calc=="SOUTH"
 
 tostring wave, gen(w2)
 tostring year, gen(year2)
@@ -1007,10 +1024,11 @@ gen day1=substr(date, 7, 2)
 drop if inlist(day1,"9x", "xx") 
 destring day1, replace
 
+/* handled in get mrip_oracle
 gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
 replace mode1="pr" if inlist(mode_fx, "7")
 replace mode1="fh" if inlist(mode_fx, "4", "5")
-
+*/
 
 // Deal with Group Catch: 
 	// This bit of code generates a flag for each year-strat_id psu_id leader. (equal to the lowest of the dom_id)
@@ -1141,7 +1159,10 @@ replace dom_id="1" if strmatch(common, "scup")
 replace dom_id="1" if strmatch(prim1_common, "scup") 
 
 * keep only NC north based on county delineation from Tracey 
-replace dom_id="2"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
+* replace dom_id="2"  if state=="NC" & !inlist(cnty, 15, 29, 41, 53, 55, 139, 143, 177, 187)
+
+* all stock_region_calc=="SOUTH" is south of Hatteras
+replace dom_id="2"  if stock_region_calc=="SOUTH"
 
 
 tostring wave, gen(w2)
@@ -1152,11 +1173,11 @@ gen month1=substr(date, 5, 2)
 gen day1=substr(date, 7, 2)
 drop if inlist(day1,"9x", "xx") 
 destring day1, replace
-
+/* handled in get_mrip_oracle
 gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
 replace mode1="pr" if inlist(mode_fx, "7")
 replace mode1="fh" if inlist(mode_fx, "4", "5")
-
+*/
 
 // Deal with Group Catch: 
 	// This bit of code generates a flag for each year-strat_id psu_id leader. (equal to the lowest of the dom_id)
