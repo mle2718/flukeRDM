@@ -24,9 +24,9 @@
 #               .dta and .csv files converted below are its output. Sources
 #               calibrate_rec_catch0_optimized.R, calibration_routine_final.R
 #               (which itself sources calibrate_rec_catch1_final.R) and
-#               predict_rec_catch_final.R. Does NOT source
-#               Code/helpers/developer_setup.R - paths are set literally
-#               below instead.
+#               predict_rec_catch_final.R. 
+#                 - n_simulations is picked up from Stata's ndraws global
+#               Sources Code/helpers/developer_setup.R - but does not yet take advantage of it
 # Pipeline:     Entry point 2 of 3. NOTHING CALLS THIS SCRIPT. Unlike
 #               GroundfishRDM, whose Stata wrapper invokes its R wrapper as a
 #               final gated step, flukeRDM's model_wrapper.do never calls this
@@ -38,10 +38,6 @@
 #               335 and 339; plus 2 more in commented-out lines (150, 170).
 #
 # Configuration mismatches to be aware of (documented, not changed):
-#   - n_simulations is 10 here. The comment above it describes the intended
-#     125-draw calibration / 100-draw production design, and Stata's $ndraws
-#     is 100 (or 3 when proto=1). None of these are linked programmatically;
-#     changing one does not change the others.
 #   - n_draws (50) is assigned and never used in this file.
 #   - input_data_cd and iterative_input_data_cd are absolute paths on two
 #     different developers' machines. Several loops below then ignore
@@ -128,6 +124,11 @@ parse_date_any <- function(x) {
 
 
 #Set up R globals for input/output data and code scripts
+here::i_am("Code/sim/R code wrapper.R")
+source(here("Code", "helpers", "developer_setup.R"))
+source(here("Code","helpers","naa_helpers.R"))
+
+
 code_cd=here("Code", "sim")
 input_data_cd="C:/Users/andrew.carr-harris/Desktop/MRIP_data_2025"
 iterative_input_data_cd="E:/Lou_projects/flukeRDM/flukeRDM_iterative_data"
