@@ -532,7 +532,8 @@ global fitted_sizes
 
 levelsof domain, local(regs)
 
-foreach r of local regs {
+quietly foreach r of local regs {
+	noisily display "processing regulations `r'"
     use `new', clear
     keep if domain=="`r'"
     di "`r'"
