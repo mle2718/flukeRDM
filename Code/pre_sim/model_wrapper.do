@@ -286,7 +286,6 @@ if `push_NAA_to_gdrive' {
 // 0) Pull MRIP data from Oracle (takes a while).
 
 /* Paths to the tidied MRIP extracts (written by tidyup_mrip_data_fromR.do). */
-	global catchlist "$misc_data_cd/mrip_catch.dta"	
 	global triplist  "$misc_data_cd/mrip_trip.dta"
 	global b2list  "$misc_data_cd/mrip_size_b2.dta"
 	global sizelist  "$misc_data_cd/mrip_size.dta"
