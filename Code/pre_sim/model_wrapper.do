@@ -22,12 +22,10 @@
 			   Google Drive.  If you have not already connected to google drive, 
 			   run "Code/helpers/googledrivesetup.R".  If you do not the
 			   the R scripts that use googledrive will fail ungracefully.
- Pipeline:     Entry point 1 of 3, invoked as
+ Pipeline:     Entry point 1 of 2, invoked as
                    do Code/pre_sim/model_wrapper.do
-               Runs 17 scripts across steps 0-9. It does NOT chain to the R
-               stage - see the note on step 10 below - so an operator must
-               afterwards run "Code/sim/R code wrapper.R" by hand, and later
-               Run_Model.R for projections.
+               Runs 17 scripts across steps 0-9. Chained to the R
+               stage. Must later Run Run_Model.R for projections.
 
  THINGS THAT MUST BE UPDATED EVERY YEAR (all in the "Adjust globals" block):
    $yr_wvs, $yearlist, $wavelist       which MRIP files to read
@@ -50,20 +48,11 @@
    Rpush_to_gdrive        = 0   the script it would call,
                                 rdb_catch_per_trip_to_drive.R, EXISTS but was
                                 never wired up; self-labeled written-not-tested
-   angler_demogs          = 1   ON by default with NO explanatory comment.
-                                GroundfishRDM has an identically named toggle
-                                that does gate a script; here nothing runs.
-                                This is the one worth resolving - a reader
-                                would reasonably assume demographics are being
-                                added when they are not. (Angler demographics
+   angler_demogs          = 0   (Angler demographics
                                 ARE built, but by
                                 calibration_catch_per_trip_part2.do, which
                                 this toggle does not control.)
 
- PROTOTYPE MODE IS ON BY DEFAULT. `proto' = 1 overwrites $ndraws from 100 to
- 3. Running this file exactly as committed therefore produces a 3-draw test
- run, not a production run. GroundfishRDM defaults the same toggle to 0. Set
- proto = 0 for a real run.
 *******************************************************************************/
 
 /**** SFSBSB RDM code wrapper ****/
@@ -117,12 +106,27 @@ set varabbrev on
 
 **Adjust globals**
 
+global mrip_cal_type "cal_2018"
+
 * These need to be changed every year 
 
-* year-waves of MRIP data. 
-global yr_wvs 20221 20222 20223 20224 20225 20226 20231 20232 20233 20234 20235 20236  20241 20242 20243 20244 20245  20246 20251 20252 20253 20254 20255 20256
-global yearlist 2022 2023 2024 2025
+/* First and last year of MRIP data.*/
+/* used by:
+tidyup_mrip_data_fromR.do*/
+
+global first_mrip_year 2022
+global last_mrip_year 2025
+numlist "$first_mrip_year/$last_mrip_year"
+
+global yearlist  `r(numlist)'
 global wavelist 1 2 3 4 5 6
+
+
+* year-waves of MRIP data. 
+global yr_wvs 20221 20222 20223 20224 20225 20226  ///
+			  20231 20232 20233 20234 20235 20236  ///
+			  20241 20242 20243 20244 20245 20246  ///
+			  20251 20252 20253 20254 20255 20256
 
 global calibration_year "(year==2024 & inlist(wave, 1, 2, 3, 4, 5, 6))"
 global calibration_year_num 2024
@@ -164,7 +168,7 @@ global fed_holidays_y2 "inlist(day_y2, td(01jan2026), td(19jan2026), td(16feb202
 global leap_yr_days "td(29feb2024)" 
 
 * Number of model iterations
-global ndraws 100
+global ndraws 150
 
 * set years of which to pull the NEFSC trawl survey data
 global NEFSC_svy_yrs "inlist(year,2024, 2023, 2022)"
@@ -210,44 +214,46 @@ global seed 03211990
 **********************************************************************
 
 // Control which modules to run (set to 0 to skip)
-loc pull_assessment = 1		 		// Pull Assessment data
-loc processMRIP = 1		 			// deal with casing MRIP data
-loc assemblemriplists = 1		 	// deal with casing MRIP data
-
+loc pull_assessment = 0		 		// Pull Assessment data
+loc pull_MRIP= 1			 		// Pull MRIP data
+loc processMRIP = 0		 			// deal with casing MRIP data
+loc assemblemriplists = 0		 	// deal with casing MRIP data
 loc estimate_dtrips = 1				// Estimate Directed Trips 
-loc costs_per_trip = 1			// Create Distributions of costs per trip (run 1x)
+loc costs_per_trip = 0			// Create Distributions of costs per trip (run 1x)
 loc draw_angler_preferences = 1		// Create draw of angler preference parameters (run 1x)
 loc catch_per_trip1 = 1				// Part 1 of catch per trip
-loc copula_in_R = 1					// Copula model in R
+loc copula1_in_R = 0				// Copula model in R
 loc catch_per_trip2 = 1				// Part 2 of catch per trip
 loc compare_calibration_MRIP = 1	// compare calibration output to MRIP
 /* The next three toggles gate NOTHING - there is no matching `if' block for
-   any of them below. See the header for details. angler_demogs in particular
-   is ON and undocumented; demographics are in fact produced by
-   calibration_catch_per_trip_part2.do, which this toggle does not control. */
+   any of them below. See the header for details. */
 loc prep_cpt_for_dashboard= 0		// prep data for dashboard NOT IN WRAPPER. NOT WRITTEN, See Groundfish repo
 loc Rpush_to_gdrive =0 				// Push to google drive in R NOT IN WRAPPER. WRITTEN but not tested
-loc angler_demogs	=1				// add additonal angler demographics
+loc angler_demogs	=0				// add additonal angler demographics
+
+
 loc generate_baseline=1				// Generate baseline-year catch-at-length
 loc catch_at_length_project=1		// Generate projection-year catch-at-length
-/* Unlike the toggles above, this one is a META-TOGGLE: it gates four scripts
-   as a single unit (step 9a-9d). They cannot be run or skipped individually
-   without editing the block. GroundfishRDM toggles the equivalent scripts
-   separately. */
-loc catch_per_trip_project=1       // Generate projection-year catch-per trip
+loc catch_per_trip_project_part1=1       // Part 1 of PROJECTED catch per trip
+loc copula2_in_R=0      			 // Projection part of copula in R 
+loc catch_per_trip_project_part2=1       // Part 2 of PROJECTED catch per trip
+loc compare_project_to_MRIP=1       // Compare projection data to MRIP
 
 loc prep_NAA_for_dashboard = 1		// Pull Assessment data
 loc push_NAA_to_gdrive =1 			// Convert Assessment data to Rds, reshape to long, and push to googledrive
+loc run_calibration =0 				// Run calibration /sim/R wrapper.R  Will Not run until the hardcoded paths are fixed.
+	
+	
+	
+	
 
 
-/* Prototype mode. ON as committed - see the header. This silently overrides
-   the $ndraws 100 set above with 3, which makes a full pass through the
-   pipeline finish in a fraction of the time but produces results too noisy to
-   use. Note also that the R side does not read $ndraws at all: "R code wrapper.R"
-   sets its own n_simulations (currently 10), so changing proto here does not
-   keep the two halves of the pipeline in step. */
+/* Prototype mode will overrides
+   the $ndraws =150 to ndraws=3, which makes a full pass through the
+   pipeline finish in a fraction of the time  
+   */
 // Prototyping
-local proto = 0
+local proto = 1
 
 if `proto' {
 	global ndraws 3
@@ -277,10 +283,30 @@ if `push_NAA_to_gdrive' {
 
 	}
 
+// 0) Pull MRIP data from Oracle (takes a while).
+
+/* Paths to the tidied MRIP extracts (written by tidyup_mrip_data_fromR.do). */
+	global catchlist "${misc_data_cd}\mrip_catch.dta"	
+	global triplist  "${misc_data_cd}\mrip_trip.dta"
+	global b2list  "${misc_data_cd}\mrip_size_b2.dta"
+	global sizelist  "${misc_data_cd}\mrip_size.dta"
+
+	
+	if `pull_MRIP' {
+  	di "Pulling MRIP data from oracle"
+		rscript using "$input_code_cd\get_mrip_oracle.R", args($mrip_cal_type $first_mrip_year $last_mrip_year)
+    di "Oracle Data Pull Finished"
+
+  	di "Tidying up MRIP data"
+  	do "$input_code_cd\tidyup_mrip_data_fromR.do"
+  	di "Tidyup finished"
+
+}
+
 	
 	
 
-// 1) Pull the MRIP data
+// 1) Process MRIP data
 
 if `processMRIP' {
 	di "Processing MRIP data"
@@ -295,7 +321,7 @@ if `assemblemriplists' {
 }
 
 /* Break code if triplist global is empty. */
-assert "${triplist}"!=""
+assert `"${triplist}"'!=""
 
 	
 // 2) Estimate directed trips during calibration period
@@ -303,6 +329,10 @@ assert "${triplist}"!=""
 		// THIS NEEDS TO BE ADJUSTED EVERY YEAR. 
 
 if `estimate_dtrips' {
+  di "Compiling Aggregate Effort"
+		rscript using "$input_code_cd\get_mrip_trips.R"
+
+	di "Estimating Directed trips"
 
 	di "Estimating Directed trips"
     do "$input_code_cd\directed_trips_calibration.do"
@@ -337,11 +367,11 @@ if `catch_per_trip1' {
 }
 
 		// b) use copula model (in R) to simulate harvest and discards per-trip
-if `copula_in_R' {
+if `copula1_in_R' {
 
     	di "Estimating copula in R. This takes a while and will look like it's hung"
 
-		rscript using "$input_code_cd\copula_modeling_calibration.R"
+		rscript using "$input_code_cd\copula_modeling_calibration.R", args($ndraws)
 	  	di "Copula in R estimated"
 }
 
@@ -379,39 +409,48 @@ if `catch_at_length_project'{
 		di "Projection year catch-at-length generated " 
 
 }
-	
-	
-if `catch_per_trip_project'{
+if `catch_per_trip_project_part1'{
 
 // 9)  Estimate projected catch-per-trips at the month and mode level
 		 *use MRIP catch data from the last THREE full years. 
 		 
 		//a) compute mean catch-per-trip and standard error, imputing standard errors from historcial data when they are missing. 
 		 do "$input_code_cd\catch_per_trip_projection_part1.do"
+}
 
+if `copula2_in_R'{
 		//b) use copula model (in R) to simulate harvest and discards per-trip
-		rscript using "$input_code_cd\copula_modeling_projection.R"
-		
+    	di "Estimating copula in R. This takes a while and will look like it's hung"
+
+		rscript using "$input_code_cd\copula_modeling_projection.R",args($ndraws)
+ 
+        di "Copula in R estimated"
+}
+
+if `catch_per_trip_project_part2'{
+
 		//c) generate estimates of simulated total harvest based on random draws of catch-per-trip and directed trips
 		do "$input_code_cd\catch_per_trip_projection_part2.do"
-		
+}
+if `compare_project_to_MRIP'{
+
 		//d) compare estimates of mean projected catch to MRIP data to ensure consistency and remove extraneous columns from projected catch draw data
 		do "$input_code_cd\compare_projection_data_to_MRIP.do"
 }
 
-// 10) Run the projection loop in R
-
-/* Step 10 is a heading with no code beneath it. This is the wrapper-chaining
-   gap: GroundfishRDM's Stata wrapper calls its R wrapper here as a final
-   gated step, so the two halves cannot be run out of order. flukeRDM's
-   equivalent call was never written, which is why the pipeline has three
-   independent entry points that an operator must sequence by hand:
-       1. this file
-       2. Rscript "Code/sim/R code wrapper.R"
-       3. Rscript Run_Model.R <Run_Name>   (currently broken - see its header)
-   Closing this gap is in scope for the next flukeRDM development pass. */
-
 display "model_wrapper.do: Stata pre-simulation stage complete. NEXT STEP IS MANUAL - run Code/sim/'R code wrapper.R' to perform the R calibration; this wrapper does not call it."
+// 10) Run the calibration routine in R, export files to Google Drive
+
+/* need to fix hardcoded paths*/
+
+if `run_calibration'{
+		di "Running calibration routine in R"
+	cd $here
+
+		rscript using "$here\Code\sim\R code wrapper.R", args($ndraws)
+    	di "Simulation model calibrated and files exported to Google Drive"
+}
+
 
 
 if (`proto'==1) {

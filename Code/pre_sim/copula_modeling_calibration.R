@@ -17,9 +17,7 @@
 #               means and standard errors from
 #               catch_per_trip_calibration_part1.do; its output is expanded
 #               into daily catch draws by calibration_catch_per_trip_part2.do.
-# Dev paths:    2 hardcoded absolute paths to a developer's local machine
-#               (E:\), at lines 109 and 113.
-#
+
 # NEAR-DUPLICATE of copula_modeling_projection.R. The two files differ in only
 # about eighteen lines: the input workbook, the output directory, the output
 # filename prefix, and some indentation. All of the modeling logic is
@@ -37,23 +35,11 @@
 # supplies the dependence between them. The survey-weighted correlations
 # estimated here are what the copula is fitted to.
 #
-# CONTROLS AT THE TOP OF THE FILE, and one important consequence:
+# CONTROLS AT THE TOP OF THE FILE:
 #   n_sim   = 5000   simulated trips drawn per stratum
-#   n_draws = 3      SIMULATION DRAWS WRITTEN - see below
 #   n_reps  = 200    replicate weights used for the survey variance estimates
 #
-# n_draws IS HARDCODED TO 3 AND DOES NOT READ $ndraws. This is the constraint
-# that ties the whole Stata pipeline to prototype mode. model_wrapper.do sets
-# $ndraws to 100 and then, because proto defaults to 1, overwrites it with 3.
-# If someone sets proto = 0 for a "real" run, the downstream Stata scripts will
-# loop over draws 1..100 looking for files this script only wrote three of, and
-# fail at draw 4. Running at full size therefore requires changing n_draws here
-# and in copula_modeling_projection.R as well as setting proto = 0. Flagged,
-# deliberately not changed.
-#
-# PATHS ARE HARDCODED absolute E: paths for both input and output, so this
-# script ignores the $misc_data_cd / $calib_catch_data_cd globals the Stata
-# side uses and must be edited to run on another machine.
+# n_draws reads $ndraws. 
 #
 # INVOKED FROM STATA via `rscript using', not sourced by the R wrapper. The
 # wrapper comment warns that this step "takes a while and will look like it's
@@ -63,6 +49,14 @@
 ################################################################################
 ################################################################################
 
+# Define arguments
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) != 1) {
+  stop("Error: This script requires exactly three arguments.", call. = FALSE)
+}
+
+#read in arguments. Ensure they are numeric
+n_draws  <- as.numeric(sub("cal_","",args[1]))
 
 # ---- packages ----
 required_pkgs <- c(
@@ -93,25 +87,31 @@ library(writexl)
 library(plyr)
 library(conflicted)
 library(haven)
+library(here)
 
 conflicts_prefer(dplyr::filter)
 conflicts_prefer(dplyr::select)
 conflicts_prefer(dplyr::mutate)
 conflicts_prefer(dplyr::summarise)
+conflicts_prefer(here::here)
+
+here::i_am("Code/pre_sim/copula_modeling_calibration.R")
+source(here("Code", "helpers", "developer_setup.R"))
+source(here("Code","helpers","naa_helpers.R"))
+
+misc_data_dir<-file.path(sf.data.dir, "miscellaneous")
 
 # ---- controls ----
 n_sim   <- 5000
-n_draws <- 3
 n_reps  <- 200
 
 statez <- c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC")
 
-input_file <- "E:/Lou_projects/flukeRDM/2028_mgt_cycle/miscellaneous/baseline_mrip_catch_processed.xlsx"
+input_file <- file.path(misc_data_dir,"baseline_mrip_catch_processed.xlsx")
 
 full_df <- readxl::read_xlsx(input_file)
 
-output_dir <- "E:/Lou_projects/flukeRDM/2028_mgt_cycle/calib_catch_draws"
-
+output_dir <- file.path(sf.data.dir, "calib_catch_draws") 
 # ---- helper functions ----
 
 #' @title Survey mean plus its replicate-weight realizations
