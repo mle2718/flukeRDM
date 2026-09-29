@@ -120,9 +120,9 @@ parse_date_any <- function(x) {
 
 
 #Set up R globals for input/output data and code scripts
-here::i_am("Code/sim/R code wrapper.R")
-source(here("Code", "helpers", "developer_setup.R"))
-source(here("Code","helpers","naa_helpers.R"))
+# here::i_am("Code/sim/R code wrapper.R")
+# source(here("Code", "helpers", "developer_setup.R"))
+# source(here("Code","helpers","naa_helpers.R"))
 
 
 code_cd=here("Code", "sim")
@@ -326,9 +326,6 @@ for(s in statez) {
 ##################### STEP 3 #####################
 # Run the projection algorithm. This algorithm pulls in population-adjusted catch-at-length distributions and allocates 
 # fish discarded as harvest or vice versa in proportion to how they were allocated in the calibration. 
-################################################################################
-################################################################################
-# Section F: STEP 3 - project catch under the alternative regulations
 ################################################################################
 ################################################################################
 
