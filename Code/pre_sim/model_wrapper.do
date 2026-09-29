@@ -51,9 +51,6 @@
  Additionally set_regulations.do, called from within step 2, holds the season
  and bag/size limits and must be reviewed each year.
 
-  Forked rscript install. Monitor https://github.com/reifjulian/rscript/pull/13. When merged, you can simply do:
-	net install rscript, from("https://raw.githubusercontent.com/reifjulian/rscript/master") replace
-
  
  THREE TOGGLES GATE NOTHING (defined in EXECUTION CONTROL, no matching `if'
  block anywhere in this file):
