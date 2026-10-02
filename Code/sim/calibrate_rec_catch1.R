@@ -1,6 +1,6 @@
 ################################################################################
 ################################################################################
-# Script:       calibrate_rec_catch1_final.R
+# Script:       calibrate_rec_catch1.R
 # Purpose:      Calibration PASS 1 simulation - the same calibration-year trip
 #               simulation as PASS 0, but with a reallocation step applied.
 #               Where PASS 0 assumes perfect regulatory compliance, this
@@ -8,7 +8,7 @@
 #               harvest (sublegal fish kept) or a proportion of modeled
 #               harvest into releases (legal fish voluntarily released),
 #               depending on which direction the model missed MRIP.
-#               calibration_routine_final.R sources this file repeatedly,
+#               calibration_routine.R sources this file repeatedly,
 #               varying p, until simulated harvest lands within tolerance.
 # Inputs:       calib_catch_draws_<ST>_<i>.fst, baseline_catch_at_length_state.csv,
 #               L_W_Conversion.csv, and
@@ -16,18 +16,18 @@
 # Outputs:      None written directly. Returns results to the search routine,
 #               which persists calibrated_model_stats, base_outcomes and
 #               n_choice_occasions files.
-# Dependencies: SOURCED, NOT CALLED. calibration_routine_final.R sources this
+# Dependencies: SOURCED, NOT CALLED. calibration_routine.R sources this
 #               file inside its search loop and passes the current
 #               reallocation settings through GLOBAL VARIABLES
 #               (rel_to_keep_<sp>, p_rel_to_keep_<sp> and siblings, written by
 #               that script's push_globals()). There is no argument-passing
 #               contract between the two files.
 # Pipeline:     Inner loop of R calibration STEP 2. Sibling of
-#               calibrate_rec_catch0_optimized.R, from which it inherits
+#               calibrate_rec_catch0.R, from which it inherits
 #               safe_divide(), calc_prob_trip() and build_compare_table()
 #               VERBATIM - those three functions are duplicated across the two
 #               files rather than shared. See those definitions in
-#               calibrate_rec_catch0_optimized.R for their documentation;
+#               calibrate_rec_catch0.R for their documentation;
 #               only what is new here is documented below.
 #
 # THE UTILITY ADJUSTMENT - the subtlest thing in this file.
@@ -50,7 +50,7 @@
 # minimum size, on the reasoning that an angler who keeps an illegal fish
 # keeps a near-legal one, not a tiny one. The window starts at 3 inches and
 # the search routine widens it to 4 when a stratum runs out of eligible fish
-# (see needs_floor4_rerun() in calibration_routine_final.R).
+# (see needs_floor4_rerun() in calibration_routine.R).
 ################################################################################
 ################################################################################
 
@@ -63,7 +63,7 @@
 
 # The next three functions - parse_date_any(), safe_divide() and
 # calc_prob_trip() - plus build_compare_table() below are duplicated verbatim
-# from calibrate_rec_catch0_optimized.R (and parse_date_any() also from
+# from calibrate_rec_catch0.R (and parse_date_any() also from
 # "R code wrapper.R"). They are documented in those files; a change made here
 # will NOT propagate to the copies.
 parse_date_any <- function(x) {
@@ -256,7 +256,7 @@ prop_legal_rel_bsb <- 0
 
 #' @title Apply bag and size limits, then reallocate harvest or releases
 #' @description The PASS 1 counterpart of simulate_species() in
-#'   calibrate_rec_catch0_optimized.R. Expands each trip's catch to individual
+#'   calibrate_rec_catch0.R. Expands each trip's catch to individual
 #'   fish, draws lengths, applies the minimum size and the bag limit in
 #'   encounter order - and then moves a proportion of the outcome across the
 #'   kept/released line to close the gap against MRIP.

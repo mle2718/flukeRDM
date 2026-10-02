@@ -16,11 +16,10 @@
  Dependencies: Global $developer must be set BEFORE running, and the working
                directory must already be the project root so that `here'
                resolves correctly (the header comment below describes the
-               profile.do trick for this). Requires the user-written commands
-               xsvmat, gammafit, grc1leg, and here.  
-
-			   forked rscript (improved error handling) installed with 
-			      net install rscript, from("https://raw.githubusercontent.com/mle2718/rscript/master") replace
+               profile.do trick for this). 
+               
+               Requires the user-written commands:
+               xsvmat, gammafit, grc1leg, here, and rscript (>= version 1.2.1, 27Sept2026) .  
 
 			   Some R scripts that a
                are called will copy files from Google Drive or write files to 
@@ -51,9 +50,6 @@
                                        cost survey
  Additionally set_regulations.do, called from within step 2, holds the season
  and bag/size limits and must be reviewed each year.
-
-  Forked rscript install. Monitor https://github.com/reifjulian/rscript/pull/13. When merged, you can simply do:
-	net install rscript, from("https://raw.githubusercontent.com/reifjulian/rscript/master") replace
 
  
  THREE TOGGLES GATE NOTHING (defined in EXECUTION CONTROL, no matching `if'

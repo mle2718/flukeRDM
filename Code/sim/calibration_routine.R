@@ -1,14 +1,14 @@
 
 ################################################################################
 ################################################################################
-# Script:       calibration_routine_final.R
+# Script:       calibration_routine.R
 # Purpose:      Calibration PASS 1 - the search that closes the model-vs-MRIP
 #               harvest gap measured by PASS 0. For each state x mode x draw
 #               and each species it searches for the reallocation proportion p
 #               that brings simulated harvest within tolerance of MRIP, by
 #               repeatedly re-running the trip simulation with a candidate p
 #               and narrowing a bracket around it. The reallocation itself is
-#               performed by calibrate_rec_catch1_final.R, which this script
+#               performed by calibrate_rec_catch1.R, which this script
 #               sources inside the loop; this file owns the search logic, the
 #               convergence criteria and the bookkeeping.
 #
@@ -29,17 +29,14 @@
 # Dependencies: Objects iterative_input_data_cd and input_data_cd must exist
 #               in the calling environment - set by "R code wrapper.R", which
 #               sources this file as STEP 2. Sources
-#               calibrate_rec_catch1_final.R repeatedly.
+#               calibrate_rec_catch1.R repeatedly.
 # Pipeline:     Second of the three R steps. Consumes PASS 0's comparison
-#               table; its output feeds the projection stage and is also what
-#               "check calibration convergence.do" filters down to 100 usable
-#               draws.
-# Dev paths:    1 hardcoded absolute path to a developer's local machine
-#               (E:\), at line 77.
+#               table.
+
 #
 # HOW THE SEARCH WORKS (the part worth understanding before editing):
 #   - Convergence for a species is is_achieved(): harvest within 500 fish OR
-#     within 5% of MRIP. Same criterion as "check calibration convergence.do".
+#     within 5% of MRIP.
 #   - When not converged, score_species() ranks candidate p values so the best
 #     attempt so far can be kept even if nothing fully converges. The score is
 #     keep_score + 0.15 * catch_score, so matching HARVEST dominates and total

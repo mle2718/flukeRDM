@@ -1,6 +1,6 @@
 ################################################################################
 ################################################################################
-# Script:       calibrate_rec_catch0_optimized.R
+# Script:       calibrate_rec_catch0.R
 # Purpose:      Calibration PASS 0 - simulate the calibration year exactly as
 #               the regulations were written, with NO adjustment for illegal
 #               harvest or voluntary release, and measure how far the result
@@ -12,7 +12,7 @@
 #               is taken, expands to population totals, and tabulates
 #               model-vs-MRIP differences by species and disposition.
 #               The gaps it measures are the input to PASS 1
-#               (calibrate_rec_catch1_final.R), which reallocates harvest and
+#               (calibrate_rec_catch1.R), which reallocates harvest and
 #               discards until those gaps close.
 # Inputs:       simulated_catch_totals.dta, baseline_catch_at_length_state.csv,
 #               calib_catch_draws_<ST>_<i>.fst
@@ -22,28 +22,10 @@
 #               they are set by "R code wrapper.R", which sources this file as
 #               STEP 1.
 # Pipeline:     First of the three R calibration/projection steps. Its sibling
-#               calibrate_rec_catch1_final.R reuses the same modeling logic
+#               calibrate_rec_catch1.R reuses the same modeling logic
 #               with reallocation added.
 
-#
-# Why "optimized": an earlier version (Code/archive/calibrate_rec_catch0.R)
-# performed the same computation but re-read the catch-at-length file inside
-# the innermost loop. This version preloads it once and leans on data.table
-# grouped operations. The fish-level expansion was deliberately RETAINED -
-# bag limits bind on individual fish in size order, so they cannot be applied
-# to trip-level totals without changing the answer.
-#
-# NOTE - preference coefficients are hardcoded here, not read from Stata.
-# The beta_* values in the simulation loop are literal numbers (e.g.
-# beta_sqrt_sf_keep mean 0.827, sd 1.267) rather than reads from
-# preference_params.dta, the file estimate_angler_preferences.do exists to
-# produce. Two consequences worth understanding: (1) the same coefficient
-# means are used on every draw, so sampling uncertainty in the estimated
-# preferences is NOT propagated through the calibration, only heterogeneity
-# across simulated anglers is; (2) if the choice model is ever re-estimated,
-# these literals must be updated by hand or the calibration will silently
-# keep using the old preferences. The sd = 0 entries correspond exactly to
-# the parameters estimate_angler_preferences.do zeroes out as insignificant.
+
 ################################################################################
 ################################################################################
 
@@ -302,7 +284,7 @@ build_compare_table <- function(summed_results, MRIP_comparison_draw, md) {
 ################################################################################
 ################################################################################
 
-message("calibrate_rec_catch0_optimized.R: starting calibration pass 0 over 9 states x 3 modes x ", n_simulations, " draws. This is a long-running step.")
+message("calibrate_rec_catch0.R: starting calibration pass 0 over 9 states x 3 modes x ", n_simulations, " draws. This is a long-running step.")
 
 MRIP_comparison <- read_dta(file.path(final_process_misc_cd, "simulated_catch_totals.dta")) |>
   as.data.table()
