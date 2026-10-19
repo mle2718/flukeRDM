@@ -147,7 +147,7 @@ final_process_project_catch_cd=file.path(final_process_data_cd,"proj_catch_draws
 # # Show them, just in case.
 # cat("Number of model iterations selected:", n_simulations, "\n")
 
-n_simulations  <- 3 ## HARDCODED number of model iterations
+n_simulations  <- 101 ## HARDCODED number of model iterations
 
 
 

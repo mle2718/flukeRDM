@@ -181,7 +181,7 @@ global fed_holidays_y2 "inlist(day_y2, td(01jan2026), td(19jan2026), td(16feb202
 global leap_yr_days "td(29feb2024)" 
 
 * Number of model iterations
-global ndraws 150
+global ndraws 101
 
 * set years of which to pull the NEFSC trawl survey data
 global NEFSC_svy_yrs "inlist(year,2024, 2023, 2022)"
@@ -243,10 +243,10 @@ loc assemblemriplists = 0		 	// deal with casing MRIP data
 loc estimate_dtrips = 0				// Estimate Directed Trips 
 loc costs_per_trip = 0			// Create Distributions of costs per trip (run 1x)
 loc draw_angler_preferences = 0		// Create draw of angler preference parameters (run 1x)
-loc catch_per_trip1 = 1				// Part 1 of catch per trip
+loc catch_per_trip1 = 0				// Part 1 of catch per trip
 loc copula1_in_R = 0				// Copula model in R
 loc catch_per_trip2 = 0				// Part 2 of catch per trip
-loc compare_calibration_MRIP = 0	// compare calibration output to MRIP
+loc compare_calibration_MRIP = 1	// compare calibration output to MRIP
 /* The next three toggles gate NOTHING - there is no matching `if' block for
    any of them below. See the header for details. */
 loc prep_cpt_for_dashboard= 0		// prep data for dashboard NOT IN WRAPPER. NOT WRITTEN, See Groundfish repo
@@ -254,7 +254,7 @@ loc Rpush_to_gdrive =0 				// Push to google drive in R NOT IN WRAPPER. WRITTEN 
 loc angler_demogs	=0				// add additonal angler demographics
 
 
-loc generate_baseline=0				// Generate baseline-year catch-at-length
+loc generate_baseline=1				// Generate baseline-year catch-at-length
 loc catch_at_length_project=0		// Generate projection-year catch-at-length
 loc catch_per_trip_project_part1=0      // Part 1 of PROJECTED catch per trip
 loc copula2_in_R=0      			 // Projection part of copula in R 
@@ -275,7 +275,7 @@ loc run_calibration =0 				// Run calibration /sim/R wrapper.R  Will Not run unt
    pipeline finish in a fraction of the time  
    */
 // Prototyping
-local proto = 1
+local proto = 0
 
 if `proto' {
 	global ndraws 3

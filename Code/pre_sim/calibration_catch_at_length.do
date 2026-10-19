@@ -626,7 +626,7 @@ global fitted_sizes
 levelsof domain, local(regs)
 
 quietly foreach r of local regs {
-	noisily display "processing regulations `r'"
+	noisily display "processing region `r'"
     use `new', clear
     keep if domain=="`r'"
     di "`r'"
