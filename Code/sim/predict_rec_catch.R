@@ -11,8 +11,7 @@
 #               baseline harvest, releases, dead discards and angler welfare,
 #               with absolute and percent differences.
 #
-#               Carrying the calibrated proportions forward is the central
-#               modeling assumption. The calibration inferred how far angler
+#               Calibration inferred how far angler
 #               behavior departs from strict compliance in the base year; the
 #               projection assumes that same departure persists under the new
 #               regulations, rather than re-estimating it.

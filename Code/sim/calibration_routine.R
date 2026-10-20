@@ -110,6 +110,45 @@ draws <- 1:n_simulations
 # mode_draw <- c("pr")
 # draws <- 1:1
 
+# Table for p_star starting values. 
+# Odd draw numbers after draw 1 will use draw 1's p_star as the starting value
+# Even draw numbers after draw 2 will use draw 2's p_star as the starting value
+warm_starts <- data.table::data.table(
+  state = character(),
+  mode = character(),
+  parity = integer(),
+  species = character(),
+  direction = character(),
+  p_star = numeric()
+)
+
+update_warm_starts <- function(results, s, md, i) {
+  for (sp in species_vec) {
+    row <- results[species == sp]
+    if (nrow(row) != 1L) next
+    
+    rel_flag <- row[[paste0("rel_to_keep_", sp)]][1]
+    keep_flag <- row[[paste0("keep_to_rel_", sp)]][1]
+    convergence <- row[[paste0("convergence_", sp)]][1]
+    
+    direction <- if (isTRUE(rel_flag == 1)) "rel_to_keep" else
+      if (isTRUE(keep_flag == 1)) "keep_to_rel" else "none"
+    
+    if (direction == "none" || !isTRUE(convergence == 1)) next
+    
+    p <- if (direction == "rel_to_keep") row[[paste0("p_rel_to_keep_", sp)]][1] else
+      row[[paste0("p_keep_to_rel_", sp)]][1]
+    
+    if (!is.finite(p)) next
+    
+    warm_starts <<- warm_starts[!(state == s & mode == md & parity == i %% 2L & species == sp)]
+    warm_starts <<- data.table::rbindlist(list(
+      warm_starts,
+      data.table::data.table(state = s, mode = md, parity = i %% 2L,
+                             species = sp, direction = direction, p_star = p)
+    ))
+  }
+}
 # Search settings. The two tolerances are the agreed definition of "close
 # enough to MRIP" and are mirrored in "check calibration convergence.do";
 # changing them here without changing that script would desynchronize which
@@ -227,21 +266,23 @@ extract_species_row <- function(dt, sp, md, s, i) {
 #' @return A list holding direction, the current proportion p, the bracket
 #'   endpoints lo and hi, whether tolerance is already met, a convergence
 #'   flag, and slots for the best-scoring attempt seen so far.
-make_state <- function(base_row, draw) {
-
+make_state <- function(base_row, draw, warm_p = NA_real_, warm_direction = NA_character_) {
+  
   # Odd draws start toward higher harvest; even draws toward lower harvest.
   # Increasing p raises harvest for rel_to_keep and lowers it for keep_to_rel.
+  
   start_p <- function(center, direction) {
     center <- if (length(center) != 1L || !is.finite(center)) 0 else as.numeric(center)
     if (direction == "none") return(0)
+    
     harvest_sign <- if (draw %% 2L == 1L) 1 else -1
     p_sign <- if (direction == "rel_to_keep") harvest_sign else -harvest_sign
+    
     max(0, min(1, center + p_sign * start_offset))
   }
   
   mrip_keep  <- as.numeric(base_row$MRIP_keep)
   model_keep <- as.numeric(base_row$model_keep)
-  diff_keep  <- as.numeric(base_row$diff_keep)
   
   # zero-target case
   if (is.finite(mrip_keep) && mrip_keep == 0) {
@@ -249,31 +290,31 @@ make_state <- function(base_row, draw) {
     # if model is also effectively zero, nothing to do
     if (is.finite(model_keep) && model_keep == 0) {
       return(list(
-        direction = "none",
-        p = 0,
-        lo = 0,
-        hi = NA_real_,
-        achieved = TRUE,
-        convergence = 1L,
+        direction = "none", p = 0, lo = 0, hi = NA_real_,
+        achieved = TRUE, convergence = 1L,
         best_score = Inf,
-        best_row = NULL
+        best_row = NULL,
+        best_p = NA_real_
       ))
     }
     
     # if model_keep > 0 and MRIP_keep == 0, only keep->rel makes sense
     direction <- "keep_to_rel"
-    p0 <- ifelse(is.finite(base_row$p_keep_to_rel), as.numeric(base_row$p_keep_to_rel), 0)
-    p0 <- start_p(p0, direction)
+    
+    if (is.finite(warm_p) && identical(warm_direction, direction)) {
+      p0 <- warm_p
+    } else {
+      p0 <- ifelse(is.finite(base_row$p_keep_to_rel), as.numeric(base_row$p_keep_to_rel), 0)
+      p0 <- start_p(p0, direction)
+    }
     
     return(list(
-      direction = direction,
-      p = p0,
-      lo = 0,
-      hi = 1,
-      achieved = FALSE,
-      convergence = 1L,
+      direction = direction, p = p0,
+      lo = 0, hi = 1,
+      achieved = FALSE, convergence = 1L,
       best_score = Inf,
-      best_row = NULL
+      best_row = NULL,
+      best_p = NA_real_
     ))
   }
   
@@ -285,27 +326,37 @@ make_state <- function(base_row, draw) {
     "none"
   }
   
-  p0 <- if (direction == "rel_to_keep") {
-    base_row$p_rel_to_keep
-  } else if (direction == "keep_to_rel") {
-    base_row$p_keep_to_rel
+  # Use calibrated warm start when its direction agrees with this draw.
+  if (is.finite(warm_p) && identical(warm_direction, direction)) {
+    
+    p0 <- warm_p
+    
   } else {
-    0
+    
+    p0 <- if (direction == "rel_to_keep") {
+      base_row$p_rel_to_keep
+    } else if (direction == "keep_to_rel") {
+      base_row$p_keep_to_rel
+    } else {
+      0
+    }
+    
+    p0 <- start_p(p0, direction)
   }
-  
-  p0 <- start_p(p0, direction)
   
   list(
     direction = direction,
-    p = p0,
+    p = max(0, min(1, p0)),
     lo = 0,
     hi = 1,
     achieved = FALSE,
     convergence = 1L,
     best_score = Inf,
-    best_row = NULL
+    best_row = NULL,
+    best_p = NA_real_
   )
 }
+
 
 #' @title Publish the current search state to the global environment
 #' @description The simulation script sourced inside the search loop does not
@@ -361,6 +412,10 @@ push_globals <- function(states_by_sp, target_env = .GlobalEnv) {
 #' @return The updated search state, with a new p to try next unless the
 #'   search has converged or exhausted its bracket.
 update_bracket <- function(st, row) {
+  
+  # Preserve the best solution once a species has converged.
+  if (isTRUE(st$achieved)) return(st)
+  
   if (st$direction == "none") {
     st$achieved <- TRUE
     return(st)
@@ -385,14 +440,16 @@ update_bracket <- function(st, row) {
   )
   
   if (st$achieved) {
-    st$best_row <- copy(row)
+    st$best_row <- data.table::copy(row)
     st$best_score <- -Inf
+    st$best_p <- st$p
     return(st)
   }
   
   if (this_score < st$best_score) {
     st$best_score <- this_score
-    st$best_row <- copy(row)
+    st$best_row <- data.table::copy(row)
+    st$best_p <- st$p
   }
   
   if (st$direction == "rel_to_keep") {
@@ -488,6 +545,10 @@ for (s in states) {
         
         calibrated[[k]] <- saved
         k <- k + 1L
+        
+        # Populate warm-start cache from completed draws
+        update_warm_starts(saved, s, md, i)
+        
         message("Skipping completed first pass: ", s, " / ", md, " / draw ", i)
         next
       }
@@ -512,9 +573,38 @@ for (s in states) {
 
       states_by_sp <- setNames(vector("list", length(species_vec)), species_vec)
       for (sp in species_vec) {
+        
         base_row <- extract_species_row(baseline_targets_current, sp, md, s, i)
-        states_by_sp[[sp]] <- make_state(base_row, i)
+        
+        warm_p <- NA_real_
+        warm_direction <- NA_character_
+        
+        if (i > 2L) {
+          
+          parity_i <- i %% 2L
+          
+          ws <- warm_starts[
+            state == s &
+              mode == md &
+              parity == parity_i &
+              species == sp
+          ]
+          
+          if (nrow(ws) == 1L) {
+            warm_p <- ws$p_star
+            warm_direction <- ws$direction
+          }
+        }
+        
+        states_by_sp[[sp]] <- make_state(
+          base_row,
+          i,
+          warm_p = warm_p,
+          warm_direction = warm_direction
+        )
+        
         states_by_sp[[sp]]$best_row <- copy(base_row)
+        states_by_sp[[sp]]$best_p <- 0
         states_by_sp[[sp]]$best_score <- score_species(
           base_row$diff_keep,
           base_row$pct_diff_keep,
@@ -563,7 +653,7 @@ for (s in states) {
         if (all_done || iter_used >= max_iter) break
       }
 
-
+     
       floor_used_in_sf   <- sf_floor_below_min_in
       floor_used_in_bsb  <- bsb_floor_below_min_in
       floor_used_in_scup <- scup_floor_below_min_in
@@ -600,24 +690,24 @@ for (s in states) {
       final_rows[species == "sf", `:=`(
         keep_to_rel_sf = as.integer(states_by_sp[["sf"]]$direction == "keep_to_rel"),
         rel_to_keep_sf = as.integer(states_by_sp[["sf"]]$direction == "rel_to_keep"),
-        p_rel_to_keep_sf = if (states_by_sp[["sf"]]$direction == "rel_to_keep") states_by_sp[["sf"]]$p else 0,
-        p_keep_to_rel_sf = if (states_by_sp[["sf"]]$direction == "keep_to_rel") states_by_sp[["sf"]]$p else 0,
+        p_rel_to_keep_sf = if (states_by_sp[["sf"]]$direction == "rel_to_keep") states_by_sp[["sf"]]$best_p else 0,
+        p_keep_to_rel_sf = if (states_by_sp[["sf"]]$direction == "keep_to_rel") states_by_sp[["sf"]]$best_p else 0,
         convergence_sf = as.integer(is_achieved(diff_keep, pct_diff_keep, MRIP_keep))
         )]
       
       final_rows[species == "bsb", `:=`(
         keep_to_rel_bsb = as.integer(states_by_sp[["bsb"]]$direction == "keep_to_rel"),
         rel_to_keep_bsb = as.integer(states_by_sp[["bsb"]]$direction == "rel_to_keep"),
-        p_rel_to_keep_bsb = if (states_by_sp[["bsb"]]$direction == "rel_to_keep") states_by_sp[["bsb"]]$p else 0,
-        p_keep_to_rel_bsb = if (states_by_sp[["bsb"]]$direction == "keep_to_rel") states_by_sp[["bsb"]]$p else 0,
+        p_rel_to_keep_bsb = if (states_by_sp[["bsb"]]$direction == "rel_to_keep") states_by_sp[["bsb"]]$best_p else 0,
+        p_keep_to_rel_bsb = if (states_by_sp[["bsb"]]$direction == "keep_to_rel") states_by_sp[["bsb"]]$best_p else 0,
         convergence_bsb = as.integer(is_achieved(diff_keep, pct_diff_keep, MRIP_keep))
         )]
       
       final_rows[species == "scup", `:=`(
         keep_to_rel_scup = as.integer(states_by_sp[["scup"]]$direction == "keep_to_rel"),
         rel_to_keep_scup = as.integer(states_by_sp[["scup"]]$direction == "rel_to_keep"),
-        p_rel_to_keep_scup = if (states_by_sp[["scup"]]$direction == "rel_to_keep") states_by_sp[["scup"]]$p else 0,
-        p_keep_to_rel_scup = if (states_by_sp[["scup"]]$direction == "keep_to_rel") states_by_sp[["scup"]]$p else 0,
+        p_rel_to_keep_scup = if (states_by_sp[["scup"]]$direction == "rel_to_keep") states_by_sp[["scup"]]$best_p else 0,
+        p_keep_to_rel_scup = if (states_by_sp[["scup"]]$direction == "keep_to_rel") states_by_sp[["scup"]]$best_p else 0,
         convergence_scup = as.integer(is_achieved(diff_keep, pct_diff_keep, MRIP_keep))
         )]
 
@@ -636,18 +726,28 @@ for (s in states) {
       }
 
       final_rows[, iter_used := iter_used]
-      setcolorder(final_rows, c("draw","state", "mode","species","MRIP_rel","model_rel","diff_rel","pct_diff_rel",
-                                "MRIP_keep","model_keep","diff_keep","pct_diff_keep",
-                                "MRIP_catch","model_catch","diff_catch","pct_diff_catch",
-                                "rel_to_keep_new","keep_to_rel_new","p_rel_to_keep_new","p_keep_to_rel_new",
-                                "floor_used_in_sf", "floor_used_in_bsb", "floor_used_in_scup",
-                                setdiff(names(final_rows), c("draw","state", "mode","species","MRIP_rel","model_rel","diff_rel","pct_diff_rel",
-                                                             "MRIP_keep","model_keep","diff_keep","pct_diff_keep",
-                                                             "MRIP_catch","model_catch","diff_catch","pct_diff_catch",
-                                                             "rel_to_keep_new","keep_to_rel_new","p_rel_to_keep_new","p_keep_to_rel_new", 
-                                                             "floor_used_in_sf", "floor_used_in_bsb", "floor_used_in_scup"))))
+      front_cols <- c(
+        "draw", "state", "mode", "species",
+        "MRIP_rel", "model_rel", "diff_rel", "pct_diff_rel",
+        "MRIP_keep", "model_keep", "diff_keep", "pct_diff_keep",
+        "MRIP_catch", "model_catch", "diff_catch", "pct_diff_catch",
+        "rel_to_keep_new", "keep_to_rel_new",
+        "p_rel_to_keep_new", "p_keep_to_rel_new",
+        "floor_used_in_sf", "floor_used_in_bsb", "floor_used_in_scup"
+      )
+      
+      front_cols <- intersect(front_cols, names(final_rows))
+      
+      data.table::setcolorder(
+        final_rows,
+        c(front_cols, setdiff(names(final_rows), front_cols))
+      )
 
       save_checkpoint(final_rows, first_pass_path)
+      
+      # Save the calibrated p values for subsequent same-parity draws
+      update_warm_starts(final_rows, s, md, i)
+      
       message("Saved first-pass checkpoint: ", first_pass_path)
       calibrated[[k]] <- final_rows
       k <- k + 1L
@@ -745,11 +845,8 @@ needs_floor4_rerun <- function(rel_to_keep, convergence, diff_keep, pct_diff_kee
     return(is.finite(diff_keep) && abs(diff_keep) >= 500)
   }
   
-  # otherwise use your usual tolerance logic
-  keep_bad_abs <- is.finite(diff_keep) && abs(diff_keep) >= 500
-  keep_bad_pct <- is.finite(pct_diff_keep) && abs(pct_diff_keep) >= 5
-  
-  keep_bad_abs || keep_bad_pct || !is.finite(pct_diff_keep)
+  # Apply the same convergence criterion as the main calibration
+  !is_achieved(diff_keep, pct_diff_keep, MRIP_keep)
 }
 
 problem_rows <- calibrated_combined[
@@ -822,7 +919,8 @@ if (nrow(problem_rows) > 0) {
           for (sp in species_vec) {
             base_row <- extract_species_row(baseline_targets_current, sp, md, s, i)
             states_by_sp[[sp]] <- make_state(base_row, i)
-            states_by_sp[[sp]]$best_row <- copy(base_row)
+            states_by_sp[[sp]]$best_row <- data.table::copy(base_row)
+            states_by_sp[[sp]]$best_p <- 0
             states_by_sp[[sp]]$best_score <- score_species(
               base_row$diff_keep,
               base_row$pct_diff_keep,
@@ -876,7 +974,7 @@ if (nrow(problem_rows) > 0) {
             if (all_done || iter_used >= max_iter) break
           }
           
-   
+    
           floor_used_in_sf   <- sf_floor_below_min_in
           floor_used_in_bsb  <- bsb_floor_below_min_in
           floor_used_in_scup <- scup_floor_below_min_in
@@ -913,24 +1011,24 @@ if (nrow(problem_rows) > 0) {
           final_rows[species == "sf", `:=`(
             keep_to_rel_sf = as.integer(states_by_sp[["sf"]]$direction == "keep_to_rel"),
             rel_to_keep_sf = as.integer(states_by_sp[["sf"]]$direction == "rel_to_keep"),
-            p_rel_to_keep_sf = if (states_by_sp[["sf"]]$direction == "rel_to_keep") states_by_sp[["sf"]]$p else 0,
-            p_keep_to_rel_sf = if (states_by_sp[["sf"]]$direction == "keep_to_rel") states_by_sp[["sf"]]$p else 0,
+            p_rel_to_keep_sf = if (states_by_sp[["sf"]]$direction == "rel_to_keep") states_by_sp[["sf"]]$best_p else 0,
+            p_keep_to_rel_sf = if (states_by_sp[["sf"]]$direction == "keep_to_rel") states_by_sp[["sf"]]$best_p else 0,
             convergence_sf = as.integer(is_achieved(diff_keep, pct_diff_keep, MRIP_keep))
           )]
           
           final_rows[species == "bsb", `:=`(
             keep_to_rel_bsb = as.integer(states_by_sp[["bsb"]]$direction == "keep_to_rel"),
             rel_to_keep_bsb = as.integer(states_by_sp[["bsb"]]$direction == "rel_to_keep"),
-            p_rel_to_keep_bsb = if (states_by_sp[["bsb"]]$direction == "rel_to_keep") states_by_sp[["bsb"]]$p else 0,
-            p_keep_to_rel_bsb = if (states_by_sp[["bsb"]]$direction == "keep_to_rel") states_by_sp[["bsb"]]$p else 0,
+            p_rel_to_keep_bsb = if (states_by_sp[["bsb"]]$direction == "rel_to_keep") states_by_sp[["bsb"]]$best_p else 0,
+            p_keep_to_rel_bsb = if (states_by_sp[["bsb"]]$direction == "keep_to_rel") states_by_sp[["bsb"]]$best_p else 0,
             convergence_bsb = as.integer(is_achieved(diff_keep, pct_diff_keep, MRIP_keep))
           )]
           
           final_rows[species == "scup", `:=`(
             keep_to_rel_scup = as.integer(states_by_sp[["scup"]]$direction == "keep_to_rel"),
             rel_to_keep_scup = as.integer(states_by_sp[["scup"]]$direction == "rel_to_keep"),
-            p_rel_to_keep_scup = if (states_by_sp[["scup"]]$direction == "rel_to_keep") states_by_sp[["scup"]]$p else 0,
-            p_keep_to_rel_scup = if (states_by_sp[["scup"]]$direction == "keep_to_rel") states_by_sp[["scup"]]$p else 0,
+            p_rel_to_keep_scup = if (states_by_sp[["scup"]]$direction == "rel_to_keep") states_by_sp[["scup"]]$best_p else 0,
+            p_keep_to_rel_scup = if (states_by_sp[["scup"]]$direction == "keep_to_rel") states_by_sp[["scup"]]$best_p else 0,
             convergence_scup = as.integer(is_achieved(diff_keep, pct_diff_keep, MRIP_keep))
           )]
           
@@ -949,16 +1047,22 @@ if (nrow(problem_rows) > 0) {
           }
           
           final_rows[, iter_used := iter_used]
-          setcolorder(final_rows, c("draw","state", "mode","species","MRIP_rel","model_rel","diff_rel","pct_diff_rel",
-                                    "MRIP_keep","model_keep","diff_keep","pct_diff_keep",
-                                    "MRIP_catch","model_catch","diff_catch","pct_diff_catch",
-                                    "rel_to_keep_new","keep_to_rel_new","p_rel_to_keep_new","p_keep_to_rel_new",
-                                    "floor_used_in_sf", "floor_used_in_bsb", "floor_used_in_scup",
-                                    setdiff(names(final_rows), c("draw","state", "mode","species","MRIP_rel","model_rel","diff_rel","pct_diff_rel",
-                                                                 "MRIP_keep","model_keep","diff_keep","pct_diff_keep",
-                                                                 "MRIP_catch","model_catch","diff_catch","pct_diff_catch",
-                                                                 "rel_to_keep_new","keep_to_rel_new","p_rel_to_keep_new","p_keep_to_rel_new", 
-                                                                 "floor_used_in_sf", "floor_used_in_bsb", "floor_used_in_scup"))))
+          sefront_cols <- c(
+            "draw", "state", "mode", "species",
+            "MRIP_rel", "model_rel", "diff_rel", "pct_diff_rel",
+            "MRIP_keep", "model_keep", "diff_keep", "pct_diff_keep",
+            "MRIP_catch", "model_catch", "diff_catch", "pct_diff_catch",
+            "rel_to_keep_new", "keep_to_rel_new",
+            "p_rel_to_keep_new", "p_keep_to_rel_new",
+            "floor_used_in_sf", "floor_used_in_bsb", "floor_used_in_scup"
+          )
+          
+          front_cols <- intersect(front_cols, names(final_rows))
+          
+          data.table::setcolorder(
+            final_rows,
+            c(front_cols, setdiff(names(final_rows), front_cols))
+          )
           
           save_checkpoint(final_rows, rerun_path)
           message("Saved wider-floor checkpoint: ", rerun_path)
