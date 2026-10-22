@@ -1034,6 +1034,174 @@ if (nrow(duplicate_drive_files) > 0) {
   print(duplicate_drive_files[order(folder, file_name)])
 }
 
+
+#===============================================================================
+# 13. RETRY MISSING GOOGLE DRIVE FILES
+#===============================================================================
+
+# Save the missing file list before attempting uploads.
+missing_files_retry <- data.table::copy(missing_drive)
+
+# Add local file paths and Google Drive folder IDs.
+missing_files_retry <- merge(
+  missing_files_retry,
+  data.table::as.data.table(export_folders)[
+    , .(folder, local_folder, drive_folder_id)
+  ],
+  by = "folder",
+  all.x = TRUE,
+  sort = FALSE
+)
+
+missing_files_retry[
+  , local_path := file.path(local_folder, file_name)
+]
+
+# Check that all missing files exist locally.
+missing_files_retry[
+  , local_exists := file.exists(local_path)
+]
+
+if (any(!missing_files_retry$local_exists)) {
+  warning("Some missing Drive files do not exist locally.")
+  print(missing_files_retry[local_exists == FALSE])
+}
+
+# Retry uploads.
+retry_results <- vector("list", nrow(missing_files_retry))
+
+for (i in seq_len(nrow(missing_files_retry))) {
+  
+  f <- missing_files_retry[i]
+  
+  message(
+    "[Retry ", i, "/", nrow(missing_files_retry), "] ",
+    f$file_name
+  )
+  
+  if (!f$local_exists) {
+    retry_results[[i]] <- data.table::data.table(
+      folder = f$folder,
+      file_name = f$file_name,
+      status = "missing_local",
+      details = "Local file does not exist"
+    )
+    next
+  }
+  
+  result <- tryCatch(
+    drive_retry(
+      fun = function() {
+        googledrive::drive_upload(
+          media = f$local_path,
+          path = googledrive::as_id(f$drive_folder_id),
+          name = f$file_name
+        )
+      },
+      label = paste("Retry upload", f$file_name)
+    ),
+    error = function(e) e
+  )
+  
+  if (inherits(result, "error")) {
+    
+    status <- "failed"
+    details <- conditionMessage(result)
+    
+    warning("Retry failed: ", f$file_name, " | ", details)
+    
+  } else {
+    
+    status <- "uploaded"
+    details <- "Success"
+    
+    message("  Uploaded successfully.")
+  }
+  
+  retry_results[[i]] <- data.table::data.table(
+    folder = f$folder,
+    file_name = f$file_name,
+    status = status,
+    details = details
+  )
+  
+  Sys.sleep(upload_delay)
+}
+
+retry_results <- data.table::rbindlist(retry_results, fill = TRUE)
+
+cat("\nRetry upload results:\n")
+print(retry_results)
+
+#===============================================================================
+# 13B. VERIFY RETRIED FILES
+#===============================================================================
+
+# Check each affected Drive folder once.
+retry_verification <- list()
+
+for (folder_name in unique(missing_files_retry$folder)) {
+  
+  folder_id <- export_folders$drive_folder_id[
+    export_folders$folder == folder_name
+  ]
+  
+  drive_files <- tryCatch(
+    drive_retry(
+      fun = function() googledrive::drive_ls(
+        path = googledrive::as_id(folder_id)
+      ),
+      label = paste("Verify retry", folder_name)
+    ),
+    error = function(e) e
+  )
+  
+  if (inherits(drive_files, "error")) {
+    warning("Could not verify folder: ", folder_name)
+    next
+  }
+  
+  retry_verification[[folder_name]] <- data.table::data.table(
+    folder = folder_name,
+    file_name = drive_files$name,
+    drive_id = drive_files$id
+  )
+}
+
+retry_verification <- data.table::rbindlist(
+  retry_verification,
+  fill = TRUE
+)
+
+# Identify any files still missing after retry.
+still_missing <- missing_files_retry[
+  !retry_verification,
+  on = .(folder, file_name)
+]
+
+cat("\n====================================================\n")
+cat("RETRY VERIFICATION RESULTS\n")
+cat("====================================================\n")
+
+if (nrow(still_missing) == 0) {
+  message("All retried files are now present on Google Drive.")
+} else {
+  warning(nrow(still_missing), " files still missing from Google Drive.")
+  print(still_missing[, .(folder, file_name, local_path)])
+}
+
+# Save retry results.
+# data.table::fwrite(
+#   retry_results,
+#   file.path(report_dir, "gdrive_retry_results.csv")
+# )
+# 
+# data.table::fwrite(
+#   still_missing,
+#   file.path(report_dir, "gdrive_still_missing.csv")
+# )
+
+
 ################################################################################
 # END OF SCRIPT
 ################################################################################
