@@ -246,7 +246,7 @@ loc draw_angler_preferences = 0		// Create draw of angler preference parameters 
 loc catch_per_trip1 = 0				// Part 1 of catch per trip
 loc copula1_in_R = 0				// Copula model in R
 loc catch_per_trip2 = 0				// Part 2 of catch per trip
-loc compare_calibration_MRIP = 1	// compare calibration output to MRIP
+loc compare_calibration_MRIP = 0	// compare calibration output to MRIP
 /* The next three toggles gate NOTHING - there is no matching `if' block for
    any of them below. See the header for details. */
 loc prep_cpt_for_dashboard= 0		// prep data for dashboard NOT IN WRAPPER. NOT WRITTEN, See Groundfish repo
@@ -254,12 +254,12 @@ loc Rpush_to_gdrive =0 				// Push to google drive in R NOT IN WRAPPER. WRITTEN 
 loc angler_demogs	=0				// add additonal angler demographics
 
 
-loc generate_baseline=1				// Generate baseline-year catch-at-length
-loc catch_at_length_project=0		// Generate projection-year catch-at-length
-loc catch_per_trip_project_part1=0      // Part 1 of PROJECTED catch per trip
-loc copula2_in_R=0      			 // Projection part of copula in R 
-loc catch_per_trip_project_part2=0       // Part 2 of PROJECTED catch per trip
-loc compare_project_to_MRIP=0       // Compare projection data to MRIP
+loc generate_baseline=0				// Generate baseline-year catch-at-length
+loc catch_at_length_project=1		// Generate projection-year catch-at-length
+loc catch_per_trip_project_part1=1      // Part 1 of PROJECTED catch per trip
+loc copula2_in_R=1      			 // Projection part of copula in R 
+loc catch_per_trip_project_part2=1       // Part 2 of PROJECTED catch per trip
+loc compare_project_to_MRIP=1       // Compare projection data to MRIP
 
 loc prep_NAA_for_dashboard = 0		// Pull Assessment data
 loc push_NAA_to_gdrive =0			// Convert Assessment data to Rds, reshape to long, and push to googledrive

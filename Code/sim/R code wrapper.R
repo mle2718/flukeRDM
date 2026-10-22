@@ -323,6 +323,16 @@ for(s in statez) {
 }
 
 
+################################################################################
+################################################################################
+# Section F: Export input data files to Google Drive
+################################################################################
+################################################################################
+
+source(file.path(code_cd,"export_all_to_GDrive.R"))
+
+
+
 ##################### STEP 3 #####################
 # Run the projection algorithm. This algorithm pulls in population-adjusted catch-at-length distributions and allocates 
 # fish discarded as harvest or vice versa in proportion to how they were allocated in the calibration. 
