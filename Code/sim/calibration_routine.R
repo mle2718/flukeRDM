@@ -1159,5 +1159,7 @@ problem_rows <- calibrated_combined_final[
 ][needs_rerun == TRUE]
 
 fst::write_fst(calibrated_combined_final,
-               file.path(final_process_misc_cd,
-                         paste0("calibrated_model_stats.fst")))
+               file.path(final_process_misc_cd,paste0("calibrated_model_stats.fst")))
+
+writexl::write_xlsx(calibrated_combined_final,
+                    file.path(final_process_misc_cd, "calibrated_model_stats.xlsx"))
